@@ -803,7 +803,6 @@ let lpStartPos = {x:0, y:0};
 let lpInterval = null;
 let lpLocked = false;         // true once user moves while in a visual mode
 let lpSavedMap = null;       // Map<material, saved props>
-let lpTubeOwners = null;     // Map<material, 'X'|'O'>
 let lpRestoring = false, lpRestoreStart = 0;
 let lpRestoreSnaps = null;   // Map<material, {from, to}> for lerp
 
@@ -820,7 +819,6 @@ function lpSaveMat(map, mat) {
 
 function lpCollectMaterials() {
   const map = new Map();
-  const owners = new Map();
   for (const mesh of cellMeshes) {
     if (!mesh) continue;
     lpSaveMat(map, mesh.material);
@@ -831,9 +829,8 @@ function lpCollectMaterials() {
   }
   for (const tube of [...lineTubes, ...partialTubes]) {
     lpSaveMat(map, tube.material);
-    owners.set(tube.material, tube.material.color.getHex() === 0x00ffff ? PLAYER : CPU);
   }
-  return {map, owners};
+  return map;
 }
 
 function lpBoostEmissive(mat, saved) {
@@ -848,9 +845,7 @@ function lpBoostEmissive(mat, saved) {
 function lpApplyStage(stage) {
   if (stage === lpStage) return;
   if (!lpSavedMap) {
-    const collected = lpCollectMaterials();
-    lpSavedMap = collected.map;
-    lpTubeOwners = collected.owners;
+    lpSavedMap = lpCollectMaterials();
   }
   lpStage = stage;
 
@@ -861,10 +856,10 @@ function lpApplyStage(stage) {
     if (!saved) continue;
 
     if (stage === 1) {
-      // HIGH CONTRAST: boost emissive, brighter edges
+      // HIGH CONTRAST: boost emissive, fully opaque
       lpBoostEmissive(mat, saved);
-      mat.opacity = Math.min(1, saved.opacity + 0.25);
-      mat.transparent = true;
+      mat.opacity = 1;
+      mat.transparent = false;
     } else if (stage >= 2) {
       // WIREFRAME / BW WIREFRAME: hide cube faces
       mat.opacity = 0;
@@ -876,7 +871,6 @@ function lpApplyStage(stage) {
         const eMat = child.material;
         if (stage === 1) eMat.color.setHex(0x88aaff);
         else if (stage === 2) eMat.color.setHex(0x6699ff);
-        else if (stage === 3) eMat.color.setHex(0xbbbbbb);
       }
       if (child.isGroup) {
         child.traverse(c => {
@@ -887,41 +881,14 @@ function lpApplyStage(stage) {
             lpBoostEmissive(c.material, ms);
           } else if (stage === 2) {
             // markers stay visible in wireframe
-          } else if (stage === 3) {
-            // BW: markers become white/gray
-            c.material.color.setHex(0xcccccc);
-            if (c.material.emissive) c.material.emissive.setHex(0x444444);
           }
         });
       }
     }
   }
 
-  // Tubes
-  for (const tube of [...lineTubes, ...partialTubes]) {
-    if (stage === 3) {
-      tube.material.color.setHex(0xffffff);
-    }
-  }
 }
 
-// Animate BW wireframe dashed/dotted effect on tubes
-function lpAnimateTubes() {
-  if (lpStage !== 3 || !lpTubeOwners) return;
-  const now = Date.now() * 0.001;
-  for (const tube of [...lineTubes, ...partialTubes]) {
-    const owner = lpTubeOwners.get(tube.material);
-    const saved = lpSavedMap.get(tube.material);
-    if (!saved) continue;
-    if (owner === PLAYER) {
-      // X: dashed — slow square-wave oscillation
-      tube.material.opacity = saved.opacity * (0.25 + 0.75 * (Math.sin(now * 5) > 0 ? 1 : 0.15));
-    } else {
-      // O: dotted — fast oscillation
-      tube.material.opacity = saved.opacity * (0.2 + 0.8 * Math.max(0, Math.sin(now * 14)));
-    }
-  }
-}
 
 function lpSnapCurrent(mat) {
   return {
@@ -979,7 +946,6 @@ function lpUpdateRestore() {
     }
     lpRestoring = false;
     lpSavedMap = null;
-    lpTubeOwners = null;
     lpRestoreSnaps = null;
     lpStage = 0;
   }
@@ -995,8 +961,7 @@ function lpStart(x, y) {
   lpInterval = setInterval(() => {
     if (!lpActive) { clearInterval(lpInterval); lpInterval = null; return; }
     const elapsed = Date.now() - lpStartTime;
-    if (elapsed >= 6000 && lpStage < 3) lpApplyStage(3);
-    else if (elapsed >= 3000 && lpStage < 2) lpApplyStage(2);
+    if (elapsed >= 3000 && lpStage < 2) lpApplyStage(2);
     else if (elapsed >= 700 && lpStage < 1) lpApplyStage(1);
   }, 50);
 }
@@ -1081,7 +1046,6 @@ function animate() {
   }
 
   // Long-press visual mode updates
-  lpAnimateTubes();
   lpUpdateRestore();
 
   if(ptW.intensity > 0) ptW.intensity = 4+Math.sin(t*4)*2;
