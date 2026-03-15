@@ -5,64 +5,64 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>3D Tic-Tac-Toe</title>
 <style>
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { background:#000; overflow:hidden; font-family:'Segoe UI',sans-serif; }
-  canvas { display:block; }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:#000;overflow:hidden;font-family:'Segoe UI',sans-serif;}
+  canvas{display:block;}
 
-  #ui {
-    position:fixed; top:0; left:0; right:0;
-    display:flex; flex-direction:column; align-items:center;
-    pointer-events:none; padding-top:14px; gap:6px;
+  #ui{
+    position:fixed;top:0;left:0;right:0;
+    display:flex;flex-direction:column;align-items:center;
+    pointer-events:none;padding-top:14px;gap:4px;
   }
-  #status {
-    font-size:1.6rem; font-weight:900; letter-spacing:3px;
-    color:#fff; text-shadow: 0 0 30px #fff, 0 0 60px currentColor;
-    min-height:2rem; text-align:center;
-    -webkit-text-stroke: 1px rgba(255,255,255,0.3);
+  #score-bar{
+    display:flex;align-items:center;gap:20px;
+    font-size:2rem;font-weight:900;letter-spacing:2px;
   }
-  .x-col  { color:#00ffff; text-shadow:0 0 20px #00ffff,0 0 50px #00ffff; }
-  .o-col  { color:#ff6600; text-shadow:0 0 20px #ff6600,0 0 50px #ff6600; }
-  .w-col  { color:#ff00ff; text-shadow:0 0 30px #ff00ff,0 0 70px #ff00ff; }
-  .ai-col { color:#ffff00; text-shadow:0 0 20px #ffff00,0 0 50px #ffff00; }
+  .sx{color:#00ffff;text-shadow:0 0 20px #00ffff,0 0 50px #00ffff;}
+  .so{color:#ff6600;text-shadow:0 0 20px #ff6600,0 0 50px #ff6600;}
+  .sdiv{color:#444;font-size:1.2rem;}
+  #status{
+    font-size:1.1rem;font-weight:700;letter-spacing:3px;
+    color:#fff;text-shadow:0 0 15px #fff;
+    min-height:1.4rem;text-align:center;
+  }
+  .x-col{color:#00ffff;text-shadow:0 0 15px #00ffff;}
+  .o-col{color:#ff6600;text-shadow:0 0 15px #ff6600;}
+  .w-col{color:#ff00ff;text-shadow:0 0 25px #ff00ff,0 0 50px #ff00ff;}
+  .d-col{color:#fff;}
 
-  #bottom {
-    position:fixed; bottom:16px; left:0; right:0;
-    display:flex; flex-direction:column; align-items:center; gap:8px;
+  #lines-bar{
+    font-size:0.7rem;letter-spacing:2px;color:#333;
+    min-height:1rem;text-align:center;
+  }
+  .lx{color:#00ffff88;} .lo{color:#ff660088;}
+
+  #bottom{
+    position:fixed;bottom:16px;left:0;right:0;
+    display:flex;flex-direction:column;align-items:center;gap:8px;
     pointer-events:none;
   }
-  #score {
-    font-size:1rem; font-weight:700; letter-spacing:3px;
-    color:#fff; text-shadow:0 0 10px #fff;
-  }
-  .s-x { color:#00ffff; } .s-o { color:#ff6600; } .s-d { color:#888; }
-  button {
+  button{
     pointer-events:all;
-    padding:0.6rem 2.4rem;
-    border:2px solid #fff;
-    background:rgba(255,255,255,0.1);
-    color:#fff; border-radius:6px;
-    font-size:1rem; font-weight:900;
-    letter-spacing:3px; cursor:pointer;
-    text-shadow:0 0 10px #fff;
-    box-shadow:0 0 20px rgba(255,255,255,0.3);
+    padding:0.55rem 2.2rem;border:2px solid #fff;
+    background:rgba(255,255,255,0.08);color:#fff;
+    border-radius:6px;font-size:0.9rem;font-weight:900;
+    letter-spacing:3px;cursor:pointer;
+    text-shadow:0 0 8px #fff;
+    box-shadow:0 0 15px rgba(255,255,255,0.2);
     transition:all 0.15s;
   }
-  button:hover { background:rgba(255,255,255,0.25); box-shadow:0 0 40px rgba(255,255,255,0.6); }
+  button:hover{background:rgba(255,255,255,0.2);box-shadow:0 0 30px rgba(255,255,255,0.5);}
+  #hint{color:#333;font-size:0.65rem;letter-spacing:1px;pointer-events:none;}
 
-  #ring {
-    position:fixed; pointer-events:none;
-    width:70px; height:70px; border-radius:50%;
+  #ring{
+    position:fixed;pointer-events:none;
+    width:70px;height:70px;border-radius:50%;
     border:3px solid #fff;
     transform:translate(-50%,-50%) scale(0);
-    opacity:0; transition:transform 0.12s, opacity 0.3s;
+    opacity:0;transition:transform 0.12s,opacity 0.3s;
   }
-  #ring.show { transform:translate(-50%,-50%) scale(1); opacity:1; }
-
-  #hint {
-    position:fixed; bottom:80px; left:0; right:0;
-    text-align:center; color:#333;
-    font-size:0.65rem; letter-spacing:1px; pointer-events:none;
-  }
+  #ring.show{transform:translate(-50%,-50%) scale(1);opacity:1;}
 </style>
 </head>
 <body>
@@ -70,26 +70,25 @@
 <div id="ring"></div>
 
 <div id="ui">
+  <div id="score-bar">
+    <span class="sx">YOU <span id="sX">0</span></span>
+    <span class="sdiv">|</span>
+    <span class="so">CPU <span id="sO">0</span></span>
+  </div>
   <div id="status"></div>
+  <div id="lines-bar"></div>
 </div>
 
 <div id="bottom">
-  <div id="score">
-    <span class="s-x">YOU <span id="sX">0</span></span>
-    &nbsp;·&nbsp;
-    <span class="s-d">DRAW <span id="sD">0</span></span>
-    &nbsp;·&nbsp;
-    <span class="s-o">CPU <span id="sO">0</span></span>
-  </div>
   <button onclick="newGame()">NEW GAME</button>
+  <div id="hint">drag to rotate  |  double-tap to place  |  pinch to zoom</div>
 </div>
-<div id="hint">drag · double-tap to place · pinch to zoom</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-// ─── Renderer ────────────────────────────────────────────────────────────────
+// ─── RENDERER ────────────────────────────────────────────────────────────────
 const canvas = document.getElementById('canvas');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias:true });
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 renderer.setClearColor(0x000000);
@@ -98,27 +97,24 @@ renderer.shadowMap.enabled = true;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 200);
 
-// ─── Lights ──────────────────────────────────────────────────────────────────
-scene.add(new THREE.AmbientLight(0xffffff, 0.25));
+// ─── LIGHTS ──────────────────────────────────────────────────────────────────
+scene.add(new THREE.AmbientLight(0xffffff, 0.2));
 const sun = new THREE.DirectionalLight(0xffffff, 2.5);
 sun.position.set(10,15,10); sun.castShadow=true; scene.add(sun);
 const ptX = new THREE.PointLight(0x00ffff, 5, 35); ptX.position.set(-8,4,6); scene.add(ptX);
-const ptO = new THREE.PointLight(0xff6600, 5, 35); ptO.position.set( 8,4,6); scene.add(ptO);
-const ptW = new THREE.PointLight(0xff00ff, 0, 30); ptW.position.set( 0,8,0); scene.add(ptW);
+const ptO = new THREE.PointLight(0xff6600, 5, 35); ptO.position.set(8,4,6); scene.add(ptO);
+const ptW = new THREE.PointLight(0xff00ff, 0, 30); ptW.position.set(0,8,0); scene.add(ptW);
 const ptAI= new THREE.PointLight(0xffff00, 0, 20); ptAI.position.set(0,-4,8); scene.add(ptAI);
 
-// ─── Game State ───────────────────────────────────────────────────────────────
-const PLAYER='X', AI='O';
-let board, currentPlayer, gameOver, thinking;
-let scores = { X:0, O:0, draw:0 };
-let cellMeshes=[], winMeshes=[], popQueue=[];
+// ─── CONSTANTS ───────────────────────────────────────────────────────────────
+const PLAYER='X', AI_P='O';
+const SP=2.0, CS=1.25;
+const idx=(x,y,z)=>z*9+y*3+x;
 
-const pivot = new THREE.Group(); scene.add(pivot);
-
-// All 49 winning lines in 3x3x3
-const WINS = (() => {
-  const lines=[], idx=(x,y,z)=>z*9+y*3+x;
-  for(let a=0;a<3;a++) for(let b=0;b<3;b++) {
+// All 49 lines in 3x3x3
+const ALL_WINS=(()=>{
+  const lines=[];
+  for(let a=0;a<3;a++) for(let b=0;b<3;b++){
     lines.push([idx(0,a,b),idx(1,a,b),idx(2,a,b)]);
     lines.push([idx(a,0,b),idx(a,1,b),idx(a,2,b)]);
     lines.push([idx(a,b,0),idx(a,b,1),idx(a,b,2)]);
@@ -130,74 +126,117 @@ const WINS = (() => {
   return lines;
 })();
 
+// Valid lines: exclude any line through center (index 13)
+const WINS = ALL_WINS.filter(line => !line.includes(13));
+// WINS has 36 valid lines — enough for a rich scoring game
+
+// ─── GAME STATE ───────────────────────────────────────────────────────────────
+let board, currentPlayer, gameOver, thinking;
+let lineScore = {X:0, O:0};       // lines scored this game
+let totalScore = {X:0, O:0};      // games won overall
+let completedLineObjects = [];     // Three.js tubes for scored lines
+let cellMeshes = [], popQueue = [];
+
+const pivot = new THREE.Group(); scene.add(pivot);
+
 // ─── AI ──────────────────────────────────────────────────────────────────────
-function scoreBoard(b) {
+function linesCompletedBy(b, moveIdx, who) {
+  // How many lines does 'who' complete by placing at moveIdx?
+  let count = 0, newLines = [];
+  b[moveIdx] = who;
+  for(const line of WINS) {
+    if(line.includes(moveIdx) && line.every(i=>b[i]===who)) {
+      count++; newLines.push(line);
+    }
+  }
+  b[moveIdx] = null;
+  return {count, newLines};
+}
+
+function potentialLines(b, who) {
+  // Lines still open to 'who' (no opponent pieces)
+  const opp = who===PLAYER?AI_P:PLAYER;
+  return WINS.filter(line=>!line.some(i=>b[i]===opp));
+}
+
+function evalPosition(b, who) {
+  const opp = who===PLAYER?AI_P:PLAYER;
   let score = 0;
   for(const line of WINS) {
-    const vals = line.map(i=>b[i]);
-    const aCount = vals.filter(v=>v===AI).length;
-    const pCount = vals.filter(v=>v===PLAYER).length;
-    if(aCount>0 && pCount===0) score += aCount===2?100:aCount===1?1:0;
-    if(pCount>0 && aCount===0) score -= pCount===2?120:pCount===1?1:0;
+    const mine = line.filter(i=>b[i]===who).length;
+    const theirs= line.filter(i=>b[i]===opp).length;
+    if(theirs>0) continue; // line dead for me
+    if(mine===3) score+=1000;
+    else if(mine===2) score+=30;
+    else if(mine===1) score+=5;
   }
-  // Center bonus
-  if(b[13]===AI) score+=5;
+  for(const line of WINS) {
+    const mine = line.filter(i=>b[i]===who).length;
+    const theirs= line.filter(i=>b[i]===opp).length;
+    if(mine>0) continue; // line dead for opponent
+    if(theirs===3) score-=1000;
+    else if(theirs===2) score-=60;  // heavily penalise letting opponent get 2-in-a-row
+    else if(theirs===1) score-=5;
+  }
   return score;
 }
 
-function findWinMove(b, who) {
-  for(const line of WINS) {
-    const vals = line.map(i=>b[i]);
-    const whoCount = vals.filter(v=>v===who).length;
-    const empties = line.filter(i=>!b[i]);
-    if(whoCount===2 && empties.length===1) return empties[0];
-  }
-  return -1;
-}
-
 function aiMove(b) {
-  // 1. Win immediately
-  const win = findWinMove(b, AI);
-  if(win!==-1) return win;
+  const empties = b.map((v,i)=>v||i===13?-1:i).filter(i=>i>=0);
+  if(!empties.length) return -1;
 
-  // 2. Block player win
-  const block = findWinMove(b, PLAYER);
-  if(block!==-1) return block;
+  // Score every move
+  const scored = empties.map(i=>{
+    b[i] = AI_P;
+    const immediate = linesCompletedBy(b, i, AI_P).count; // already placed
+    // Actually recalc properly
+    b[i] = null;
+    const {count:myLines} = linesCompletedBy(b, i, AI_P);
 
-  // 3. (center removed from board)
+    // How many opponent lines does placing here block?
+    let blocked = 0;
+    b[i] = AI_P;
+    for(const line of WINS) {
+      if(!line.includes(i)) continue;
+      const oppInLine = line.filter(j=>b[j]===PLAYER).length;
+      const emptyInLine = line.filter(j=>!b[j]).length;
+      if(oppInLine===2 && emptyInLine===0) blocked++; // we just blocked a 2-in-a-row
+    }
+    const posScore = evalPosition(b, AI_P);
+    b[i] = null;
 
-  // 4. Score all moves
-  const empties = b.map((v,i)=>v?-1:i).filter(i=>i>=0&&i!==13);
-  let best=-Infinity, bestMove=empties[0];
-  for(const i of empties) {
-    b[i]=AI;
-    // Look one step ahead for opponent wins to block
-    const oppWin = findWinMove(b, PLAYER);
-    let s = scoreBoard(b);
-    if(oppWin!==-1) s-=50; // penalise moves that let opponent win next
-    b[i]=null;
-    if(s>best){ best=s; bestMove=i; }
-  }
-  // Add small randomness so it's not robotic
-  const topMoves = empties.filter(i=>{
-    b[i]=AI; const s=scoreBoard(b); b[i]=null; return s>=best-5;
+    // Fork: after this move, how many cells give us 2+ lines next turn?
+    b[i] = AI_P;
+    let forkPotential = 0;
+    for(const j of empties) {
+      if(j===i) continue;
+      const {count} = linesCompletedBy(b, j, AI_P);
+      if(count>=2) forkPotential+=20;
+      else if(count===1) forkPotential+=5;
+    }
+    b[i] = null;
+
+    const total = myLines*200 + blocked*80 + forkPotential + posScore;
+    return {i, total};
   });
-  return topMoves[Math.floor(Math.random()*topMoves.length)];
+
+  scored.sort((a,b)=>b.total-a.total);
+  // Take best, but add tiny randomness among top equal moves
+  const best = scored[0].total;
+  const top = scored.filter(s=>s.total>=best-10);
+  return top[Math.floor(Math.random()*Math.min(3,top.length))].i;
 }
 
-// ─── Materials ────────────────────────────────────────────────────────────────
-const SP = 2.0, CS = 1.25;
+// ─── MATERIALS ───────────────────────────────────────────────────────────────
+const matEmpty =()=>new THREE.MeshPhongMaterial({color:0x0a0a22,transparent:true,opacity:0.55,shininess:50,specular:0x3344aa});
+const matHover =()=>new THREE.MeshPhongMaterial({color:0x221144,transparent:true,opacity:0.9,shininess:120,specular:0xaa66ff,emissive:0x110033});
+const matX     =()=>new THREE.MeshPhongMaterial({color:0x00ffff,emissive:0x007777,shininess:220,specular:0xffffff});
+const matO     =()=>new THREE.MeshPhongMaterial({color:0xff6600,emissive:0xaa3300,shininess:220,specular:0xffcc88});
 
-const matEmpty = ()=> new THREE.MeshPhongMaterial({color:0x0a0a22,transparent:true,opacity:0.55,shininess:50,specular:0x3344aa});
-const matHover = ()=> new THREE.MeshPhongMaterial({color:0x221144,transparent:true,opacity:0.9,shininess:120,specular:0xaa66ff,emissive:0x110033});
-const matX     = ()=> new THREE.MeshPhongMaterial({color:0x00ffff,emissive:0x007777,shininess:220,specular:0xffffff});
-const matO     = ()=> new THREE.MeshPhongMaterial({color:0xff6600,emissive:0xaa3300,shininess:220,specular:0xffcc88});
-const matWin   = ()=> new THREE.MeshPhongMaterial({color:0xff00ff,emissive:0xaa00aa,shininess:250,specular:0xffffff});
-const matThink = ()=> new THREE.MeshPhongMaterial({color:0xffff00,emissive:0x886600,shininess:200,specular:0xffff88,transparent:true,opacity:0.7});
-
-function buildGrid() {
-  const lm = new THREE.LineBasicMaterial({color:0x2244aa,transparent:true,opacity:0.7});
-  const offs = [-SP,0,SP], hw = SP+CS/2;
+// ─── BUILD SCENE ─────────────────────────────────────────────────────────────
+function buildGrid(){
+  const lm=new THREE.LineBasicMaterial({color:0x2244aa,transparent:true,opacity:0.7});
+  const offs=[-SP,0,SP], hw=SP+CS/2;
   for(let z=0;z<3;z++){
     const zv=offs[z];
     const box=[[-hw,-hw,zv],[hw,-hw,zv],[hw,hw,zv],[-hw,hw,zv],[-hw,-hw,zv]].map(p=>new THREE.Vector3(...p));
@@ -214,14 +253,18 @@ function buildGrid() {
   }
 }
 
-function buildBoard() {
-  cellMeshes.forEach(m=>pivot.remove(m));
-  cellMeshes=[]; winMeshes=[]; popQueue=[];
+function buildBoard(){
+  cellMeshes.forEach(m=>m&&pivot.remove(m));
+  cellMeshes=[];
+  completedLineObjects.forEach(o=>pivot.remove(o));
+  completedLineObjects=[];
+  popQueue=[];
+
   const geo=new THREE.BoxGeometry(CS,CS,CS);
   const eGeo=new THREE.EdgesGeometry(geo);
   for(let z=0;z<3;z++) for(let y=0;y<3;y++) for(let x=0;x<3;x++){
     const i=z*9+y*3+x;
-    if(i===13){ cellMeshes.push(null); continue; } // no center cube
+    if(i===13){cellMeshes.push(null);continue;}
     const mesh=new THREE.Mesh(geo,matEmpty());
     mesh.position.set((x-1)*SP,(y-1)*SP,(z-1)*SP);
     mesh.castShadow=true;
@@ -233,7 +276,8 @@ function buildBoard() {
 }
 
 function makeX(){
-  const g=new THREE.Group(), m=new THREE.MeshPhongMaterial({color:0x00ffff,emissive:0x004466,shininess:200});
+  const g=new THREE.Group();
+  const m=new THREE.MeshPhongMaterial({color:0x00ffff,emissive:0x004466,shininess:200});
   const bar=new THREE.CylinderGeometry(0.1,0.1,1.1,10);
   const b1=new THREE.Mesh(bar,m); b1.rotation.z=Math.PI/4; g.add(b1);
   const b2=new THREE.Mesh(bar,m); b2.rotation.z=-Math.PI/4; g.add(b2);
@@ -241,13 +285,35 @@ function makeX(){
   return g;
 }
 function makeO(){
-  const g=new THREE.Group(), m=new THREE.MeshPhongMaterial({color:0xff6600,emissive:0x993300,shininess:200});
+  const g=new THREE.Group();
+  const m=new THREE.MeshPhongMaterial({color:0xff6600,emissive:0x993300,shininess:200});
   const t=new THREE.Mesh(new THREE.TorusGeometry(0.42,0.11,14,36),m); t.rotation.x=Math.PI/2; g.add(t);
   g.add(new THREE.Mesh(new THREE.SphereGeometry(0.55,10,10),new THREE.MeshPhongMaterial({color:0xff6600,transparent:true,opacity:0.07,emissive:0xff6600})));
   return g;
 }
 
-function placeMarker(i, who) {
+function drawScoredLine(line, who){
+  const color = who===PLAYER ? 0x00ffff : 0xff6600;
+  const pts = line.map(i=>cellMeshes[i].position.clone());
+  // Extend slightly beyond endpoints
+  const dir = pts[2].clone().sub(pts[0]).normalize().multiplyScalar(0.3);
+  pts[0].sub(dir); pts[2].add(dir);
+  const curve = new THREE.CatmullRomCurve3(pts);
+
+  const tube = new THREE.Mesh(
+    new THREE.TubeGeometry(curve,12,0.05,8,false),
+    new THREE.MeshBasicMaterial({color, transparent:true, opacity:0.9})
+  );
+  const glow = new THREE.Mesh(
+    new THREE.TubeGeometry(curve,12,0.14,8,false),
+    new THREE.MeshBasicMaterial({color, transparent:true, opacity:0.18})
+  );
+  pivot.add(tube); pivot.add(glow);
+  completedLineObjects.push(tube, glow);
+}
+
+// ─── GAME LOGIC ───────────────────────────────────────────────────────────────
+function placeMarker(i, who){
   board[i]=who;
   const mesh=cellMeshes[i];
   if(!mesh) return;
@@ -258,60 +324,97 @@ function placeMarker(i, who) {
   mesh.add(sym);
   mesh.scale.setScalar(0.01);
   popQueue.push({mesh,t:0});
-}
 
-function checkWin(b) {
+  // Check scored lines
+  const {count, newLines} = linesCompletedBy(board, i, who);
+  // Re-check after actually placing
+  const scored = [];
   for(const line of WINS){
-    const [a,bb,c]=line;
-    if(b[a]&&b[a]===b[bb]&&b[a]===b[c]) return {player:b[a],line};
+    if(line.includes(i) && line.every(j=>board[j]===who)){
+      scored.push(line);
+    }
   }
-  return null;
+  if(scored.length){
+    lineScore[who] += scored.length;
+    scored.forEach(line=>drawScoredLine(line,who));
+    updateScoreUI();
+  }
 }
 
-function endCheck() {
-  const w=checkWin(board);
-  if(w){
-    w.line.forEach(j=>{ if(cellMeshes[j]){ cellMeshes[j].material=matWin(); winMeshes.push(cellMeshes[j]); } });
-    scores[w.player]++;
-    updateScore();
-    ptW.intensity=6; ptAI.intensity=0;
-    setStatus(w.player===PLAYER
-      ? `<span class="x-col">YOU WIN!</span>`
-      : `<span class="o-col">CPU WINS!</span>`);
-    gameOver=true;
-    return true;
-  }
-  if(board.every(v=>v)){
-    scores.draw++;
-    updateScore();
-    setStatus(`<span style="color:#fff">DRAW</span>`);
-    gameOver=true;
-    return true;
-  }
-  return false;
+function isBoardFull(){
+  return board.every((v,i)=>v||i===13);
 }
 
-function playerTurn(i) {
-  if(gameOver||thinking||currentPlayer!==PLAYER||board[i]) return;
+function updateLinesBar(){
+  const remain = WINS.filter(line=>!line.some(i=>board[i]!==null&&board[i]!==board[line[0]])).length;
+  document.getElementById('lines-bar').innerHTML =
+    `<span class="lx">${lineScore.X} lines</span>  vs  <span class="lo">${lineScore.O} lines</span>  —  ${WINS.length - Object.values(lineScore).reduce((a,b)=>a+b,0)} still open`;
+}
+
+function updateScoreUI(){
+  document.getElementById('sX').textContent=lineScore.X;
+  document.getElementById('sO').textContent=lineScore.O;
+  updateLinesBar();
+}
+
+function checkEndGame(){
+  if(!isBoardFull()) return false;
+  gameOver=true;
+  totalScore.X += lineScore.X > lineScore.O ? 1 : 0;
+  totalScore.O += lineScore.O > lineScore.X ? 1 : 0;
+  if(lineScore.X>lineScore.O){
+    ptW.intensity=6;
+    setStatus(`<span class="w-col">YOU WIN  ${lineScore.X} - ${lineScore.O}</span>`);
+  } else if(lineScore.O>lineScore.X){
+    setStatus(`<span class="o-col">CPU WINS  ${lineScore.O} - ${lineScore.X}</span>`);
+  } else {
+    setStatus(`<span class="d-col">DRAW  ${lineScore.X} - ${lineScore.O}</span>`);
+  }
+  return true;
+}
+
+function playerTurn(i){
+  if(gameOver||thinking||currentPlayer!==PLAYER||board[i]||i===13) return;
   placeMarker(i, PLAYER);
-  if(endCheck()) return;
-  currentPlayer=AI;
+  updateScoreUI();
+  if(checkEndGame()) return;
+
+  currentPlayer=AI_P;
   thinking=true;
   ptAI.intensity=3;
-  setStatus(`<span class="ai-col">CPU THINKING…</span>`);
+  setStatus(`<span style="color:#ffff00;text-shadow:0 0 15px #ffff00">CPU THINKING</span>`);
+
   setTimeout(()=>{
     const move=aiMove([...board]);
-    if(move!==-1) placeMarker(move, AI);
+    if(move!==-1) placeMarker(move, AI_P);
     ptAI.intensity=0;
     thinking=false;
-    if(!endCheck()){
+    updateScoreUI();
+    if(!checkEndGame()){
       currentPlayer=PLAYER;
-      setStatus(`<span class="x-col">YOUR TURN</span>`);
+      const ahead = lineScore.X-lineScore.O;
+      const aheadStr = ahead>0?` (+${ahead})`:ahead<0?` (${ahead})`:'';
+      setStatus(`<span class="x-col">YOUR TURN${aheadStr}</span>`);
     }
-  }, 420 + Math.random()*300);
+  }, 350+Math.random()*250);
 }
 
-// ─── Camera ───────────────────────────────────────────────────────────────────
+function newGame(){
+  board=Array(27).fill(null);
+  board[13]='_'; // center blocked permanently
+  lineScore={X:0,O:0};
+  currentPlayer=PLAYER;
+  gameOver=false; thinking=false;
+  ptW.intensity=0; ptAI.intensity=0;
+  popQueue=[]; hoveredMesh=null;
+  lastClickTime=0; lastClickIdx=-1;
+  lastTap=0; lastTapIdx=-1;
+  buildBoard();
+  updateScoreUI();
+  setStatus(`<span class="x-col">YOUR TURN</span>`);
+}
+
+// ─── CAMERA ──────────────────────────────────────────────────────────────────
 let sph={theta:-0.4, phi:1.05, r:9.5};
 function updateCamera(){
   camera.position.x=sph.r*Math.sin(sph.phi)*Math.sin(sph.theta);
@@ -321,15 +424,15 @@ function updateCamera(){
 }
 updateCamera();
 
-// ─── Input ───────────────────────────────────────────────────────────────────
+// ─── INPUT ───────────────────────────────────────────────────────────────────
 const raycaster=new THREE.Raycaster();
 const mouse=new THREE.Vector2();
-let hoveredMesh=null, isDragging=false;
-let dragStart={x:0,y:0};
+let hoveredMesh=null, isDragging=false, dragStart={x:0,y:0};
 let lastClickTime=0, lastClickIdx=-1;
 let lastInteract=0;
-function touched(){ lastInteract=Date.now(); }
 const ring=document.getElementById('ring');
+
+function touched(){lastInteract=Date.now();}
 
 function getHit(cx,cy){
   mouse.x=(cx/window.innerWidth)*2-1;
@@ -351,22 +454,20 @@ function tryPlace(cx,cy){
   if(!hit||hit.userData.taken||gameOver||thinking) return;
   const i=hit.userData.index;
   const now=Date.now();
-  const isDouble=(now-lastClickTime<420)&&(lastClickIdx===i);
-  if(isDouble){
+  if((now-lastClickTime<420)&&(lastClickIdx===i)){
     showRing(cx,cy,'#00ffff');
     playerTurn(i);
     lastClickTime=0; lastClickIdx=-1;
   } else {
     lastClickTime=now; lastClickIdx=i;
-    // flash hint
     const prev=hit.material;
     hit.material=matHover();
-    setTimeout(()=>{ if(!hit.userData.taken) hit.material=prev; },300);
+    setTimeout(()=>{if(!hit.userData.taken)hit.material=prev;},300);
   }
 }
 
 // Mouse
-window.addEventListener('mousedown',e=>{ isDragging=false; dragStart={x:e.clientX,y:e.clientY}; });
+window.addEventListener('mousedown',e=>{isDragging=false;dragStart={x:e.clientX,y:e.clientY};});
 window.addEventListener('mousemove',e=>{
   const dx=e.clientX-dragStart.x, dy=e.clientY-dragStart.y;
   if(Math.hypot(dx,dy)>5){
@@ -376,16 +477,13 @@ window.addEventListener('mousemove',e=>{
     dragStart={x:e.clientX,y:e.clientY};
     updateCamera();
   }
-  // hover
   const hit=getHit(e.clientX,e.clientY);
-  if(hoveredMesh&&!hoveredMesh.userData.taken){ hoveredMesh.material.emissive?.setHex(0x000011); hoveredMesh.scale.setScalar(1); }
+  if(hoveredMesh&&!hoveredMesh.userData.taken){hoveredMesh.material.emissive?.setHex(0x000011);hoveredMesh.scale.setScalar(1);}
   hoveredMesh=null;
-  if(hit&&!hit.userData.taken&&!gameOver&&!thinking){
-    hit.material.emissive?.setHex(0x221144); hit.scale.setScalar(1.08); hoveredMesh=hit;
-  }
+  if(hit&&!hit.userData.taken&&!gameOver&&!thinking){hit.material.emissive?.setHex(0x221144);hit.scale.setScalar(1.08);hoveredMesh=hit;}
 });
-window.addEventListener('mouseup',e=>{ if(!isDragging) tryPlace(e.clientX,e.clientY); isDragging=false; });
-window.addEventListener('wheel',e=>{ touched(); sph.r=Math.max(4,Math.min(20,sph.r+e.deltaY*0.012)); updateCamera(); },{passive:true});
+window.addEventListener('mouseup',e=>{if(!isDragging)tryPlace(e.clientX,e.clientY);isDragging=false;});
+window.addEventListener('wheel',e=>{touched();sph.r=Math.max(4,Math.min(20,sph.r+e.deltaY*0.012));updateCamera();},{passive:true});
 
 // Touch
 let touches={}, pinchDist0=null, pinchR0=null, tDragStart=null;
@@ -394,8 +492,8 @@ canvas.addEventListener('touchstart',e=>{
   e.preventDefault(); touched();
   Array.from(e.changedTouches).forEach(t=>touches[t.identifier]=t);
   const tArr=Object.values(touches);
-  if(tArr.length===2){ pinchDist0=Math.hypot(tArr[0].clientX-tArr[1].clientX,tArr[0].clientY-tArr[1].clientY); pinchR0=sph.r; }
-  else if(tArr.length===1) tDragStart={x:tArr[0].clientX,y:tArr[0].clientY};
+  if(tArr.length===2){pinchDist0=Math.hypot(tArr[0].clientX-tArr[1].clientX,tArr[0].clientY-tArr[1].clientY);pinchR0=sph.r;}
+  else if(tArr.length===1)tDragStart={x:tArr[0].clientX,y:tArr[0].clientY};
 },{passive:false});
 canvas.addEventListener('touchmove',e=>{
   e.preventDefault();
@@ -404,14 +502,14 @@ canvas.addEventListener('touchmove',e=>{
   if(tArr.length===2&&pinchDist0!==null){
     const d=Math.hypot(tArr[0].clientX-tArr[1].clientX,tArr[0].clientY-tArr[1].clientY);
     sph.r=Math.max(4,Math.min(20,pinchR0*(pinchDist0/d)));
-    const cx=(tArr[0].clientX+tArr[1].clientX)/2, cy=(tArr[0].clientY+tArr[1].clientY)/2;
-    if(tDragStart){ sph.theta-=(cx-tDragStart.x)*0.005; sph.phi=Math.max(0.2,Math.min(Math.PI-0.2,sph.phi+(cy-tDragStart.y)*0.005)); }
-    tDragStart={x:cx,y:cy}; updateCamera();
-  } else if(tArr.length===1&&tDragStart){
+    const cx=(tArr[0].clientX+tArr[1].clientX)/2,cy=(tArr[0].clientY+tArr[1].clientY)/2;
+    if(tDragStart){sph.theta-=(cx-tDragStart.x)*0.005;sph.phi=Math.max(0.2,Math.min(Math.PI-0.2,sph.phi+(cy-tDragStart.y)*0.005));}
+    tDragStart={x:cx,y:cy};updateCamera();
+  }else if(tArr.length===1&&tDragStart){
     const t=tArr[0];
     sph.theta-=(t.clientX-tDragStart.x)*0.006;
     sph.phi=Math.max(0.2,Math.min(Math.PI-0.2,sph.phi+(t.clientY-tDragStart.y)*0.006));
-    tDragStart={x:t.clientX,y:t.clientY}; updateCamera();
+    tDragStart={x:t.clientX,y:t.clientY};updateCamera();
   }
 },{passive:false});
 canvas.addEventListener('touchend',e=>{
@@ -422,43 +520,24 @@ canvas.addEventListener('touchend',e=>{
     const t=tArr[0];
     const hit=getHit(t.clientX,t.clientY);
     if(hit&&!hit.userData.taken&&!gameOver&&!thinking){
-      const i=hit.userData.index, now=Date.now();
-      if((now-lastTap<420)&&lastTapIdx===i){
-        showRing(t.clientX,t.clientY,'#00ffff');
-        playerTurn(i); lastTap=0; lastTapIdx=-1;
-      } else { lastTap=now; lastTapIdx=i; hit.material.emissive?.setHex(0x221144); }
+      const i=hit.userData.index,now=Date.now();
+      if((now-lastTap<420)&&lastTapIdx===i){showRing(t.clientX,t.clientY,'#00ffff');playerTurn(i);lastTap=0;lastTapIdx=-1;}
+      else{lastTap=now;lastTapIdx=i;hit.material.emissive?.setHex(0x221144);}
     }
   }
   ended.forEach(t=>delete touches[t.identifier]);
-  if(Object.keys(touches).length<2) pinchDist0=null;
+  if(Object.keys(touches).length<2)pinchDist0=null;
 },{passive:false});
 
 // ─── UI ───────────────────────────────────────────────────────────────────────
-function setStatus(html){ document.getElementById('status').innerHTML=html; }
-function updateScore(){
-  document.getElementById('sX').textContent=scores.X;
-  document.getElementById('sO').textContent=scores.O;
-  document.getElementById('sD').textContent=scores.draw;
-}
-function newGame(){
-  board=Array(27).fill(null);
-  currentPlayer=PLAYER;
-  gameOver=false; thinking=false;
-  ptW.intensity=0; ptAI.intensity=0;
-  popQueue=[]; hoveredMesh=null;
-  lastClickTime=0; lastClickIdx=-1; lastTap=0; lastTapIdx=-1;
-  buildBoard();
-  board[13]='_'; // center blocked
-  setStatus(`<span class="x-col">YOUR TURN</span>`);
-}
+function setStatus(html){document.getElementById('status').innerHTML=html;}
 
-// ─── Render Loop ──────────────────────────────────────────────────────────────
+// ─── RENDER LOOP ──────────────────────────────────────────────────────────────
 let t=0;
 function animate(){
   requestAnimationFrame(animate);
   t+=0.013;
 
-  // Pop
   popQueue=popQueue.filter(p=>{
     p.t+=0.07;
     const s=p.t<0.5?p.t*2:1+Math.sin((p.t-0.5)*Math.PI)*0.2*(1-Math.min(p.t,1));
@@ -466,17 +545,15 @@ function animate(){
     return p.t<1.5;
   });
 
-  // Win pulse
-  if(winMeshes.length){
-    ptW.intensity=3+Math.sin(t*4)*2;
-    winMeshes.forEach(m=>{ if(m.material.emissive){ const v=0.3+0.2*Math.sin(t*3); m.material.emissive.setRGB(v*0.7,0,v*0.7); }});
+  if(ptW.intensity>0){
+    ptW.intensity=4+Math.sin(t*4)*2;
   }
-
-  // Thinking flicker
   if(thinking) ptAI.intensity=2+Math.sin(t*8)*1.5;
 
-  // Gentle auto-rotate when idle for 7+ seconds
-  if(!isDragging&&!gameOver&&!thinking&&(Date.now()-lastInteract>7000)){ sph.theta+=0.0025; updateCamera(); }
+  // Auto-rotate only after 7s idle
+  if(!isDragging&&!gameOver&&!thinking&&(Date.now()-lastInteract>7000)){
+    sph.theta+=0.0025; updateCamera();
+  }
 
   renderer.render(scene,camera);
 }
