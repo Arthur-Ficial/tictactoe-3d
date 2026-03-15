@@ -63,9 +63,9 @@
     pointer-events:none;
   }
   button{
-    pointer-events:all;
-    padding:0.5rem 2rem;border:2px solid #555;
+    padding:0.5rem 2rem;border:2px solid transparent;
     background:rgba(255,255,255,0.03);color:#555;
+    opacity:0;pointer-events:none;
     border-radius:6px;font-size:0.85rem;font-weight:900;
     letter-spacing:3px;cursor:pointer;
     text-shadow:none;
@@ -189,6 +189,8 @@ let board;          // Array(27): null | 'X' | 'O' | '_' (center)
 let scores;         // {X, O} — completed lines this game
 let gameOver;
 let thinking;
+let introActive = false;
+let introStart = 0;
 
 // ─── board helpers ────────────────────────────────────────────────
 function isPlayable(b, i) {
@@ -497,7 +499,7 @@ function checkEnd() {
 }
 
 function playerTurn(i) {
-  if(gameOver || thinking) return;
+  if(gameOver || thinking || introActive) return;
   if(!isPlayable(board, i)) return;
 
   placeMarker(i, PLAYER);
@@ -536,6 +538,14 @@ function newGame() {
   buildBoard();
   updateUI();
   setStatus('');
+  // Start intro animation
+  introActive = true;
+  introStart = Date.now();
+  sph.r = 20;
+  sph.theta = -0.4;
+  sph.phi = 1.05;
+  updateCamera();
+  lastInteract = Date.now();
   updateButtonState();
 }
 
@@ -561,7 +571,10 @@ let lastClickTime = 0, lastClickIdx = -1;
 let lastInteract = 0;
 const ring = document.getElementById('ring');
 
-function touched() { lastInteract = Date.now(); }
+function touched() {
+  lastInteract = Date.now();
+  if(!gameOver) showButton(false);
+}
 
 function getHit(cx, cy) {
   mouse.x = (cx / window.innerWidth)  * 2 - 1;
@@ -579,6 +592,7 @@ function showRing(x,y,col) {
 }
 
 function tryPlace(cx, cy) {
+  if(introActive) return;
   const hit = getHit(cx, cy);
   if(!hit || hit.userData.taken || gameOver || thinking) return;
   const i = hit.userData.index;
@@ -596,8 +610,9 @@ function tryPlace(cx, cy) {
 }
 
 // Mouse
-window.addEventListener('mousedown', e => { isDragging=false; dragStart={x:e.clientX,y:e.clientY}; });
+window.addEventListener('mousedown', e => { if(introActive) return; isDragging=false; dragStart={x:e.clientX,y:e.clientY}; });
 window.addEventListener('mousemove', e => {
+  if(introActive) return;
   const dx=e.clientX-dragStart.x, dy=e.clientY-dragStart.y;
   if(Math.hypot(dx,dy)>5) {
     isDragging=true; touched();
@@ -615,8 +630,9 @@ window.addEventListener('mousemove', e => {
     hit.material.emissive?.setHex(0x221144); hit.scale.setScalar(1.08); hoveredMesh=hit;
   }
 });
-window.addEventListener('mouseup', e => { if(!isDragging) tryPlace(e.clientX,e.clientY); isDragging=false; });
+window.addEventListener('mouseup', e => { if(introActive) return; if(!isDragging) tryPlace(e.clientX,e.clientY); isDragging=false; });
 window.addEventListener('wheel', e => {
+  if(introActive) return;
   touched(); sph.r=Math.max(4,Math.min(20,sph.r+e.deltaY*0.012)); updateCamera();
 }, {passive:true});
 
@@ -624,7 +640,7 @@ window.addEventListener('wheel', e => {
 let touches={}, pinchDist0=null, pinchR0=null, tDragStart=null;
 let lastTap=0, lastTapIdx=-1;
 canvas.addEventListener('touchstart', e => {
-  e.preventDefault(); touched();
+  e.preventDefault(); if(introActive) return; touched();
   Array.from(e.changedTouches).forEach(t=>touches[t.identifier]=t);
   const tArr=Object.values(touches);
   if(tArr.length===2) {
@@ -633,7 +649,7 @@ canvas.addEventListener('touchstart', e => {
   } else if(tArr.length===1) tDragStart={x:tArr[0].clientX,y:tArr[0].clientY};
 },{passive:false});
 canvas.addEventListener('touchmove', e => {
-  e.preventDefault();
+  e.preventDefault(); if(introActive) return;
   Array.from(e.changedTouches).forEach(t=>touches[t.identifier]=t);
   const tArr=Object.values(touches);
   if(tArr.length===2 && pinchDist0!==null) {
@@ -650,7 +666,7 @@ canvas.addEventListener('touchmove', e => {
   }
 },{passive:false});
 canvas.addEventListener('touchend', e => {
-  e.preventDefault();
+  e.preventDefault(); if(introActive) return;
   const ended=Array.from(e.changedTouches);
   const tArr=Object.values(touches);
   if(tArr.length===1) {
@@ -671,8 +687,18 @@ canvas.addEventListener('touchend', e => {
 // UI HELPERS
 // ═══════════════════════════════════════════════════════════════════
 function setStatus(html){ document.getElementById('status').innerHTML=html; }
+const btn = document.querySelector('button');
+function showButton(show) {
+  btn.style.opacity = show ? '1' : '0';
+  btn.style.pointerEvents = show ? 'all' : 'none';
+}
 function updateButtonState(){
-  document.querySelector('button').classList.toggle('game-over', gameOver);
+  btn.classList.toggle('game-over', gameOver);
+  if(gameOver) showButton(true);
+  else showButton(false);
+}
+function boardHasMarks() {
+  return board && board.some((v,i) => i !== CENTER && v !== null);
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -691,12 +717,35 @@ function animate() {
     return p.t < 1.5;
   });
 
+  // Intro animation
+  if(introActive) {
+    const elapsed = (Date.now() - introStart) / 2000; // 0..1 over 2 seconds
+    if(elapsed >= 1) {
+      introActive = false;
+      sph.r = 9.5; sph.theta = -0.4 + Math.PI*2; sph.phi = 1.05;
+      lastInteract = Date.now();
+      updateCamera();
+    } else {
+      // Ease-out cubic
+      const e = 1 - Math.pow(1 - elapsed, 3);
+      sph.r = 20 + (9.5 - 20) * e;
+      sph.theta = -0.4 + Math.PI*2 * e;
+      sph.phi = 1.05;
+      updateCamera();
+    }
+  }
+
   if(ptW.intensity > 0) ptW.intensity = 4+Math.sin(t*4)*2;
   if(thinking) ptAI.intensity = 2+Math.sin(t*8)*1.5;
 
-  // Auto-rotate after 7s idle
-  if(!isDragging && !gameOver && !thinking && (Date.now()-lastInteract>7000)) {
+  // Auto-rotate after 3s idle
+  if(!isDragging && !gameOver && !thinking && !introActive && (Date.now()-lastInteract>3000)) {
     sph.theta += 0.0025; updateCamera();
+  }
+
+  // Show NEW GAME button after 7s idle if board has marks and game not over
+  if(!gameOver && !introActive && (Date.now()-lastInteract>7000) && boardHasMarks()) {
+    showButton(true);
   }
 
   renderer.render(scene, camera);
