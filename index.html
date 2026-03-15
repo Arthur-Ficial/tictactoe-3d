@@ -92,7 +92,7 @@
     background:rgba(255,255,255,0.03);color:#555;
     opacity:0;pointer-events:none;
     border-radius:6px;font-size:0.85rem;font-weight:900;
-    letter-spacing:3px;cursor:pointer;margin-top:18px;
+    letter-spacing:3px;cursor:pointer;order:1;
     text-shadow:none;
     box-shadow:none;
     transition:all 0.15s;
@@ -113,6 +113,7 @@
     transition:opacity 1.2s cubic-bezier(0.4,0,0.2,1),
                transform 1.2s cubic-bezier(0.4,0,0.2,1),
                filter 1.2s cubic-bezier(0.4,0,0.2,1),
+               max-height 0.8s cubic-bezier(0.4,0,0.2,1),
                color 0.8s cubic-bezier(0.25,0.8,0.25,1),
                font-size 0.8s cubic-bezier(0.25,0.8,0.25,1),
                text-shadow 0.8s cubic-bezier(0.25,0.8,0.25,1),
@@ -120,6 +121,7 @@
     transform-style:preserve-3d;
   }
   #hint.hint-big{
+    max-height:3rem;
     color:rgba(255,255,255,0.85);
     font-size:0.72rem;
     letter-spacing:0.28em;
@@ -136,6 +138,7 @@
     opacity:0;
     transform:perspective(600px) rotateX(-45deg) translateY(-10px) translateZ(-80px);
     filter:blur(6px);
+    max-height:0;overflow:hidden;
   }
 
 </style>
