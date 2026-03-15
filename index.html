@@ -4,14 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>3D Tic-Tac-Toe — More Challenging Than You Think</title>
-<meta name="description" content="Play 3D Tic-Tac-Toe on a 4×4×4 board against a smart AI. Harder than you think — align four in any direction across three dimensions to win.">
-<meta name="keywords" content="3D tic-tac-toe, 3D noughts and crosses, 4x4x4 tic-tac-toe, strategy game, browser game, AI game">
+<meta name="description" content="Play 3D Tic-Tac-Toe on a 3×3×3 board against a smart AI. Harder than you think — align three in any direction across three dimensions to win.">
+<meta name="keywords" content="3D tic-tac-toe, 3D noughts and crosses, 3x3x3 tic-tac-toe, strategy game, browser game, AI game">
 <meta name="author" content="Arthur">
 <meta name="theme-color" content="#000000">
 <link rel="canonical" href="https://arthur-ficial.github.io/tictactoe-3d">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><polygon points='32,4 56,18 56,46 32,60 8,46 8,18' fill='none' stroke='%2300ffff' stroke-width='3'/><line x1='32' y1='4' x2='32' y2='60' stroke='%2300ffff' stroke-width='2'/><line x1='8' y1='18' x2='56' y2='46' stroke='%2300ffff' stroke-width='2'/><line x1='56' y1='18' x2='8' y2='46' stroke='%2300ffff' stroke-width='2'/></svg>">
 <meta property="og:title" content="3D Tic-Tac-Toe — More Challenging Than You Think">
-<meta property="og:description" content="Play 3D Tic-Tac-Toe on a 4×4×4 board against a smart AI. Harder than you think — align four in any direction across three dimensions to win.">
+<meta property="og:description" content="Play 3D Tic-Tac-Toe on a 3×3×3 board against a smart AI. Harder than you think — align three in any direction across three dimensions to win.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://arthur-ficial.github.io/tictactoe-3d">
 <meta property="og:image" content="https://arthur-ficial.github.io/tictactoe-3d/preview.png">
@@ -157,7 +157,7 @@
 
 <div id="bottom">
   <button onclick="newGame()">NEW GAME</button>
-  <div id="hint">swipe to spin &nbsp;&middot;&nbsp; double-tap to place &nbsp;&middot;&nbsp; pinch to zoom</div>
+  <div id="hint"><span id="hint-touch">swipe to spin &nbsp;&middot;&nbsp; double-tap to place &nbsp;&middot;&nbsp; pinch to zoom</span><span id="hint-kb" style="display:none">arrows to rotate &nbsp;&middot;&nbsp; tab to select &nbsp;&middot;&nbsp; enter to place</span></div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -360,31 +360,29 @@ const sharedEdgeGeo = new THREE.EdgesGeometry(sharedGeo);
 
 function disposeObject(obj) {
   if (!obj) return;
+  const skipGeo = g => g === sharedGeo || g === sharedEdgeGeo;
   obj.traverse(child => {
-    if (child.geometry && child.geometry !== sharedGeo && child.geometry !== sharedEdgeGeo) {
-      child.geometry.dispose();
-    }
-    if (child.material) child.material.dispose();
+    if (child.geometry && !skipGeo(child.geometry)) child.geometry.dispose();
+    if (child.material && !sharedMats.has(child.material)) child.material.dispose();
   });
-  if (obj.geometry && obj.geometry !== sharedGeo && obj.geometry !== sharedEdgeGeo) {
-    obj.geometry.dispose();
-  }
-  if (obj.material) obj.material.dispose();
+  if (obj.geometry && !skipGeo(obj.geometry)) obj.geometry.dispose();
+  if (obj.material && !sharedMats.has(obj.material)) obj.material.dispose();
 }
 
-// Materials
-const matEmpty = () => new THREE.MeshPhongMaterial({
+// Shared materials (cached singletons — never dispose these)
+const matEmpty = new THREE.MeshPhongMaterial({
   color:0x0a0a22, transparent:true, opacity:0.55, shininess:50, specular:0x3344aa
 });
-const matHover = () => new THREE.MeshPhongMaterial({
+const matHover = new THREE.MeshPhongMaterial({
   color:0x221144, transparent:true, opacity:0.9, shininess:120, specular:0xaa66ff, emissive:0x110033
 });
-const matX = () => new THREE.MeshPhongMaterial({
+const matX = new THREE.MeshPhongMaterial({
   color:0x00ffff, emissive:0x007777, shininess:220, specular:0xffffff
 });
-const matO = () => new THREE.MeshPhongMaterial({
+const matO = new THREE.MeshPhongMaterial({
   color:0xff6600, emissive:0xaa3300, shininess:220, specular:0xffcc88
 });
+const sharedMats = new Set([matEmpty, matHover, matX, matO]);
 
 function buildGrid() {
   const lm = new THREE.LineBasicMaterial({color:0x2244aa, transparent:true, opacity:0.7});
@@ -417,7 +415,7 @@ function buildBoard() {
 
   for(let i=0;i<27;i++){
     if(i === CENTER){ cellMeshes.push(null); continue; }
-    const mesh = new THREE.Mesh(sharedGeo, matEmpty());
+    const mesh = new THREE.Mesh(sharedGeo, matEmpty);
     mesh.position.copy(cellPos(i));
     mesh.castShadow = true;
     mesh.userData = { index:i };
@@ -510,7 +508,7 @@ function placeMarker(i, who) {
   updateHint();
 
   const mesh = cellMeshes[i];
-  mesh.material = who === PLAYER ? matX() : matO();
+  mesh.material = who === PLAYER ? matX : matO;
   mesh.userData.taken = true;
   const sym = who === PLAYER ? makeX() : makeO();
   sym.scale.setScalar(0.55);
@@ -605,7 +603,7 @@ function newGame() {
   popQueue = [];
   hoveredMesh = null;
   lastClickTime = 0; lastClickIdx = -1;
-  lastTap = 0; lastTapIdx = -1;
+  lastTap = 0; lastTapIdx = -1; kbHoverIdx = -1;
   moveCount = 0;
   buildBoard();
   updateUI();
@@ -690,9 +688,8 @@ function tryPlace(cx, cy) {
   } else {
     lastClickTime = now; lastClickIdx = i;
     const prev = hit.material;
-    const hm = matHover();
-    hit.material = hm;
-    setTimeout(()=>{ hm.dispose(); if(!hit.userData.taken) hit.material = prev; }, 300);
+    hit.material = matHover;
+    setTimeout(()=>{ if(!hit.userData.taken) hit.material = prev; }, 300);
   }
 }
 
@@ -846,6 +843,70 @@ canvas.addEventListener('touchend', e => {
   }
   if(remaining<2) { pinchPrevDist=null; pinchActive=false; }
 },{passive:false});
+
+// ═══════════════════════════════════════════════════════════════════
+// KEYBOARD CONTROLS
+// ═══════════════════════════════════════════════════════════════════
+let kbHoverIdx = -1;
+
+function cycleHover(reverse) {
+  if (gameOver || thinking) return;
+  const empties = getEmpties(board);
+  if (!empties.length) return;
+  const cur = kbHoverIdx;
+  let idx;
+  if (cur < 0) {
+    idx = 0;
+  } else {
+    const pos = empties.indexOf(cur);
+    idx = pos < 0 ? 0 : (reverse ? (pos - 1 + empties.length) % empties.length : (pos + 1) % empties.length);
+  }
+  clearKbHover();
+  kbHoverIdx = empties[idx];
+  const mesh = cellMeshes[kbHoverIdx];
+  if (mesh && !mesh.userData.taken) {
+    mesh.material = matHover;
+    mesh.scale.setScalar(1.08);
+    hoveredMesh = mesh;
+  }
+}
+
+function clearKbHover() {
+  if (kbHoverIdx >= 0) {
+    const mesh = cellMeshes[kbHoverIdx];
+    if (mesh && !mesh.userData.taken) {
+      mesh.material = matEmpty;
+      mesh.scale.setScalar(1);
+    }
+  }
+  kbHoverIdx = -1;
+  hoveredMesh = null;
+}
+
+function placeHovered() {
+  if (kbHoverIdx < 0 || gameOver || thinking) return;
+  const idx = kbHoverIdx;
+  clearKbHover();
+  playerTurn(idx);
+}
+
+window.addEventListener('keydown', e => {
+  if (introActive) return;
+  touched();
+  const step = 0.15;
+  switch(e.key) {
+    case 'ArrowLeft':  sph.theta += step; updateCamera(); break;
+    case 'ArrowRight': sph.theta -= step; updateCamera(); break;
+    case 'ArrowUp':    sph.phi = Math.max(PHI_MIN, sph.phi - step); updateCamera(); break;
+    case 'ArrowDown':  sph.phi = Math.min(PHI_MAX, sph.phi + step); updateCamera(); break;
+    case '+': case '=': sph.r = Math.max(ZOOM_MIN, sph.r - 1); updateCamera(); break;
+    case '-':           sph.r = Math.min(ZOOM_MAX, sph.r + 1); updateCamera(); break;
+    case 'Tab':        e.preventDefault(); cycleHover(e.shiftKey); break;
+    case 'Enter': case ' ': e.preventDefault(); placeHovered(); break;
+    case 'r': case 'n': if (!thinking) newGame(); break;
+    case 'Escape':     clearKbHover(); break;
+  }
+});
 
 // ═══════════════════════════════════════════════════════════════════
 // LONG-PRESS VISUAL MODES
@@ -1179,6 +1240,10 @@ window.addEventListener('resize', () => {
 
 buildGrid();
 newGame();
+if (!('ontouchstart' in window)) {
+  document.getElementById('hint-touch').style.display='none';
+  document.getElementById('hint-kb').style.display='';
+}
 animate();
 </script>
 </body>
