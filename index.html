@@ -12,52 +12,72 @@
   #ui{
     position:fixed;top:0;left:0;right:0;
     display:flex;flex-direction:column;align-items:center;
-    pointer-events:none;padding-top:14px;gap:4px;
+    pointer-events:none;padding-top:12px;gap:4px;
   }
-  #score-bar{
-    display:flex;align-items:center;gap:20px;
-    font-size:2rem;font-weight:900;letter-spacing:2px;
-  }
-  .sx{color:#00ffff;text-shadow:0 0 20px #00ffff,0 0 50px #00ffff;}
-  .so{color:#ff6600;text-shadow:0 0 20px #ff6600,0 0 50px #ff6600;}
-  .sdiv{color:#444;font-size:1.2rem;}
-  #status{
-    font-size:1.1rem;font-weight:700;letter-spacing:3px;
-    color:#fff;text-shadow:0 0 15px #fff;
-    min-height:1.4rem;text-align:center;
-  }
-  .x-col{color:#00ffff;text-shadow:0 0 15px #00ffff;}
-  .o-col{color:#ff6600;text-shadow:0 0 15px #ff6600;}
-  .w-col{color:#ff00ff;text-shadow:0 0 25px #ff00ff,0 0 50px #ff00ff;}
-  .d-col{color:#fff;}
 
-  #lines-bar{
-    font-size:0.7rem;letter-spacing:2px;color:#333;
-    min-height:1rem;text-align:center;
+  /* Score bar */
+  #score-bar{
+    display:flex;align-items:center;gap:0;
+    font-size:1.8rem;font-weight:900;letter-spacing:1px;
+    width:320px;
   }
-  .lx{color:#00ffff88;} .lo{color:#ff660088;}
+  .sc-you{
+    flex:1;text-align:left;
+    color:#00ffff;text-shadow:0 0 20px #00ffff;
+  }
+  .sc-cpu{
+    flex:1;text-align:right;
+    color:#ff6600;text-shadow:0 0 20px #ff6600;
+  }
+  .sc-sep{color:#333;font-size:1rem;text-align:center;flex:0 0 30px;}
+
+  /* Delta bar */
+  #delta-wrap{
+    width:320px;height:8px;
+    background:#111;border-radius:4px;overflow:hidden;
+    display:flex;
+  }
+  #delta-you{background:#00ffff;height:100%;transition:width 0.4s ease;}
+  #delta-cpu{background:#ff6600;height:100%;transition:width 0.4s ease;}
+
+  /* Status */
+  #status{
+    font-size:1rem;font-weight:800;letter-spacing:3px;
+    color:#fff;text-shadow:0 0 12px #fff;
+    min-height:1.3rem;text-align:center;
+  }
+  .x-col{color:#00ffff;text-shadow:0 0 15px #00ffff,0 0 40px #00ffff;}
+  .o-col{color:#ff6600;text-shadow:0 0 15px #ff6600,0 0 40px #ff6600;}
+  .w-col{color:#ff00ff;text-shadow:0 0 25px #ff00ff,0 0 60px #ff00ff;}
+
+  /* Threat preview bar */
+  #threat-bar{
+    font-size:0.65rem;letter-spacing:2px;color:#444;
+    min-height:0.9rem;text-align:center;
+  }
+  .tx{color:#00ffff99;} .to{color:#ff660099;}
 
   #bottom{
-    position:fixed;bottom:16px;left:0;right:0;
-    display:flex;flex-direction:column;align-items:center;gap:8px;
+    position:fixed;bottom:14px;left:0;right:0;
+    display:flex;flex-direction:column;align-items:center;gap:7px;
     pointer-events:none;
   }
   button{
     pointer-events:all;
-    padding:0.55rem 2.2rem;border:2px solid #fff;
+    padding:0.5rem 2rem;border:2px solid #fff;
     background:rgba(255,255,255,0.08);color:#fff;
-    border-radius:6px;font-size:0.9rem;font-weight:900;
+    border-radius:6px;font-size:0.85rem;font-weight:900;
     letter-spacing:3px;cursor:pointer;
     text-shadow:0 0 8px #fff;
-    box-shadow:0 0 15px rgba(255,255,255,0.2);
+    box-shadow:0 0 12px rgba(255,255,255,0.2);
     transition:all 0.15s;
   }
-  button:hover{background:rgba(255,255,255,0.2);box-shadow:0 0 30px rgba(255,255,255,0.5);}
-  #hint{color:#333;font-size:0.65rem;letter-spacing:1px;pointer-events:none;}
+  button:hover{background:rgba(255,255,255,0.2);box-shadow:0 0 28px rgba(255,255,255,0.5);}
+  #hint{color:#2a2a2a;font-size:0.62rem;letter-spacing:1px;pointer-events:none;}
 
   #ring{
     position:fixed;pointer-events:none;
-    width:70px;height:70px;border-radius:50%;
+    width:68px;height:68px;border-radius:50%;
     border:3px solid #fff;
     transform:translate(-50%,-50%) scale(0);
     opacity:0;transition:transform 0.12s,opacity 0.3s;
@@ -71,12 +91,16 @@
 
 <div id="ui">
   <div id="score-bar">
-    <span class="sx">YOU <span id="sX">0</span></span>
-    <span class="sdiv">|</span>
-    <span class="so">CPU <span id="sO">0</span></span>
+    <span class="sc-you">YOU <span id="sX">0</span></span>
+    <span class="sc-sep">|</span>
+    <span class="sc-cpu"><span id="sO">0</span> CPU</span>
+  </div>
+  <div id="delta-wrap">
+    <div id="delta-you" style="width:50%"></div>
+    <div id="delta-cpu" style="width:50%"></div>
   </div>
   <div id="status"></div>
-  <div id="lines-bar"></div>
+  <div id="threat-bar"></div>
 </div>
 
 <div id="bottom">
@@ -86,481 +110,594 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-// ─── RENDERER ────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+// RENDERER
+// ═══════════════════════════════════════════════════════════════════
 const canvas = document.getElementById('canvas');
 const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setClearColor(0x000000);
 renderer.shadowMap.enabled = true;
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 200);
 
-// ─── LIGHTS ──────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+// LIGHTS
+// ═══════════════════════════════════════════════════════════════════
 scene.add(new THREE.AmbientLight(0xffffff, 0.2));
 const sun = new THREE.DirectionalLight(0xffffff, 2.5);
 sun.position.set(10,15,10); sun.castShadow=true; scene.add(sun);
-const ptX = new THREE.PointLight(0x00ffff, 5, 35); ptX.position.set(-8,4,6); scene.add(ptX);
-const ptO = new THREE.PointLight(0xff6600, 5, 35); ptO.position.set(8,4,6); scene.add(ptO);
-const ptW = new THREE.PointLight(0xff00ff, 0, 30); ptW.position.set(0,8,0); scene.add(ptW);
-const ptAI= new THREE.PointLight(0xffff00, 0, 20); ptAI.position.set(0,-4,8); scene.add(ptAI);
+const ptX  = new THREE.PointLight(0x00ffff, 5, 35); ptX.position.set(-8,4,6);  scene.add(ptX);
+const ptO  = new THREE.PointLight(0xff6600, 5, 35); ptO.position.set( 8,4,6);  scene.add(ptO);
+const ptW  = new THREE.PointLight(0xff00ff, 0, 30); ptW.position.set( 0,8,0);  scene.add(ptW);
+const ptAI = new THREE.PointLight(0xffff00, 0, 20); ptAI.position.set(0,-4,8); scene.add(ptAI);
 
-// ─── CONSTANTS ───────────────────────────────────────────────────────────────
-const PLAYER='X', AI_P='O';
+// ═══════════════════════════════════════════════════════════════════
+// CONSTANTS & WIN LINES
+// ═══════════════════════════════════════════════════════════════════
+const PLAYER='X', CPU='O';
 const SP=2.0, CS=1.25;
-const idx=(x,y,z)=>z*9+y*3+x;
+const CENTER=13; // index of center cell — removed from play
 
-// All 49 lines in 3x3x3
-const ALL_WINS=(()=>{
-  const lines=[];
+const cellPos = (i) => {
+  const x = i%3, y = Math.floor(i/3)%3, z = Math.floor(i/9);
+  return new THREE.Vector3((x-1)*SP, (y-1)*SP, (z-1)*SP);
+};
+
+// Build all 49 lines in 3x3x3, then filter out any touching center
+const I = (x,y,z) => z*9+y*3+x;
+const RAW_WINS = (() => {
+  const L = [];
   for(let a=0;a<3;a++) for(let b=0;b<3;b++){
-    lines.push([idx(0,a,b),idx(1,a,b),idx(2,a,b)]);
-    lines.push([idx(a,0,b),idx(a,1,b),idx(a,2,b)]);
-    lines.push([idx(a,b,0),idx(a,b,1),idx(a,b,2)]);
+    L.push([I(0,a,b),I(1,a,b),I(2,a,b)]);
+    L.push([I(a,0,b),I(a,1,b),I(a,2,b)]);
+    L.push([I(a,b,0),I(a,b,1),I(a,b,2)]);
   }
-  for(let z=0;z<3;z++){lines.push([idx(0,0,z),idx(1,1,z),idx(2,2,z)]);lines.push([idx(2,0,z),idx(1,1,z),idx(0,2,z)]);}
-  for(let x=0;x<3;x++){lines.push([idx(x,0,0),idx(x,1,1),idx(x,2,2)]);lines.push([idx(x,2,0),idx(x,1,1),idx(x,0,2)]);}
-  for(let y=0;y<3;y++){lines.push([idx(0,y,0),idx(1,y,1),idx(2,y,2)]);lines.push([idx(2,y,0),idx(1,y,1),idx(0,y,2)]);}
-  lines.push([idx(0,0,0),idx(1,1,1),idx(2,2,2)],[idx(2,0,0),idx(1,1,1),idx(0,2,2)],[idx(0,2,0),idx(1,1,1),idx(2,0,2)],[idx(2,2,0),idx(1,1,1),idx(0,0,2)]);
-  return lines;
+  for(let z=0;z<3;z++){
+    L.push([I(0,0,z),I(1,1,z),I(2,2,z)]);
+    L.push([I(2,0,z),I(1,1,z),I(0,2,z)]);
+  }
+  for(let x=0;x<3;x++){
+    L.push([I(x,0,0),I(x,1,1),I(x,2,2)]);
+    L.push([I(x,2,0),I(x,1,1),I(x,0,2)]);
+  }
+  for(let y=0;y<3;y++){
+    L.push([I(0,y,0),I(1,y,1),I(2,y,2)]);
+    L.push([I(2,y,0),I(1,y,1),I(0,y,2)]);
+  }
+  L.push([I(0,0,0),I(1,1,1),I(2,2,2)]);
+  L.push([I(2,0,0),I(1,1,1),I(0,2,2)]);
+  L.push([I(0,2,0),I(1,1,1),I(2,0,2)]);
+  L.push([I(2,2,0),I(1,1,1),I(0,0,2)]);
+  return L;
 })();
+const WINS = RAW_WINS.filter(line => !line.includes(CENTER));
+// 36 valid lines
 
-// Valid lines: exclude any line through center (index 13)
-const WINS = ALL_WINS.filter(line => !line.includes(13));
-// WINS has 36 valid lines — enough for a rich scoring game
+// ═══════════════════════════════════════════════════════════════════
+// GAME STATE — single source of truth
+// ═══════════════════════════════════════════════════════════════════
+let board;          // Array(27): null | 'X' | 'O' | '_' (center)
+let scores;         // {X, O} — completed lines this game
+let gameOver;
+let thinking;
 
-// ─── GAME STATE ───────────────────────────────────────────────────────────────
-let board, currentPlayer, gameOver, thinking;
-let lineScore = {X:0, O:0};       // lines scored this game
-let totalScore = {X:0, O:0};      // games won overall
-let completedLineObjects = [];     // Three.js tubes for scored lines
-let cellMeshes = [], popQueue = [];
-
-const pivot = new THREE.Group(); scene.add(pivot);
-
-// ─── AI ──────────────────────────────────────────────────────────────────────
-
-// Count lines scored by 'who' on board b
-function countLines(b, who) {
-  return WINS.filter(line => line.every(i => b[i] === who)).length;
+// ─── board helpers ────────────────────────────────────────────────
+function isPlayable(b, i) {
+  return i !== CENTER && b[i] === null;
 }
 
-// Count lines scored if we place at idx
-function linesGainedAt(b, idx, who) {
-  b[idx] = who;
-  const n = WINS.filter(line => line.includes(idx) && line.every(i => b[i] === who)).length;
-  b[idx] = null;
-  return n;
+function getEmpties(b) {
+  return b.map((v,i) => isPlayable(b,i) ? i : -1).filter(i => i >= 0);
 }
 
-// How many lines does 'who' have with exactly 2 pieces and 1 empty (threats)?
-function threats(b, who) {
+function isFull(b) {
+  return b.every((v,i) => i === CENTER || v !== null);
+}
+
+// Lines completed by 'who' on board b at cell i (b[i] must already be set)
+function newLinesAt(b, i, who) {
+  return WINS.filter(line => line.includes(i) && line.every(j => b[j] === who));
+}
+
+// Count total completed lines for 'who' on board b
+function countCompleted(b, who) {
+  return WINS.filter(line => line.every(j => b[j] === who)).length;
+}
+
+// Threats: lines with exactly N of 'who' and rest empty
+function countThreats(b, who, n) {
+  const opp = who === PLAYER ? CPU : PLAYER;
   return WINS.filter(line => {
-    const mine = line.filter(i => b[i] === who).length;
-    const empty = line.filter(i => !b[i]).length;
-    return mine === 2 && empty === 1;
+    const mine  = line.filter(j => b[j] === who).length;
+    const theirs= line.filter(j => b[j] === opp).length;
+    return mine === n && theirs === 0;
   }).length;
 }
 
-// Static eval from AI_P perspective: final score diff + positional value
-function evaluate(b) {
-  const aiLines  = countLines(b, AI_P);
-  const plLines  = countLines(b, PLAYER);
+// ═══════════════════════════════════════════════════════════════════
+// AI — proper minimax-style eval, no mutation bugs
+// ═══════════════════════════════════════════════════════════════════
+function evalBoard(b) {
+  // Eval from CPU's perspective (positive = good for CPU)
+  const cpuLines = countCompleted(b, CPU);
+  const plrLines = countCompleted(b, PLAYER);
 
   let pos = 0;
   for(const line of WINS) {
-    const ai = line.filter(i => b[i] === AI_P).length;
-    const pl = line.filter(i => b[i] === PLAYER).length;
-    if(pl === 0) {
-      if(ai === 2) pos += 8;
-      else if(ai === 1) pos += 1;
+    const c = line.filter(j => b[j] === CPU).length;
+    const p = line.filter(j => b[j] === PLAYER).length;
+    // Lines with only CPU pieces — building value
+    if(p === 0) {
+      if(c === 2) pos += 10;
+      else if(c === 1) pos += 1;
     }
-    if(ai === 0) {
-      if(pl === 2) pos -= 12;  // blocking is more valuable than building
-      else if(pl === 1) pos -= 1;
+    // Lines with only PLAYER pieces — threat level
+    if(c === 0) {
+      if(p === 2) pos -= 15;
+      else if(p === 1) pos -= 1;
     }
   }
 
-  // Reward having more threats (fork potential)
-  pos += threats(b, AI_P) * 6;
-  pos -= threats(b, PLAYER) * 8;
+  // Bonus for having many simultaneous threats (fork power)
+  pos += countThreats(b, CPU, 2) * 8;
+  pos -= countThreats(b, PLAYER, 2) * 12;
 
-  return (aiLines - plLines) * 100 + pos;
+  return (cpuLines - plrLines) * 100 + pos;
 }
 
-// 2-ply lookahead: AI picks, then simulates best player response
+// Score a candidate move for CPU using 2-ply lookahead
+function scoreMoveForCPU(b, idx) {
+  // 1. Make the move
+  b[idx] = CPU;
+
+  // 2. Count immediately scored lines (guaranteed value)
+  const immediate = WINS.filter(line => line.includes(idx) && line.every(j => b[j] === CPU)).length;
+
+  // 3. Simulate player's best response
+  const replies = getEmpties(b);
+  let worstForCPU = Infinity;
+
+  if(replies.length === 0) {
+    worstForCPU = evalBoard(b);
+  } else {
+    for(const j of replies) {
+      b[j] = PLAYER;
+      const s = evalBoard(b);
+      b[j] = null; // ← restore immediately after eval
+      if(s < worstForCPU) worstForCPU = s;
+    }
+  }
+
+  b[idx] = null; // ← restore CPU move
+
+  return immediate * 160 + worstForCPU;
+}
+
 function aiMove(b) {
-  const opp = PLAYER;
-  const empties = () => b.map((v,i) => (!v && i!==13) ? i : -1).filter(i => i>=0);
-  const avail = empties();
+  const avail = getEmpties(b);
   if(!avail.length) return -1;
 
-  let bestScore = -Infinity, bestMove = avail[0];
+  // Work on a COPY so we never corrupt the real board
+  const copy = [...b];
 
+  let best = -Infinity, bestIdx = avail[0];
   for(const i of avail) {
-    b[i] = AI_P;
-    const immediateGain = WINS.filter(line => line.includes(i) && line.every(j => b[j] === AI_P)).length;
-
-    // Simulate player's best response (1-ply)
-    let playerBestResponse = Infinity;
-    const avail2 = empties();
-    if(avail2.length === 0) {
-      playerBestResponse = evaluate(b);
-    } else {
-      for(const j of avail2) {
-        b[j] = PLAYER;
-        const s = evaluate(b);
-        b[j] = null;
-        if(s < playerBestResponse) playerBestResponse = s;
-      }
-    }
-
-    // Immediate lines scored this move are guaranteed — weight them heavily
-    const score = immediateGain * 150 + playerBestResponse;
-    b[i] = null;
-
-    if(score > bestScore) { bestScore = score; bestMove = i; }
+    const s = scoreMoveForCPU(copy, i);
+    if(s > best) { best = s; bestIdx = i; }
   }
-
-  return bestMove;
+  return bestIdx;
 }
 
-// ─── MATERIALS ───────────────────────────────────────────────────────────────
-const matEmpty =()=>new THREE.MeshPhongMaterial({color:0x0a0a22,transparent:true,opacity:0.55,shininess:50,specular:0x3344aa});
-const matHover =()=>new THREE.MeshPhongMaterial({color:0x221144,transparent:true,opacity:0.9,shininess:120,specular:0xaa66ff,emissive:0x110033});
-const matX     =()=>new THREE.MeshPhongMaterial({color:0x00ffff,emissive:0x007777,shininess:220,specular:0xffffff});
-const matO     =()=>new THREE.MeshPhongMaterial({color:0xff6600,emissive:0xaa3300,shininess:220,specular:0xffcc88});
+// ═══════════════════════════════════════════════════════════════════
+// THREE.JS SCENE
+// ═══════════════════════════════════════════════════════════════════
+const pivot = new THREE.Group(); scene.add(pivot);
+let cellMeshes = [];         // Array(27), null for CENTER
+let lineTubes = [];          // scored line visuals
+let partialTubes = [];       // partial-line threat visuals (rebuilt each turn)
+let popQueue = [];
 
-// ─── BUILD SCENE ─────────────────────────────────────────────────────────────
-function buildGrid(){
-  const lm=new THREE.LineBasicMaterial({color:0x2244aa,transparent:true,opacity:0.7});
-  const offs=[-SP,0,SP], hw=SP+CS/2;
+// Materials
+const matEmpty = () => new THREE.MeshPhongMaterial({
+  color:0x0a0a22, transparent:true, opacity:0.55, shininess:50, specular:0x3344aa
+});
+const matHover = () => new THREE.MeshPhongMaterial({
+  color:0x221144, transparent:true, opacity:0.9, shininess:120, specular:0xaa66ff, emissive:0x110033
+});
+const matX = () => new THREE.MeshPhongMaterial({
+  color:0x00ffff, emissive:0x007777, shininess:220, specular:0xffffff
+});
+const matO = () => new THREE.MeshPhongMaterial({
+  color:0xff6600, emissive:0xaa3300, shininess:220, specular:0xffcc88
+});
+
+function buildGrid() {
+  const lm = new THREE.LineBasicMaterial({color:0x2244aa, transparent:true, opacity:0.7});
+  const vm = new THREE.LineBasicMaterial({color:0x112266, transparent:true, opacity:0.4});
+  const offs = [-SP,0,SP], hw = SP+CS/2;
   for(let z=0;z<3;z++){
     const zv=offs[z];
     const box=[[-hw,-hw,zv],[hw,-hw,zv],[hw,hw,zv],[-hw,hw,zv],[-hw,-hw,zv]].map(p=>new THREE.Vector3(...p));
-    pivot.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(box),lm));
+    pivot.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(box), lm));
     for(let i=1;i<3;i++){
       const v=-hw+i*SP;
-      pivot.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-hw,v,zv),new THREE.Vector3(hw,v,zv)]),lm));
-      pivot.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(v,-hw,zv),new THREE.Vector3(v,hw,zv)]),lm));
+      pivot.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(
+        [new THREE.Vector3(-hw,v,zv),new THREE.Vector3(hw,v,zv)]), lm));
+      pivot.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(
+        [new THREE.Vector3(v,-hw,zv),new THREE.Vector3(v,hw,zv)]), lm));
     }
   }
-  const vm=new THREE.LineBasicMaterial({color:0x112266,transparent:true,opacity:0.4});
   for(const [cx,cy] of [[-hw,-hw],[hw,-hw],[hw,hw],[-hw,hw]]){
-    pivot.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(offs.map(zv=>new THREE.Vector3(cx,cy,zv))),vm));
+    pivot.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(
+      offs.map(zv=>new THREE.Vector3(cx,cy,zv))), vm));
   }
 }
 
-function buildBoard(){
-  cellMeshes.forEach(m=>m&&pivot.remove(m));
-  cellMeshes=[];
-  completedLineObjects.forEach(o=>pivot.remove(o));
-  completedLineObjects=[];
-  popQueue=[];
+function buildBoard() {
+  cellMeshes.forEach(m => m && pivot.remove(m));
+  cellMeshes = [];
+  [...lineTubes, ...partialTubes].forEach(o => pivot.remove(o));
+  lineTubes = []; partialTubes = [];
+  popQueue = [];
 
-  const geo=new THREE.BoxGeometry(CS,CS,CS);
-  const eGeo=new THREE.EdgesGeometry(geo);
-  for(let z=0;z<3;z++) for(let y=0;y<3;y++) for(let x=0;x<3;x++){
-    const i=z*9+y*3+x;
-    if(i===13){cellMeshes.push(null);continue;}
-    const mesh=new THREE.Mesh(geo,matEmpty());
-    mesh.position.set((x-1)*SP,(y-1)*SP,(z-1)*SP);
-    mesh.castShadow=true;
-    mesh.userData={index:i};
-    mesh.add(new THREE.LineSegments(eGeo,new THREE.LineBasicMaterial({color:0x3355cc})));
+  const geo  = new THREE.BoxGeometry(CS,CS,CS);
+  const eGeo = new THREE.EdgesGeometry(geo);
+
+  for(let i=0;i<27;i++){
+    if(i === CENTER){ cellMeshes.push(null); continue; }
+    const mesh = new THREE.Mesh(geo, matEmpty());
+    mesh.position.copy(cellPos(i));
+    mesh.castShadow = true;
+    mesh.userData = { index:i };
+    mesh.add(new THREE.LineSegments(eGeo, new THREE.LineBasicMaterial({color:0x3355cc})));
     pivot.add(mesh);
     cellMeshes.push(mesh);
   }
 }
 
-function makeX(){
-  const g=new THREE.Group();
-  const m=new THREE.MeshPhongMaterial({color:0x00ffff,emissive:0x004466,shininess:200});
-  const bar=new THREE.CylinderGeometry(0.1,0.1,1.1,10);
-  const b1=new THREE.Mesh(bar,m); b1.rotation.z=Math.PI/4; g.add(b1);
-  const b2=new THREE.Mesh(bar,m); b2.rotation.z=-Math.PI/4; g.add(b2);
-  g.add(new THREE.Mesh(new THREE.SphereGeometry(0.55,10,10),new THREE.MeshPhongMaterial({color:0x00ffff,transparent:true,opacity:0.07,emissive:0x00ffff})));
+function makeX() {
+  const g = new THREE.Group();
+  const m = new THREE.MeshPhongMaterial({color:0x00ffff, emissive:0x004466, shininess:200});
+  const bar = new THREE.CylinderGeometry(0.1,0.1,1.1,10);
+  const b1 = new THREE.Mesh(bar,m); b1.rotation.z= Math.PI/4; g.add(b1);
+  const b2 = new THREE.Mesh(bar,m); b2.rotation.z=-Math.PI/4; g.add(b2);
+  g.add(new THREE.Mesh(new THREE.SphereGeometry(0.55,10,10),
+    new THREE.MeshPhongMaterial({color:0x00ffff,transparent:true,opacity:0.07,emissive:0x00ffff})));
   return g;
 }
-function makeO(){
-  const g=new THREE.Group();
-  const m=new THREE.MeshPhongMaterial({color:0xff6600,emissive:0x993300,shininess:200});
-  const t=new THREE.Mesh(new THREE.TorusGeometry(0.42,0.11,14,36),m); t.rotation.x=Math.PI/2; g.add(t);
-  g.add(new THREE.Mesh(new THREE.SphereGeometry(0.55,10,10),new THREE.MeshPhongMaterial({color:0xff6600,transparent:true,opacity:0.07,emissive:0xff6600})));
+function makeO() {
+  const g = new THREE.Group();
+  const m = new THREE.MeshPhongMaterial({color:0xff6600, emissive:0x993300, shininess:200});
+  const t = new THREE.Mesh(new THREE.TorusGeometry(0.42,0.11,14,36),m);
+  t.rotation.x = Math.PI/2; g.add(t);
+  g.add(new THREE.Mesh(new THREE.SphereGeometry(0.55,10,10),
+    new THREE.MeshPhongMaterial({color:0xff6600,transparent:true,opacity:0.07,emissive:0xff6600})));
   return g;
 }
 
-function drawScoredLine(line, who){
-  const color = who===PLAYER ? 0x00ffff : 0xff6600;
-  const pts = line.map(i=>cellMeshes[i].position.clone());
-  // Extend slightly beyond endpoints
-  const dir = pts[2].clone().sub(pts[0]).normalize().multiplyScalar(0.3);
+// Draw a completed line — bold glowing tube
+function drawCompletedLine(line, who) {
+  const color = who === PLAYER ? 0x00ffff : 0xff6600;
+  const pts = line.map(i => cellMeshes[i].position.clone());
+  const dir = pts[2].clone().sub(pts[0]).normalize().multiplyScalar(0.35);
   pts[0].sub(dir); pts[2].add(dir);
   const curve = new THREE.CatmullRomCurve3(pts);
 
   const tube = new THREE.Mesh(
-    new THREE.TubeGeometry(curve,12,0.05,8,false),
-    new THREE.MeshBasicMaterial({color, transparent:true, opacity:0.9})
+    new THREE.TubeGeometry(curve,10,0.06,8,false),
+    new THREE.MeshBasicMaterial({color, transparent:true, opacity:1.0})
   );
   const glow = new THREE.Mesh(
-    new THREE.TubeGeometry(curve,12,0.14,8,false),
-    new THREE.MeshBasicMaterial({color, transparent:true, opacity:0.18})
+    new THREE.TubeGeometry(curve,10,0.18,8,false),
+    new THREE.MeshBasicMaterial({color, transparent:true, opacity:0.22})
   );
   pivot.add(tube); pivot.add(glow);
-  completedLineObjects.push(tube, glow);
+  lineTubes.push(tube, glow);
 }
 
-// ─── GAME LOGIC ───────────────────────────────────────────────────────────────
-function placeMarker(i, who){
-  board[i]=who;
-  const mesh=cellMeshes[i];
-  if(!mesh) return;
-  mesh.material = who===PLAYER ? matX() : matO();
-  mesh.userData.taken=true;
-  const sym=who===PLAYER?makeX():makeO();
+// Draw partial-line threats — dim dashed-style tubes for lines with 2-in-a-row
+function rebuildPartialTubes() {
+  partialTubes.forEach(o => pivot.remove(o));
+  partialTubes = [];
+
+  for(const line of WINS) {
+    const xCount = line.filter(i => board[i] === PLAYER).length;
+    const oCount = line.filter(i => board[i] === CPU).length;
+    const empty  = line.filter(i => board[i] === null).length;
+
+    // Only show lines with exactly 2 of one player and 1 empty (active threats)
+    if(empty !== 1) continue;
+    let who = null;
+    if(xCount === 2 && oCount === 0) who = PLAYER;
+    if(oCount === 2 && xCount === 0) who = CPU;
+    if(!who) continue;
+
+    const color = who === PLAYER ? 0x00ffff : 0xff6600;
+    const pts = line.map(i => cellMeshes[i] ? cellMeshes[i].position.clone() : cellPos(i));
+    const curve = new THREE.CatmullRomCurve3(pts);
+
+    // Thin dim tube — threat indicator
+    const threat = new THREE.Mesh(
+      new THREE.TubeGeometry(curve,8,0.03,6,false),
+      new THREE.MeshBasicMaterial({color, transparent:true, opacity:0.35})
+    );
+    pivot.add(threat);
+    partialTubes.push(threat);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// GAME LOGIC
+// ═══════════════════════════════════════════════════════════════════
+function placeMarker(i, who) {
+  // Validate
+  if(!isPlayable(board, i)) return false;
+
+  board[i] = who;
+
+  const mesh = cellMeshes[i];
+  mesh.material = who === PLAYER ? matX() : matO();
+  mesh.userData.taken = true;
+  const sym = who === PLAYER ? makeX() : makeO();
   sym.scale.setScalar(0.55);
   mesh.add(sym);
   mesh.scale.setScalar(0.01);
-  popQueue.push({mesh,t:0});
+  popQueue.push({mesh, t:0});
 
-  // Check scored lines
-  const {count, newLines} = linesCompletedBy(board, i, who);
-  // Re-check after actually placing
-  const scored = [];
-  for(const line of WINS){
-    if(line.includes(i) && line.every(j=>board[j]===who)){
-      scored.push(line);
-    }
+  // Score new lines
+  const scored = newLinesAt(board, i, who);
+  if(scored.length) {
+    scores[who] += scored.length;
+    scored.forEach(line => drawCompletedLine(line, who));
   }
-  if(scored.length){
-    lineScore[who] += scored.length;
-    scored.forEach(line=>drawScoredLine(line,who));
-    updateScoreUI();
-  }
-}
 
-function isBoardFull(){
-  return board.every((v,i)=>v||i===13);
-}
+  // Rebuild partial threat tubes
+  rebuildPartialTubes();
 
-function updateLinesBar(){
-  const remain = WINS.filter(line=>!line.some(i=>board[i]!==null&&board[i]!==board[line[0]])).length;
-  document.getElementById('lines-bar').innerHTML =
-    `<span class="lx">${lineScore.X} lines</span>  vs  <span class="lo">${lineScore.O} lines</span>  —  ${WINS.length - Object.values(lineScore).reduce((a,b)=>a+b,0)} still open`;
-}
-
-function updateScoreUI(){
-  document.getElementById('sX').textContent=lineScore.X;
-  document.getElementById('sO').textContent=lineScore.O;
-  updateLinesBar();
-}
-
-function checkEndGame(){
-  if(!isBoardFull()) return false;
-  gameOver=true;
-  totalScore.X += lineScore.X > lineScore.O ? 1 : 0;
-  totalScore.O += lineScore.O > lineScore.X ? 1 : 0;
-  if(lineScore.X>lineScore.O){
-    ptW.intensity=6;
-    setStatus(`<span class="w-col">YOU WIN  ${lineScore.X} - ${lineScore.O}</span>`);
-  } else if(lineScore.O>lineScore.X){
-    setStatus(`<span class="o-col">CPU WINS  ${lineScore.O} - ${lineScore.X}</span>`);
-  } else {
-    setStatus(`<span class="d-col">DRAW  ${lineScore.X} - ${lineScore.O}</span>`);
-  }
   return true;
 }
 
-function playerTurn(i){
-  if(gameOver||thinking||currentPlayer!==PLAYER||board[i]||i===13) return;
-  placeMarker(i, PLAYER);
-  updateScoreUI();
-  if(checkEndGame()) return;
+function updateUI() {
+  const x = scores[PLAYER], o = scores[CPU];
+  document.getElementById('sX').textContent = x;
+  document.getElementById('sO').textContent = o;
 
-  currentPlayer=AI_P;
-  thinking=true;
-  ptAI.intensity=3;
-  setStatus(`<span style="color:#ffff00;text-shadow:0 0 15px #ffff00">CPU THINKING</span>`);
+  // Delta bar
+  const total = x + o || 1;
+  const pctX = (x / total * 100).toFixed(1);
+  const pctO = (100 - pctX).toFixed(1);
+  document.getElementById('delta-you').style.width = pctX + '%';
+  document.getElementById('delta-cpu').style.width = pctO + '%';
 
-  setTimeout(()=>{
-    const move=aiMove([...board]);
-    if(move!==-1) placeMarker(move, AI_P);
-    ptAI.intensity=0;
-    thinking=false;
-    updateScoreUI();
-    if(!checkEndGame()){
-      currentPlayer=PLAYER;
-      const ahead = lineScore.X-lineScore.O;
-      const aheadStr = ahead>0?` (+${ahead})`:ahead<0?` (${ahead})`:'';
-      setStatus(`<span class="x-col">YOUR TURN${aheadStr}</span>`);
-    }
-  }, 350+Math.random()*250);
+  // Threat counts
+  const tx = countThreats(board, PLAYER, 2);
+  const to = countThreats(board, CPU, 2);
+  document.getElementById('threat-bar').innerHTML =
+    `<span class="tx">threats: ${tx}</span>  &nbsp;  <span class="to">threats: ${to}</span>`;
 }
 
-function newGame(){
-  board=Array(27).fill(null);
-  board[13]='_'; // center blocked permanently
-  lineScore={X:0,O:0};
-  currentPlayer=PLAYER;
-  gameOver=false; thinking=false;
-  ptW.intensity=0; ptAI.intensity=0;
-  popQueue=[]; hoveredMesh=null;
-  lastClickTime=0; lastClickIdx=-1;
-  lastTap=0; lastTapIdx=-1;
+function checkEnd() {
+  if(!isFull(board)) return false;
+  gameOver = true;
+  ptW.intensity = 0;
+  const x = scores[PLAYER], o = scores[CPU];
+  if(x > o)      setStatus(`<span class="w-col">YOU WIN  ${x} - ${o}</span>`), ptW.intensity=6;
+  else if(o > x) setStatus(`<span class="o-col">CPU WINS  ${o} - ${x}</span>`);
+  else           setStatus(`<span style="color:#fff">DRAW  ${x} - ${o}</span>`);
+  return true;
+}
+
+function playerTurn(i) {
+  if(gameOver || thinking) return;
+  if(!isPlayable(board, i)) return;
+
+  placeMarker(i, PLAYER);
+  updateUI();
+  if(checkEnd()) return;
+
+  thinking = true;
+  ptAI.intensity = 3;
+  setStatus(`<span style="color:#ffff00;text-shadow:0 0 15px #ffff00">CPU THINKING</span>`);
+
+  setTimeout(() => {
+    // Pass a COPY of the board to AI so it can't corrupt state
+    const move = aiMove([...board]);
+    if(move !== -1) placeMarker(move, CPU);
+    ptAI.intensity = 0;
+    thinking = false;
+    updateUI();
+    if(!checkEnd()) {
+      const delta = scores[PLAYER] - scores[CPU];
+      const ds = delta > 0 ? ` +${delta}` : delta < 0 ? ` ${delta}` : '';
+      setStatus(`<span class="x-col">YOUR TURN${ds}</span>`);
+    }
+  }, 320 + Math.random()*200);
+}
+
+function newGame() {
+  board = Array(27).fill(null);
+  board[CENTER] = '_'; // permanently blocked
+  scores = {X:0, O:0};
+  gameOver = false;
+  thinking = false;
+  ptW.intensity = 0;
+  ptAI.intensity = 0;
+  popQueue = [];
+  hoveredMesh = null;
+  lastClickTime = 0; lastClickIdx = -1;
+  lastTap = 0; lastTapIdx = -1;
   buildBoard();
-  updateScoreUI();
+  updateUI();
   setStatus(`<span class="x-col">YOUR TURN</span>`);
 }
 
-// ─── CAMERA ──────────────────────────────────────────────────────────────────
-let sph={theta:-0.4, phi:1.05, r:9.5};
-function updateCamera(){
-  camera.position.x=sph.r*Math.sin(sph.phi)*Math.sin(sph.theta);
-  camera.position.y=sph.r*Math.cos(sph.phi);
-  camera.position.z=sph.r*Math.sin(sph.phi)*Math.cos(sph.theta);
+// ═══════════════════════════════════════════════════════════════════
+// CAMERA ORBIT
+// ═══════════════════════════════════════════════════════════════════
+let sph = {theta:-0.4, phi:1.05, r:9.5};
+function updateCamera() {
+  camera.position.x = sph.r * Math.sin(sph.phi) * Math.sin(sph.theta);
+  camera.position.y = sph.r * Math.cos(sph.phi);
+  camera.position.z = sph.r * Math.sin(sph.phi) * Math.cos(sph.theta);
   camera.lookAt(0,0,0);
 }
 updateCamera();
 
-// ─── INPUT ───────────────────────────────────────────────────────────────────
-const raycaster=new THREE.Raycaster();
-const mouse=new THREE.Vector2();
-let hoveredMesh=null, isDragging=false, dragStart={x:0,y:0};
-let lastClickTime=0, lastClickIdx=-1;
-let lastInteract=0;
-const ring=document.getElementById('ring');
+// ═══════════════════════════════════════════════════════════════════
+// INPUT
+// ═══════════════════════════════════════════════════════════════════
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+let hoveredMesh = null, isDragging = false, dragStart = {x:0,y:0};
+let lastClickTime = 0, lastClickIdx = -1;
+let lastInteract = 0;
+const ring = document.getElementById('ring');
 
-function touched(){lastInteract=Date.now();}
+function touched() { lastInteract = Date.now(); }
 
-function getHit(cx,cy){
-  mouse.x=(cx/window.innerWidth)*2-1;
-  mouse.y=-(cy/window.innerHeight)*2+1;
-  raycaster.setFromCamera(mouse,camera);
-  const hits=raycaster.intersectObjects(cellMeshes.filter(Boolean));
-  return hits.length?hits[0].object:null;
+function getHit(cx, cy) {
+  mouse.x = (cx / window.innerWidth)  * 2 - 1;
+  mouse.y = -(cy / window.innerHeight) * 2 + 1;
+  raycaster.setFromCamera(mouse, camera);
+  const hits = raycaster.intersectObjects(cellMeshes.filter(Boolean));
+  return hits.length ? hits[0].object : null;
 }
 
-function showRing(x,y,col){
+function showRing(x,y,col) {
   ring.style.left=x+'px'; ring.style.top=y+'px';
   ring.style.borderColor=col; ring.style.boxShadow=`0 0 20px ${col}`;
   ring.classList.add('show');
-  setTimeout(()=>ring.classList.remove('show'),400);
+  setTimeout(()=>ring.classList.remove('show'), 400);
 }
 
-function tryPlace(cx,cy){
-  const hit=getHit(cx,cy);
-  if(!hit||hit.userData.taken||gameOver||thinking) return;
-  const i=hit.userData.index;
-  const now=Date.now();
-  if((now-lastClickTime<420)&&(lastClickIdx===i)){
-    showRing(cx,cy,'#00ffff');
+function tryPlace(cx, cy) {
+  const hit = getHit(cx, cy);
+  if(!hit || hit.userData.taken || gameOver || thinking) return;
+  const i = hit.userData.index;
+  const now = Date.now();
+  if((now - lastClickTime < 420) && (lastClickIdx === i)) {
+    showRing(cx, cy, '#00ffff');
     playerTurn(i);
-    lastClickTime=0; lastClickIdx=-1;
+    lastClickTime = 0; lastClickIdx = -1;
   } else {
-    lastClickTime=now; lastClickIdx=i;
-    const prev=hit.material;
-    hit.material=matHover();
-    setTimeout(()=>{if(!hit.userData.taken)hit.material=prev;},300);
+    lastClickTime = now; lastClickIdx = i;
+    const prev = hit.material;
+    hit.material = matHover();
+    setTimeout(()=>{ if(!hit.userData.taken) hit.material = prev; }, 300);
   }
 }
 
 // Mouse
-window.addEventListener('mousedown',e=>{isDragging=false;dragStart={x:e.clientX,y:e.clientY};});
-window.addEventListener('mousemove',e=>{
+window.addEventListener('mousedown', e => { isDragging=false; dragStart={x:e.clientX,y:e.clientY}; });
+window.addEventListener('mousemove', e => {
   const dx=e.clientX-dragStart.x, dy=e.clientY-dragStart.y;
-  if(Math.hypot(dx,dy)>5){
+  if(Math.hypot(dx,dy)>5) {
     isDragging=true; touched();
-    sph.theta-=dx*0.006;
-    sph.phi=Math.max(0.2,Math.min(Math.PI-0.2,sph.phi+dy*0.006));
-    dragStart={x:e.clientX,y:e.clientY};
+    sph.theta -= dx*0.006;
+    sph.phi = Math.max(0.2, Math.min(Math.PI-0.2, sph.phi+dy*0.006));
+    dragStart = {x:e.clientX,y:e.clientY};
     updateCamera();
   }
-  const hit=getHit(e.clientX,e.clientY);
-  if(hoveredMesh&&!hoveredMesh.userData.taken){hoveredMesh.material.emissive?.setHex(0x000011);hoveredMesh.scale.setScalar(1);}
-  hoveredMesh=null;
-  if(hit&&!hit.userData.taken&&!gameOver&&!thinking){hit.material.emissive?.setHex(0x221144);hit.scale.setScalar(1.08);hoveredMesh=hit;}
+  const hit = getHit(e.clientX, e.clientY);
+  if(hoveredMesh && !hoveredMesh.userData.taken) {
+    hoveredMesh.material.emissive?.setHex(0x000011); hoveredMesh.scale.setScalar(1);
+  }
+  hoveredMesh = null;
+  if(hit && !hit.userData.taken && !gameOver && !thinking) {
+    hit.material.emissive?.setHex(0x221144); hit.scale.setScalar(1.08); hoveredMesh=hit;
+  }
 });
-window.addEventListener('mouseup',e=>{if(!isDragging)tryPlace(e.clientX,e.clientY);isDragging=false;});
-window.addEventListener('wheel',e=>{touched();sph.r=Math.max(4,Math.min(20,sph.r+e.deltaY*0.012));updateCamera();},{passive:true});
+window.addEventListener('mouseup', e => { if(!isDragging) tryPlace(e.clientX,e.clientY); isDragging=false; });
+window.addEventListener('wheel', e => {
+  touched(); sph.r=Math.max(4,Math.min(20,sph.r+e.deltaY*0.012)); updateCamera();
+}, {passive:true});
 
 // Touch
 let touches={}, pinchDist0=null, pinchR0=null, tDragStart=null;
 let lastTap=0, lastTapIdx=-1;
-canvas.addEventListener('touchstart',e=>{
+canvas.addEventListener('touchstart', e => {
   e.preventDefault(); touched();
   Array.from(e.changedTouches).forEach(t=>touches[t.identifier]=t);
   const tArr=Object.values(touches);
-  if(tArr.length===2){pinchDist0=Math.hypot(tArr[0].clientX-tArr[1].clientX,tArr[0].clientY-tArr[1].clientY);pinchR0=sph.r;}
-  else if(tArr.length===1)tDragStart={x:tArr[0].clientX,y:tArr[0].clientY};
+  if(tArr.length===2) {
+    pinchDist0=Math.hypot(tArr[0].clientX-tArr[1].clientX,tArr[0].clientY-tArr[1].clientY);
+    pinchR0=sph.r;
+  } else if(tArr.length===1) tDragStart={x:tArr[0].clientX,y:tArr[0].clientY};
 },{passive:false});
-canvas.addEventListener('touchmove',e=>{
+canvas.addEventListener('touchmove', e => {
   e.preventDefault();
   Array.from(e.changedTouches).forEach(t=>touches[t.identifier]=t);
   const tArr=Object.values(touches);
-  if(tArr.length===2&&pinchDist0!==null){
+  if(tArr.length===2 && pinchDist0!==null) {
     const d=Math.hypot(tArr[0].clientX-tArr[1].clientX,tArr[0].clientY-tArr[1].clientY);
     sph.r=Math.max(4,Math.min(20,pinchR0*(pinchDist0/d)));
-    const cx=(tArr[0].clientX+tArr[1].clientX)/2,cy=(tArr[0].clientY+tArr[1].clientY)/2;
-    if(tDragStart){sph.theta-=(cx-tDragStart.x)*0.005;sph.phi=Math.max(0.2,Math.min(Math.PI-0.2,sph.phi+(cy-tDragStart.y)*0.005));}
-    tDragStart={x:cx,y:cy};updateCamera();
-  }else if(tArr.length===1&&tDragStart){
+    const cx=(tArr[0].clientX+tArr[1].clientX)/2, cy=(tArr[0].clientY+tArr[1].clientY)/2;
+    if(tDragStart){ sph.theta-=(cx-tDragStart.x)*0.005; sph.phi=Math.max(0.2,Math.min(Math.PI-0.2,sph.phi+(cy-tDragStart.y)*0.005)); }
+    tDragStart={x:cx,y:cy}; updateCamera();
+  } else if(tArr.length===1 && tDragStart) {
     const t=tArr[0];
     sph.theta-=(t.clientX-tDragStart.x)*0.006;
     sph.phi=Math.max(0.2,Math.min(Math.PI-0.2,sph.phi+(t.clientY-tDragStart.y)*0.006));
-    tDragStart={x:t.clientX,y:t.clientY};updateCamera();
+    tDragStart={x:t.clientX,y:t.clientY}; updateCamera();
   }
 },{passive:false});
-canvas.addEventListener('touchend',e=>{
+canvas.addEventListener('touchend', e => {
   e.preventDefault();
   const ended=Array.from(e.changedTouches);
   const tArr=Object.values(touches);
-  if(tArr.length===1){
+  if(tArr.length===1) {
     const t=tArr[0];
     const hit=getHit(t.clientX,t.clientY);
-    if(hit&&!hit.userData.taken&&!gameOver&&!thinking){
-      const i=hit.userData.index,now=Date.now();
-      if((now-lastTap<420)&&lastTapIdx===i){showRing(t.clientX,t.clientY,'#00ffff');playerTurn(i);lastTap=0;lastTapIdx=-1;}
-      else{lastTap=now;lastTapIdx=i;hit.material.emissive?.setHex(0x221144);}
+    if(hit && !hit.userData.taken && !gameOver && !thinking) {
+      const i=hit.userData.index, now=Date.now();
+      if((now-lastTap<420) && lastTapIdx===i) {
+        showRing(t.clientX,t.clientY,'#00ffff'); playerTurn(i); lastTap=0; lastTapIdx=-1;
+      } else { lastTap=now; lastTapIdx=i; hit.material.emissive?.setHex(0x221144); }
     }
   }
   ended.forEach(t=>delete touches[t.identifier]);
-  if(Object.keys(touches).length<2)pinchDist0=null;
+  if(Object.keys(touches).length<2) pinchDist0=null;
 },{passive:false});
 
-// ─── UI ───────────────────────────────────────────────────────────────────────
-function setStatus(html){document.getElementById('status').innerHTML=html;}
+// ═══════════════════════════════════════════════════════════════════
+// UI HELPERS
+// ═══════════════════════════════════════════════════════════════════
+function setStatus(html){ document.getElementById('status').innerHTML=html; }
 
-// ─── RENDER LOOP ──────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+// RENDER LOOP
+// ═══════════════════════════════════════════════════════════════════
 let t=0;
-function animate(){
+function animate() {
   requestAnimationFrame(animate);
-  t+=0.013;
+  t += 0.013;
 
-  popQueue=popQueue.filter(p=>{
-    p.t+=0.07;
-    const s=p.t<0.5?p.t*2:1+Math.sin((p.t-0.5)*Math.PI)*0.2*(1-Math.min(p.t,1));
-    p.mesh.scale.setScalar(Math.max(0.01,Math.min(1.2,s)));
-    return p.t<1.5;
+  // Pop-in animation
+  popQueue = popQueue.filter(p => {
+    p.t += 0.07;
+    const s = p.t < 0.5 ? p.t*2 : 1+Math.sin((p.t-0.5)*Math.PI)*0.2*(1-Math.min(p.t,1));
+    p.mesh.scale.setScalar(Math.max(0.01, Math.min(1.2, s)));
+    return p.t < 1.5;
   });
 
-  if(ptW.intensity>0){
-    ptW.intensity=4+Math.sin(t*4)*2;
-  }
-  if(thinking) ptAI.intensity=2+Math.sin(t*8)*1.5;
+  if(ptW.intensity > 0) ptW.intensity = 4+Math.sin(t*4)*2;
+  if(thinking) ptAI.intensity = 2+Math.sin(t*8)*1.5;
 
-  // Auto-rotate only after 7s idle
-  if(!isDragging&&!gameOver&&!thinking&&(Date.now()-lastInteract>7000)){
-    sph.theta+=0.0025; updateCamera();
+  // Auto-rotate after 7s idle
+  if(!isDragging && !gameOver && !thinking && (Date.now()-lastInteract>7000)) {
+    sph.theta += 0.0025; updateCamera();
   }
 
-  renderer.render(scene,camera);
+  renderer.render(scene, camera);
 }
 
-window.addEventListener('resize',()=>{
-  camera.aspect=window.innerWidth/window.innerHeight;
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth/window.innerHeight;
   camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth,window.innerHeight);
+  renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
 buildGrid();
