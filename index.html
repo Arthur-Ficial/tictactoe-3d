@@ -138,19 +138,10 @@
     filter:blur(6px);
   }
 
-  #ring{
-    position:fixed;pointer-events:none;
-    width:68px;height:68px;border-radius:50%;
-    border:3px solid #fff;
-    transform:translate(-50%,-50%) scale(0);
-    opacity:0;transition:transform 0.12s,opacity 0.3s;
-  }
-  #ring.show{transform:translate(-50%,-50%) scale(1);opacity:1;}
 </style>
 </head>
 <body>
 <canvas id="canvas"></canvas>
-<div id="ring"></div>
 
 <div id="ui">
   <div id="score-bar">
@@ -367,6 +358,16 @@ let cellMeshes = [];         // Array(27), null for CENTER
 let lineTubes = [];          // scored line visuals
 let partialTubes = [];       // partial-line threat visuals (rebuilt each turn)
 let popQueue = [];
+let shockQueue = [];
+
+function spawnShockwave(worldPos, color) {
+  const geo = new THREE.TorusGeometry(0.8, 0.08, 8, 32);
+  const mat = new THREE.MeshBasicMaterial({ color, transparent:true, opacity:0.9 });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.copy(worldPos);
+  pivot.add(mesh);
+  shockQueue.push({ mesh, mat, geo, t:0 });
+}
 const sharedGeo = new THREE.BoxGeometry(CS,CS,CS);
 const sharedEdgeGeo = new THREE.EdgesGeometry(sharedGeo);
 
@@ -528,6 +529,7 @@ function placeMarker(i, who) {
   mesh.add(sym);
   mesh.scale.setScalar(0.01);
   popQueue.push({mesh, t:0});
+  spawnShockwave(mesh.position.clone(), who === PLAYER ? 0x00ffff : 0xff6600);
 
   // Score new lines
   const scored = newLinesAt(board, i, who);
@@ -615,6 +617,8 @@ function newGame() {
   ptW.intensity = 0;
   ptAI.intensity = 0;
   popQueue = [];
+  shockQueue.forEach(s => { pivot.remove(s.mesh); s.geo.dispose(); s.mat.dispose(); });
+  shockQueue = [];
   hoveredMesh = null;
   lastClickTime = 0; lastClickIdx = -1;
   lastTap = 0; lastTapIdx = -1; kbHoverIdx = -1;
@@ -667,8 +671,6 @@ const mouse = new THREE.Vector2();
 let hoveredMesh = null, isDragging = false, mouseDown = false, dragStart = {x:0,y:0};
 let lastClickTime = 0, lastClickIdx = -1;
 let lastInteract = 0;
-const ring = document.getElementById('ring');
-
 function touched() {
   lastInteract = Date.now();
   if(!gameOver) showButton(false);
@@ -682,13 +684,6 @@ function getHit(cx, cy) {
   return hits.length ? hits[0].object : null;
 }
 
-function showRing(x,y,col) {
-  ring.style.left=x+'px'; ring.style.top=y+'px';
-  ring.style.borderColor=col; ring.style.boxShadow=`0 0 20px ${col}`;
-  ring.classList.add('show');
-  setTimeout(()=>ring.classList.remove('show'), 400);
-}
-
 function tryPlace(cx, cy) {
   if(introActive) return;
   const hit = getHit(cx, cy);
@@ -696,7 +691,6 @@ function tryPlace(cx, cy) {
   const i = hit.userData.index;
   const now = Date.now();
   if((now - lastClickTime < 420) && (lastClickIdx === i)) {
-    showRing(cx, cy, '#00ffff');
     playerTurn(i);
     lastClickTime = 0; lastClickIdx = -1;
   } else {
@@ -850,7 +844,7 @@ canvas.addEventListener('touchend', e => {
       if(hit && !hit.userData.taken && !gameOver && !thinking) {
         const i=hit.userData.index, now=Date.now();
         if((now-lastTap<420) && lastTapIdx===i) {
-          showRing(endedTouch.clientX,endedTouch.clientY,'#00ffff'); playerTurn(i); lastTap=0; lastTapIdx=-1;
+          playerTurn(i); lastTap=0; lastTapIdx=-1;
         } else { lastTap=now; lastTapIdx=i; hit.material.emissive?.setHex(0x221144); }
       }
     }
@@ -1167,6 +1161,20 @@ function animate() {
     const s = p.t < 0.5 ? p.t*2 : 1+Math.sin((p.t-0.5)*Math.PI)*0.2*(1-Math.min(p.t,1));
     p.mesh.scale.setScalar(Math.max(0.01, Math.min(1.2, s)));
     return p.t < 1.5;
+  });
+
+  // 3D shockwave animation
+  shockQueue = shockQueue.filter(s => {
+    s.t += 0.04;
+    s.mesh.scale.setScalar(0.3 + s.t * 2.5);
+    s.mat.opacity = Math.max(0, 0.9 - s.t * 1.8);
+    if (s.t >= 0.5) {
+      pivot.remove(s.mesh);
+      s.geo.dispose();
+      s.mat.dispose();
+      return false;
+    }
+    return true;
   });
 
   // Intro animation — blends seamlessly into idle auto-rotate
