@@ -82,20 +82,42 @@
   #hint{
     pointer-events:none;
     width:100%;text-align:center;
-    transition:font-size 0.5s ease, color 0.5s ease, opacity 0.5s ease,
-               text-shadow 0.5s ease, letter-spacing 0.5s ease;
+    text-transform:uppercase;
+    font-weight:300;
+    transition:font-size 0.8s cubic-bezier(0.25,0.8,0.25,1),
+               color 0.8s cubic-bezier(0.25,0.8,0.25,1),
+               opacity 0.6s cubic-bezier(0.25,0.8,0.25,1),
+               text-shadow 0.8s cubic-bezier(0.25,0.8,0.25,1),
+               letter-spacing 0.8s cubic-bezier(0.25,0.8,0.25,1),
+               transform 0.8s cubic-bezier(0.25,0.8,0.25,1),
+               filter 0.6s cubic-bezier(0.25,0.8,0.25,1);
   }
   #hint.hint-big{
-    color:#fff;font-size:1rem;letter-spacing:2px;
-    text-shadow:0 0 12px rgba(255,255,255,0.5);opacity:1;
+    color:rgba(255,255,255,0.85);
+    font-size:0.72rem;
+    letter-spacing:0.28em;
+    text-shadow:0 0 20px rgba(255,255,255,0.15);
+    opacity:1;
+    transform:translateY(0);
+    filter:blur(0);
   }
   #hint.hint-small{
-    color:#2a2a2a;font-size:0.62rem;letter-spacing:1px;
-    text-shadow:none;opacity:1;
+    color:rgba(255,255,255,0.18);
+    font-size:0.58rem;
+    letter-spacing:0.18em;
+    text-shadow:none;
+    opacity:1;
+    transform:translateY(0);
+    filter:blur(0);
   }
   #hint.hint-hidden{
-    color:#2a2a2a;font-size:0.62rem;letter-spacing:1px;
-    text-shadow:none;opacity:0;
+    color:rgba(255,255,255,0.18);
+    font-size:0.58rem;
+    letter-spacing:0.18em;
+    text-shadow:none;
+    opacity:0;
+    transform:translateY(4px);
+    filter:blur(4px);
   }
 
   #ring{
@@ -128,7 +150,7 @@
 
 <div id="bottom">
   <button onclick="newGame()">NEW GAME</button>
-  <div id="hint">swipe to spin  |  double-tap to place  |  pinch to zoom</div>
+  <div id="hint">swipe to spin &nbsp;&middot;&nbsp; double-tap to place &nbsp;&middot;&nbsp; pinch to zoom</div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
