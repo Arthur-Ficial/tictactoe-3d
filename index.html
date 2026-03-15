@@ -974,7 +974,7 @@ function lpStart(x, y) {
   lpInterval = setInterval(() => {
     if (!lpActive) { clearInterval(lpInterval); lpInterval = null; return; }
     const elapsed = Date.now() - lpStartTime;
-    if (elapsed >= 3000 && lpStage < 2) lpApplyStage(2);
+    if (elapsed >= 2100 && lpStage < 2) lpApplyStage(2);
     else if (elapsed >= 700 && lpStage < 1) lpApplyStage(1);
   }, 50);
 }
