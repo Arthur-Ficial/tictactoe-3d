@@ -140,91 +140,90 @@ let cellMeshes = [], popQueue = [];
 const pivot = new THREE.Group(); scene.add(pivot);
 
 // ─── AI ──────────────────────────────────────────────────────────────────────
-function linesCompletedBy(b, moveIdx, who) {
-  // How many lines does 'who' complete by placing at moveIdx?
-  let count = 0, newLines = [];
-  b[moveIdx] = who;
+
+// Count lines scored by 'who' on board b
+function countLines(b, who) {
+  return WINS.filter(line => line.every(i => b[i] === who)).length;
+}
+
+// Count lines scored if we place at idx
+function linesGainedAt(b, idx, who) {
+  b[idx] = who;
+  const n = WINS.filter(line => line.includes(idx) && line.every(i => b[i] === who)).length;
+  b[idx] = null;
+  return n;
+}
+
+// How many lines does 'who' have with exactly 2 pieces and 1 empty (threats)?
+function threats(b, who) {
+  return WINS.filter(line => {
+    const mine = line.filter(i => b[i] === who).length;
+    const empty = line.filter(i => !b[i]).length;
+    return mine === 2 && empty === 1;
+  }).length;
+}
+
+// Static eval from AI_P perspective: final score diff + positional value
+function evaluate(b) {
+  const aiLines  = countLines(b, AI_P);
+  const plLines  = countLines(b, PLAYER);
+
+  let pos = 0;
   for(const line of WINS) {
-    if(line.includes(moveIdx) && line.every(i=>b[i]===who)) {
-      count++; newLines.push(line);
+    const ai = line.filter(i => b[i] === AI_P).length;
+    const pl = line.filter(i => b[i] === PLAYER).length;
+    if(pl === 0) {
+      if(ai === 2) pos += 8;
+      else if(ai === 1) pos += 1;
+    }
+    if(ai === 0) {
+      if(pl === 2) pos -= 12;  // blocking is more valuable than building
+      else if(pl === 1) pos -= 1;
     }
   }
-  b[moveIdx] = null;
-  return {count, newLines};
+
+  // Reward having more threats (fork potential)
+  pos += threats(b, AI_P) * 6;
+  pos -= threats(b, PLAYER) * 8;
+
+  return (aiLines - plLines) * 100 + pos;
 }
 
-function potentialLines(b, who) {
-  // Lines still open to 'who' (no opponent pieces)
-  const opp = who===PLAYER?AI_P:PLAYER;
-  return WINS.filter(line=>!line.some(i=>b[i]===opp));
-}
-
-function evalPosition(b, who) {
-  const opp = who===PLAYER?AI_P:PLAYER;
-  let score = 0;
-  for(const line of WINS) {
-    const mine = line.filter(i=>b[i]===who).length;
-    const theirs= line.filter(i=>b[i]===opp).length;
-    if(theirs>0) continue; // line dead for me
-    if(mine===3) score+=1000;
-    else if(mine===2) score+=30;
-    else if(mine===1) score+=5;
-  }
-  for(const line of WINS) {
-    const mine = line.filter(i=>b[i]===who).length;
-    const theirs= line.filter(i=>b[i]===opp).length;
-    if(mine>0) continue; // line dead for opponent
-    if(theirs===3) score-=1000;
-    else if(theirs===2) score-=60;  // heavily penalise letting opponent get 2-in-a-row
-    else if(theirs===1) score-=5;
-  }
-  return score;
-}
-
+// 2-ply lookahead: AI picks, then simulates best player response
 function aiMove(b) {
-  const empties = b.map((v,i)=>v||i===13?-1:i).filter(i=>i>=0);
-  if(!empties.length) return -1;
+  const opp = PLAYER;
+  const empties = () => b.map((v,i) => (!v && i!==13) ? i : -1).filter(i => i>=0);
+  const avail = empties();
+  if(!avail.length) return -1;
 
-  // Score every move
-  const scored = empties.map(i=>{
-    b[i] = AI_P;
-    const immediate = linesCompletedBy(b, i, AI_P).count; // already placed
-    // Actually recalc properly
-    b[i] = null;
-    const {count:myLines} = linesCompletedBy(b, i, AI_P);
+  let bestScore = -Infinity, bestMove = avail[0];
 
-    // How many opponent lines does placing here block?
-    let blocked = 0;
+  for(const i of avail) {
     b[i] = AI_P;
-    for(const line of WINS) {
-      if(!line.includes(i)) continue;
-      const oppInLine = line.filter(j=>b[j]===PLAYER).length;
-      const emptyInLine = line.filter(j=>!b[j]).length;
-      if(oppInLine===2 && emptyInLine===0) blocked++; // we just blocked a 2-in-a-row
+    const immediateGain = WINS.filter(line => line.includes(i) && line.every(j => b[j] === AI_P)).length;
+
+    // Simulate player's best response (1-ply)
+    let playerBestResponse = Infinity;
+    const avail2 = empties();
+    if(avail2.length === 0) {
+      playerBestResponse = evaluate(b);
+    } else {
+      for(const j of avail2) {
+        b[j] = PLAYER;
+        const s = evaluate(b);
+        b[j] = null;
+        if(s < playerBestResponse) playerBestResponse = s;
+      }
     }
-    const posScore = evalPosition(b, AI_P);
+
+    // Immediate lines scored this move are guaranteed — weight them heavily
+    const score = immediateGain * 150 + playerBestResponse;
     b[i] = null;
 
-    // Fork: after this move, how many cells give us 2+ lines next turn?
-    b[i] = AI_P;
-    let forkPotential = 0;
-    for(const j of empties) {
-      if(j===i) continue;
-      const {count} = linesCompletedBy(b, j, AI_P);
-      if(count>=2) forkPotential+=20;
-      else if(count===1) forkPotential+=5;
-    }
-    b[i] = null;
+    if(score > bestScore) { bestScore = score; bestMove = i; }
+  }
 
-    const total = myLines*200 + blocked*80 + forkPotential + posScore;
-    return {i, total};
-  });
-
-  scored.sort((a,b)=>b.total-a.total);
-  // Take best, but add tiny randomness among top equal moves
-  const best = scored[0].total;
-  const top = scored.filter(s=>s.total>=best-10);
-  return top[Math.floor(Math.random()*Math.min(3,top.length))].i;
+  return bestMove;
 }
 
 // ─── MATERIALS ───────────────────────────────────────────────────────────────
