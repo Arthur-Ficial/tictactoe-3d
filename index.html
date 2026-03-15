@@ -164,11 +164,10 @@ function aiMove(b) {
   const block = findWinMove(b, PLAYER);
   if(block!==-1) return block;
 
-  // 3. Take center
-  if(!b[13]) return 13;
+  // 3. (center removed from board)
 
   // 4. Score all moves
-  const empties = b.map((v,i)=>v?-1:i).filter(i=>i>=0);
+  const empties = b.map((v,i)=>v?-1:i).filter(i=>i>=0&&i!==13);
   let best=-Infinity, bestMove=empties[0];
   for(const i of empties) {
     b[i]=AI;
@@ -222,6 +221,7 @@ function buildBoard() {
   const eGeo=new THREE.EdgesGeometry(geo);
   for(let z=0;z<3;z++) for(let y=0;y<3;y++) for(let x=0;x<3;x++){
     const i=z*9+y*3+x;
+    if(i===13){ cellMeshes.push(null); continue; } // no center cube
     const mesh=new THREE.Mesh(geo,matEmpty());
     mesh.position.set((x-1)*SP,(y-1)*SP,(z-1)*SP);
     mesh.castShadow=true;
@@ -250,6 +250,7 @@ function makeO(){
 function placeMarker(i, who) {
   board[i]=who;
   const mesh=cellMeshes[i];
+  if(!mesh) return;
   mesh.material = who===PLAYER ? matX() : matO();
   mesh.userData.taken=true;
   const sym=who===PLAYER?makeX():makeO();
@@ -270,7 +271,7 @@ function checkWin(b) {
 function endCheck() {
   const w=checkWin(board);
   if(w){
-    w.line.forEach(j=>{ cellMeshes[j].material=matWin(); winMeshes.push(cellMeshes[j]); });
+    w.line.forEach(j=>{ if(cellMeshes[j]){ cellMeshes[j].material=matWin(); winMeshes.push(cellMeshes[j]); } });
     scores[w.player]++;
     updateScore();
     ptW.intensity=6; ptAI.intensity=0;
@@ -334,7 +335,7 @@ function getHit(cx,cy){
   mouse.x=(cx/window.innerWidth)*2-1;
   mouse.y=-(cy/window.innerHeight)*2+1;
   raycaster.setFromCamera(mouse,camera);
-  const hits=raycaster.intersectObjects(cellMeshes);
+  const hits=raycaster.intersectObjects(cellMeshes.filter(Boolean));
   return hits.length?hits[0].object:null;
 }
 
@@ -447,6 +448,7 @@ function newGame(){
   popQueue=[]; hoveredMesh=null;
   lastClickTime=0; lastClickIdx=-1; lastTap=0; lastTapIdx=-1;
   buildBoard();
+  board[13]='_'; // center blocked
   setStatus(`<span class="x-col">YOUR TURN</span>`);
 }
 
