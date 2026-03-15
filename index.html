@@ -5,581 +5,482 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>3D Tic-Tac-Toe</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: #000; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
-  #canvas { display: block; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#000; overflow:hidden; font-family:'Segoe UI',sans-serif; }
+  canvas { display:block; }
 
   #ui {
-    position: fixed; top: 0; left: 0; right: 0;
-    display: flex; flex-direction: column; align-items: center;
-    pointer-events: none; padding-top: 18px;
-  }
-  h1 {
-    font-size: 1.8rem; letter-spacing: 6px; font-weight: 700;
-    color: #fff;
-    text-shadow: 0 0 20px #a855f7, 0 0 40px #a855f7;
-    margin-bottom: 8px;
+    position:fixed; top:0; left:0; right:0;
+    display:flex; flex-direction:column; align-items:center;
+    pointer-events:none; padding-top:14px; gap:6px;
   }
   #status {
-    font-size: 1.15rem; letter-spacing: 2px;
-    min-height: 1.6rem; text-align: center;
-    font-weight: 600;
-    text-shadow: 0 0 10px currentColor;
+    font-size:1.6rem; font-weight:900; letter-spacing:3px;
+    color:#fff; text-shadow: 0 0 30px #fff, 0 0 60px currentColor;
+    min-height:2rem; text-align:center;
+    -webkit-text-stroke: 1px rgba(255,255,255,0.3);
   }
-  .x-col { color: #00ffff; text-shadow: 0 0 15px #00ffff; }
-  .o-col { color: #ff6600; text-shadow: 0 0 15px #ff6600; }
-  .w-col { color: #ff00ff; text-shadow: 0 0 20px #ff00ff; font-size: 1.4rem; }
+  .x-col  { color:#00ffff; text-shadow:0 0 20px #00ffff,0 0 50px #00ffff; }
+  .o-col  { color:#ff6600; text-shadow:0 0 20px #ff6600,0 0 50px #ff6600; }
+  .w-col  { color:#ff00ff; text-shadow:0 0 30px #ff00ff,0 0 70px #ff00ff; }
+  .ai-col { color:#ffff00; text-shadow:0 0 20px #ffff00,0 0 50px #ffff00; }
 
   #bottom {
-    position: fixed; bottom: 20px; left: 0; right: 0;
-    display: flex; flex-direction: column; align-items: center; gap: 10px;
-    pointer-events: none;
+    position:fixed; bottom:16px; left:0; right:0;
+    display:flex; flex-direction:column; align-items:center; gap:8px;
+    pointer-events:none;
   }
   #score {
-    color: #888; font-size: 0.85rem; letter-spacing: 2px;
+    font-size:1rem; font-weight:700; letter-spacing:3px;
+    color:#fff; text-shadow:0 0 10px #fff;
   }
-  #score span { color: #fff; font-weight: bold; }
+  .s-x { color:#00ffff; } .s-o { color:#ff6600; } .s-d { color:#888; }
   button {
-    pointer-events: all;
-    padding: 0.6rem 2.2rem;
-    border: 2px solid #a855f7;
-    background: rgba(168,85,247,0.2);
-    color: #fff; border-radius: 8px;
-    font-size: 0.9rem; letter-spacing: 2px;
-    font-weight: 700; cursor: pointer;
-    text-shadow: 0 0 8px #a855f7;
-    box-shadow: 0 0 15px rgba(168,85,247,0.5);
-    transition: all 0.2s;
+    pointer-events:all;
+    padding:0.6rem 2.4rem;
+    border:2px solid #fff;
+    background:rgba(255,255,255,0.1);
+    color:#fff; border-radius:6px;
+    font-size:1rem; font-weight:900;
+    letter-spacing:3px; cursor:pointer;
+    text-shadow:0 0 10px #fff;
+    box-shadow:0 0 20px rgba(255,255,255,0.3);
+    transition:all 0.15s;
   }
-  button:hover {
-    background: rgba(168,85,247,0.4);
-    box-shadow: 0 0 30px rgba(168,85,247,0.8);
-  }
-  .hint {
-    color: #555; font-size: 0.7rem; letter-spacing: 1px;
-  }
+  button:hover { background:rgba(255,255,255,0.25); box-shadow:0 0 40px rgba(255,255,255,0.6); }
 
-  /* Double-click ring indicator */
-  #dbl-ring {
-    position: fixed; pointer-events: none;
-    width: 60px; height: 60px; border-radius: 50%;
-    border: 3px solid #fff;
-    transform: translate(-50%, -50%) scale(0);
-    transition: transform 0.15s ease-out, opacity 0.3s;
-    opacity: 0;
+  #ring {
+    position:fixed; pointer-events:none;
+    width:70px; height:70px; border-radius:50%;
+    border:3px solid #fff;
+    transform:translate(-50%,-50%) scale(0);
+    opacity:0; transition:transform 0.12s, opacity 0.3s;
   }
-  #dbl-ring.show {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 1;
+  #ring.show { transform:translate(-50%,-50%) scale(1); opacity:1; }
+
+  #hint {
+    position:fixed; bottom:80px; left:0; right:0;
+    text-align:center; color:#333;
+    font-size:0.65rem; letter-spacing:1px; pointer-events:none;
   }
 </style>
 </head>
 <body>
 <canvas id="canvas"></canvas>
-<div id="dbl-ring"></div>
+<div id="ring"></div>
 
 <div id="ui">
-  <h1>3D TIC-TAC-TOE</h1>
   <div id="status"></div>
 </div>
 
 <div id="bottom">
-  <button onclick="newGame()">⟳ NEW GAME</button>
-  <div id="score">X: <span id="sX">0</span> &nbsp;|&nbsp; O: <span id="sO">0</span> &nbsp;|&nbsp; Draw: <span id="sD">0</span></div>
-  <div class="hint">Drag to rotate · Double-tap to place · Pinch/scroll to zoom</div>
+  <div id="score">
+    <span class="s-x">YOU <span id="sX">0</span></span>
+    &nbsp;·&nbsp;
+    <span class="s-d">DRAW <span id="sD">0</span></span>
+    &nbsp;·&nbsp;
+    <span class="s-o">CPU <span id="sO">0</span></span>
+  </div>
+  <button onclick="newGame()">NEW GAME</button>
 </div>
+<div id="hint">drag · double-tap to place · pinch to zoom</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-// ── Renderer ─────────────────────────────────────────────────────────────────
+// ─── Renderer ────────────────────────────────────────────────────────────────
 const canvas = document.getElementById('canvas');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+const renderer = new THREE.WebGLRenderer({ canvas, antialias:true });
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-renderer.setClearColor(0x000000, 1);
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setClearColor(0x000000);
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 200);
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 200);
 
-// ── Lighting — very bright, high contrast ────────────────────────────────────
-const ambient = new THREE.AmbientLight(0xffffff, 0.3);
-scene.add(ambient);
+// ─── Lights ──────────────────────────────────────────────────────────────────
+scene.add(new THREE.AmbientLight(0xffffff, 0.25));
+const sun = new THREE.DirectionalLight(0xffffff, 2.5);
+sun.position.set(10,15,10); sun.castShadow=true; scene.add(sun);
+const ptX = new THREE.PointLight(0x00ffff, 5, 35); ptX.position.set(-8,4,6); scene.add(ptX);
+const ptO = new THREE.PointLight(0xff6600, 5, 35); ptO.position.set( 8,4,6); scene.add(ptO);
+const ptW = new THREE.PointLight(0xff00ff, 0, 30); ptW.position.set( 0,8,0); scene.add(ptW);
+const ptAI= new THREE.PointLight(0xffff00, 0, 20); ptAI.position.set(0,-4,8); scene.add(ptAI);
 
-const sun = new THREE.DirectionalLight(0xffffff, 2.0);
-sun.position.set(10, 15, 10);
-sun.castShadow = true;
-scene.add(sun);
-
-const ptX = new THREE.PointLight(0x00ffff, 4, 30);
-ptX.position.set(-8, 4, 6);
-scene.add(ptX);
-
-const ptO = new THREE.PointLight(0xff6600, 4, 30);
-ptO.position.set(8, 4, 6);
-scene.add(ptO);
-
-const ptPurple = new THREE.PointLight(0xff00ff, 0, 25);
-ptPurple.position.set(0, 8, 0);
-scene.add(ptPurple);
-
-// ── Game State ────────────────────────────────────────────────────────────────
-let board = Array(27).fill(null);
-let currentPlayer = 'X';
-let gameOver = false;
+// ─── Game State ───────────────────────────────────────────────────────────────
+const PLAYER='X', AI='O';
+let board, currentPlayer, gameOver, thinking;
 let scores = { X:0, O:0, draw:0 };
-let cellMeshes = [];
-let winMeshes = [];
-let popQueue = [];
-const pivot = new THREE.Group();
-scene.add(pivot);
+let cellMeshes=[], winMeshes=[], popQueue=[];
 
+const pivot = new THREE.Group(); scene.add(pivot);
+
+// All 49 winning lines in 3x3x3
 const WINS = (() => {
-  const lines = [], idx = (x,y,z) => z*9+y*3+x;
+  const lines=[], idx=(x,y,z)=>z*9+y*3+x;
   for(let a=0;a<3;a++) for(let b=0;b<3;b++) {
     lines.push([idx(0,a,b),idx(1,a,b),idx(2,a,b)]);
     lines.push([idx(a,0,b),idx(a,1,b),idx(a,2,b)]);
     lines.push([idx(a,b,0),idx(a,b,1),idx(a,b,2)]);
   }
-  for(let z=0;z<3;z++) {
-    lines.push([idx(0,0,z),idx(1,1,z),idx(2,2,z)]);
-    lines.push([idx(2,0,z),idx(1,1,z),idx(0,2,z)]);
-  }
-  for(let x=0;x<3;x++) {
-    lines.push([idx(x,0,0),idx(x,1,1),idx(x,2,2)]);
-    lines.push([idx(x,2,0),idx(x,1,1),idx(x,0,2)]);
-  }
-  for(let y=0;y<3;y++) {
-    lines.push([idx(0,y,0),idx(1,y,1),idx(2,y,2)]);
-    lines.push([idx(2,y,0),idx(1,y,1),idx(0,y,2)]);
-  }
-  lines.push([idx(0,0,0),idx(1,1,1),idx(2,2,2)]);
-  lines.push([idx(2,0,0),idx(1,1,1),idx(0,2,2)]);
-  lines.push([idx(0,2,0),idx(1,1,1),idx(2,0,2)]);
-  lines.push([idx(2,2,0),idx(1,1,1),idx(0,0,2)]);
+  for(let z=0;z<3;z++){lines.push([idx(0,0,z),idx(1,1,z),idx(2,2,z)]);lines.push([idx(2,0,z),idx(1,1,z),idx(0,2,z)]);}
+  for(let x=0;x<3;x++){lines.push([idx(x,0,0),idx(x,1,1),idx(x,2,2)]);lines.push([idx(x,2,0),idx(x,1,1),idx(x,0,2)]);}
+  for(let y=0;y<3;y++){lines.push([idx(0,y,0),idx(1,y,1),idx(2,y,2)]);lines.push([idx(2,y,0),idx(1,y,1),idx(0,y,2)]);}
+  lines.push([idx(0,0,0),idx(1,1,1),idx(2,2,2)],[idx(2,0,0),idx(1,1,1),idx(0,2,2)],[idx(0,2,0),idx(1,1,1),idx(2,0,2)],[idx(2,2,0),idx(1,1,1),idx(0,0,2)]);
   return lines;
 })();
 
-// ── Materials (high contrast) ─────────────────────────────────────────────────
-function emptyMat() {
-  return new THREE.MeshPhongMaterial({
-    color: 0x111133, transparent: true, opacity: 0.6,
-    shininess: 60, specular: 0x334466,
-    emissive: 0x000011
-  });
-}
-function hoverMat() {
-  return new THREE.MeshPhongMaterial({
-    color: 0x332255, transparent: true, opacity: 0.9,
-    shininess: 120, specular: 0x9966ff,
-    emissive: 0x221144
-  });
-}
-function xMat() {
-  return new THREE.MeshPhongMaterial({
-    color: 0x00ffff, emissive: 0x006666,
-    shininess: 200, specular: 0xffffff
-  });
-}
-function oMat() {
-  return new THREE.MeshPhongMaterial({
-    color: 0xff6600, emissive: 0x883300,
-    shininess: 200, specular: 0xffaa66
-  });
-}
-function winMat() {
-  return new THREE.MeshPhongMaterial({
-    color: 0xff00ff, emissive: 0x880088,
-    shininess: 250, specular: 0xffffff
-  });
+// ─── AI ──────────────────────────────────────────────────────────────────────
+function scoreBoard(b) {
+  let score = 0;
+  for(const line of WINS) {
+    const vals = line.map(i=>b[i]);
+    const aCount = vals.filter(v=>v===AI).length;
+    const pCount = vals.filter(v=>v===PLAYER).length;
+    if(aCount>0 && pCount===0) score += aCount===2?100:aCount===1?1:0;
+    if(pCount>0 && aCount===0) score -= pCount===2?120:pCount===1?1:0;
+  }
+  // Center bonus
+  if(b[13]===AI) score+=5;
+  return score;
 }
 
-const CELL_SIZE = 1.3;
-const SPACING = 2.0;
+function findWinMove(b, who) {
+  for(const line of WINS) {
+    const vals = line.map(i=>b[i]);
+    const whoCount = vals.filter(v=>v===who).length;
+    const empties = line.filter(i=>!b[i]);
+    if(whoCount===2 && empties.length===1) return empties[0];
+  }
+  return -1;
+}
+
+function aiMove(b) {
+  // 1. Win immediately
+  const win = findWinMove(b, AI);
+  if(win!==-1) return win;
+
+  // 2. Block player win
+  const block = findWinMove(b, PLAYER);
+  if(block!==-1) return block;
+
+  // 3. Take center
+  if(!b[13]) return 13;
+
+  // 4. Score all moves
+  const empties = b.map((v,i)=>v?-1:i).filter(i=>i>=0);
+  let best=-Infinity, bestMove=empties[0];
+  for(const i of empties) {
+    b[i]=AI;
+    // Look one step ahead for opponent wins to block
+    const oppWin = findWinMove(b, PLAYER);
+    let s = scoreBoard(b);
+    if(oppWin!==-1) s-=50; // penalise moves that let opponent win next
+    b[i]=null;
+    if(s>best){ best=s; bestMove=i; }
+  }
+  // Add small randomness so it's not robotic
+  const topMoves = empties.filter(i=>{
+    b[i]=AI; const s=scoreBoard(b); b[i]=null; return s>=best-5;
+  });
+  return topMoves[Math.floor(Math.random()*topMoves.length)];
+}
+
+// ─── Materials ────────────────────────────────────────────────────────────────
+const SP = 2.0, CS = 1.25;
+
+const matEmpty = ()=> new THREE.MeshPhongMaterial({color:0x0a0a22,transparent:true,opacity:0.55,shininess:50,specular:0x3344aa});
+const matHover = ()=> new THREE.MeshPhongMaterial({color:0x221144,transparent:true,opacity:0.9,shininess:120,specular:0xaa66ff,emissive:0x110033});
+const matX     = ()=> new THREE.MeshPhongMaterial({color:0x00ffff,emissive:0x007777,shininess:220,specular:0xffffff});
+const matO     = ()=> new THREE.MeshPhongMaterial({color:0xff6600,emissive:0xaa3300,shininess:220,specular:0xffcc88});
+const matWin   = ()=> new THREE.MeshPhongMaterial({color:0xff00ff,emissive:0xaa00aa,shininess:250,specular:0xffffff});
+const matThink = ()=> new THREE.MeshPhongMaterial({color:0xffff00,emissive:0x886600,shininess:200,specular:0xffff88,transparent:true,opacity:0.7});
 
 function buildGrid() {
-  // Bright grid lines
-  const lmat = new THREE.LineBasicMaterial({ color: 0x4444aa });
-  const offs = [-SPACING, 0, SPACING];
-
-  for(let z=0;z<3;z++) {
-    const zv = offs[z];
-    const hw = SPACING + CELL_SIZE/2;
-    // layer outline
-    const pts = [
-      new THREE.Vector3(-hw,-hw,zv), new THREE.Vector3( hw,-hw,zv),
-      new THREE.Vector3( hw, hw,zv), new THREE.Vector3(-hw, hw,zv),
-      new THREE.Vector3(-hw,-hw,zv)
-    ];
-    pivot.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), lmat));
-    // internal lines
-    for(let i=1;i<3;i++) {
-      const v = -hw + i * SPACING;
-      const h1 = [new THREE.Vector3(-hw,v,zv), new THREE.Vector3(hw,v,zv)];
-      const h2 = [new THREE.Vector3(v,-hw,zv), new THREE.Vector3(v,hw,zv)];
-      pivot.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(h1), lmat));
-      pivot.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(h2), lmat));
+  const lm = new THREE.LineBasicMaterial({color:0x2244aa,transparent:true,opacity:0.7});
+  const offs = [-SP,0,SP], hw = SP+CS/2;
+  for(let z=0;z<3;z++){
+    const zv=offs[z];
+    const box=[[-hw,-hw,zv],[hw,-hw,zv],[hw,hw,zv],[-hw,hw,zv],[-hw,-hw,zv]].map(p=>new THREE.Vector3(...p));
+    pivot.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(box),lm));
+    for(let i=1;i<3;i++){
+      const v=-hw+i*SP;
+      pivot.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-hw,v,zv),new THREE.Vector3(hw,v,zv)]),lm));
+      pivot.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(v,-hw,zv),new THREE.Vector3(v,hw,zv)]),lm));
     }
   }
-  // Vertical connectors
-  const vmat = new THREE.LineBasicMaterial({ color: 0x333377, transparent: true, opacity: 0.5 });
-  const hw = SPACING + CELL_SIZE/2;
-  const corners = [[-hw,-hw],[hw,-hw],[hw,hw],[-hw,hw]];
-  for(const [cx,cy] of corners) {
-    const pts = offs.map(zv => new THREE.Vector3(cx,cy,zv));
-    pivot.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), vmat));
+  const vm=new THREE.LineBasicMaterial({color:0x112266,transparent:true,opacity:0.4});
+  for(const [cx,cy] of [[-hw,-hw],[hw,-hw],[hw,hw],[-hw,hw]]){
+    pivot.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(offs.map(zv=>new THREE.Vector3(cx,cy,zv))),vm));
   }
 }
 
 function buildBoard() {
-  cellMeshes.forEach(m => pivot.remove(m));
-  cellMeshes = [];
-  winMeshes = [];
-  popQueue = [];
-
-  const geo = new THREE.BoxGeometry(CELL_SIZE, CELL_SIZE, CELL_SIZE);
-  const edgeGeo = new THREE.EdgesGeometry(geo);
-
-  for(let z=0;z<3;z++) for(let y=0;y<3;y++) for(let x=0;x<3;x++) {
-    const i = z*9 + y*3 + x;
-    const mesh = new THREE.Mesh(geo, emptyMat());
-    mesh.position.set(
-      (x-1)*SPACING,
-      (y-1)*SPACING,
-      (z-1)*SPACING
-    );
-    mesh.castShadow = true;
-    mesh.userData = { index:i };
-
-    // bright white edge highlight
-    const edges = new THREE.LineSegments(edgeGeo,
-      new THREE.LineBasicMaterial({ color: 0x6688ff }));
-    mesh.add(edges);
-
+  cellMeshes.forEach(m=>pivot.remove(m));
+  cellMeshes=[]; winMeshes=[]; popQueue=[];
+  const geo=new THREE.BoxGeometry(CS,CS,CS);
+  const eGeo=new THREE.EdgesGeometry(geo);
+  for(let z=0;z<3;z++) for(let y=0;y<3;y++) for(let x=0;x<3;x++){
+    const i=z*9+y*3+x;
+    const mesh=new THREE.Mesh(geo,matEmpty());
+    mesh.position.set((x-1)*SP,(y-1)*SP,(z-1)*SP);
+    mesh.castShadow=true;
+    mesh.userData={index:i};
+    mesh.add(new THREE.LineSegments(eGeo,new THREE.LineBasicMaterial({color:0x3355cc})));
     pivot.add(mesh);
     cellMeshes.push(mesh);
   }
 }
 
-function makeXMesh() {
-  const g = new THREE.Group();
-  const mat = new THREE.MeshPhongMaterial({ color:0x00ffff, emissive:0x004455, shininess:200 });
-  const bar = new THREE.CylinderGeometry(0.09, 0.09, 1.1, 10);
-  const b1 = new THREE.Mesh(bar, mat); b1.rotation.z = Math.PI/4; g.add(b1);
-  const b2 = new THREE.Mesh(bar, mat); b2.rotation.z = -Math.PI/4; g.add(b2);
-  // Glow sphere
-  const glow = new THREE.Mesh(
-    new THREE.SphereGeometry(0.55, 12, 12),
-    new THREE.MeshPhongMaterial({ color:0x00ffff, transparent:true, opacity:0.08, emissive:0x00ffff })
-  );
-  g.add(glow);
+function makeX(){
+  const g=new THREE.Group(), m=new THREE.MeshPhongMaterial({color:0x00ffff,emissive:0x004466,shininess:200});
+  const bar=new THREE.CylinderGeometry(0.1,0.1,1.1,10);
+  const b1=new THREE.Mesh(bar,m); b1.rotation.z=Math.PI/4; g.add(b1);
+  const b2=new THREE.Mesh(bar,m); b2.rotation.z=-Math.PI/4; g.add(b2);
+  g.add(new THREE.Mesh(new THREE.SphereGeometry(0.55,10,10),new THREE.MeshPhongMaterial({color:0x00ffff,transparent:true,opacity:0.07,emissive:0x00ffff})));
+  return g;
+}
+function makeO(){
+  const g=new THREE.Group(), m=new THREE.MeshPhongMaterial({color:0xff6600,emissive:0x993300,shininess:200});
+  const t=new THREE.Mesh(new THREE.TorusGeometry(0.42,0.11,14,36),m); t.rotation.x=Math.PI/2; g.add(t);
+  g.add(new THREE.Mesh(new THREE.SphereGeometry(0.55,10,10),new THREE.MeshPhongMaterial({color:0xff6600,transparent:true,opacity:0.07,emissive:0xff6600})));
   return g;
 }
 
-function makeOMesh() {
-  const g = new THREE.Group();
-  const mat = new THREE.MeshPhongMaterial({ color:0xff6600, emissive:0x883300, shininess:200 });
-  const tor = new THREE.TorusGeometry(0.4, 0.1, 14, 36);
-  const t = new THREE.Mesh(tor, mat); t.rotation.x = Math.PI/2; g.add(t);
-  const glow = new THREE.Mesh(
-    new THREE.SphereGeometry(0.55, 12, 12),
-    new THREE.MeshPhongMaterial({ color:0xff6600, transparent:true, opacity:0.08, emissive:0xff6600 })
-  );
-  g.add(glow);
-  return g;
-}
-
-function playCell(i) {
-  if(gameOver || board[i]) return;
-  board[i] = currentPlayer;
-  const mesh = cellMeshes[i];
-  mesh.material = currentPlayer === 'X' ? xMat() : oMat();
-  mesh.userData.taken = true;
-
-  const sym = currentPlayer === 'X' ? makeXMesh() : makeOMesh();
+function placeMarker(i, who) {
+  board[i]=who;
+  const mesh=cellMeshes[i];
+  mesh.material = who===PLAYER ? matX() : matO();
+  mesh.userData.taken=true;
+  const sym=who===PLAYER?makeX():makeO();
   sym.scale.setScalar(0.55);
   mesh.add(sym);
-
   mesh.scale.setScalar(0.01);
-  popQueue.push({ mesh, t:0 });
-
-  const winner = checkWin();
-  if(winner) {
-    winner.line.forEach(j => {
-      cellMeshes[j].material = winMat();
-      winMeshes.push(cellMeshes[j]);
-    });
-    scores[winner.player]++;
-    updateScore();
-    setStatus(`<span class="w-col">🎉 Player ${winner.player} wins!</span>`);
-    gameOver = true;
-    ptPurple.intensity = 5;
-  } else if(board.every(v=>v)) {
-    scores.draw++;
-    updateScore();
-    setStatus(`<span class="w-col">Draw!</span>`);
-    gameOver = true;
-  } else {
-    currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-    setStatus(`Player <span class="${currentPlayer==='X'?'x-col':'o-col'}">${currentPlayer}</span>'s turn — double-tap to place`);
-  }
+  popQueue.push({mesh,t:0});
 }
 
-function checkWin() {
-  for(const line of WINS) {
-    const [a,b,c] = line;
-    if(board[a] && board[a]===board[b] && board[a]===board[c])
-      return { player:board[a], line };
+function checkWin(b) {
+  for(const line of WINS){
+    const [a,bb,c]=line;
+    if(b[a]&&b[a]===b[bb]&&b[a]===b[c]) return {player:b[a],line};
   }
   return null;
 }
 
-// ── Camera / Orbit ────────────────────────────────────────────────────────────
-let sph = { theta: -0.4, phi: 1.05, r: 9.5 };
+function endCheck() {
+  const w=checkWin(board);
+  if(w){
+    w.line.forEach(j=>{ cellMeshes[j].material=matWin(); winMeshes.push(cellMeshes[j]); });
+    scores[w.player]++;
+    updateScore();
+    ptW.intensity=6; ptAI.intensity=0;
+    setStatus(w.player===PLAYER
+      ? `<span class="x-col">YOU WIN!</span>`
+      : `<span class="o-col">CPU WINS!</span>`);
+    gameOver=true;
+    return true;
+  }
+  if(board.every(v=>v)){
+    scores.draw++;
+    updateScore();
+    setStatus(`<span style="color:#fff">DRAW</span>`);
+    gameOver=true;
+    return true;
+  }
+  return false;
+}
 
-function updateCamera() {
-  camera.position.x = sph.r * Math.sin(sph.phi) * Math.sin(sph.theta);
-  camera.position.y = sph.r * Math.cos(sph.phi);
-  camera.position.z = sph.r * Math.sin(sph.phi) * Math.cos(sph.theta);
-  camera.lookAt(0, 0, 0);
+function playerTurn(i) {
+  if(gameOver||thinking||currentPlayer!==PLAYER||board[i]) return;
+  placeMarker(i, PLAYER);
+  if(endCheck()) return;
+  currentPlayer=AI;
+  thinking=true;
+  ptAI.intensity=3;
+  setStatus(`<span class="ai-col">CPU THINKING…</span>`);
+  setTimeout(()=>{
+    const move=aiMove([...board]);
+    if(move!==-1) placeMarker(move, AI);
+    ptAI.intensity=0;
+    thinking=false;
+    if(!endCheck()){
+      currentPlayer=PLAYER;
+      setStatus(`<span class="x-col">YOUR TURN</span>`);
+    }
+  }, 420 + Math.random()*300);
+}
+
+// ─── Camera ───────────────────────────────────────────────────────────────────
+let sph={theta:-0.4, phi:1.05, r:9.5};
+function updateCamera(){
+  camera.position.x=sph.r*Math.sin(sph.phi)*Math.sin(sph.theta);
+  camera.position.y=sph.r*Math.cos(sph.phi);
+  camera.position.z=sph.r*Math.sin(sph.phi)*Math.cos(sph.theta);
+  camera.lookAt(0,0,0);
 }
 updateCamera();
 
-// ── Input: double-click / double-tap to place ─────────────────────────────────
-const raycaster = new THREE.Raycaster();
-const mouse = new THREE.Vector2();
-let lastClickTime = 0, lastClickCell = -1;
-let isDragging = false, dragDist = 0;
-let dragStart = { x:0, y:0 };
-let hoveredMesh = null;
+// ─── Input ───────────────────────────────────────────────────────────────────
+const raycaster=new THREE.Raycaster();
+const mouse=new THREE.Vector2();
+let hoveredMesh=null, isDragging=false;
+let dragStart={x:0,y:0};
+let lastClickTime=0, lastClickIdx=-1;
+const ring=document.getElementById('ring');
 
-const ring = document.getElementById('dbl-ring');
-
-function getHoveredCell(clientX, clientY) {
-  mouse.x = (clientX / window.innerWidth) * 2 - 1;
-  mouse.y = -(clientY / window.innerHeight) * 2 + 1;
-  raycaster.setFromCamera(mouse, camera);
-  const hits = raycaster.intersectObjects(cellMeshes);
-  return hits.length ? hits[0].object : null;
+function getHit(cx,cy){
+  mouse.x=(cx/window.innerWidth)*2-1;
+  mouse.y=-(cy/window.innerHeight)*2+1;
+  raycaster.setFromCamera(mouse,camera);
+  const hits=raycaster.intersectObjects(cellMeshes);
+  return hits.length?hits[0].object:null;
 }
 
-function showRing(x, y, color) {
-  ring.style.left = x + 'px';
-  ring.style.top = y + 'px';
-  ring.style.borderColor = color;
-  ring.style.boxShadow = `0 0 20px ${color}`;
+function showRing(x,y,col){
+  ring.style.left=x+'px'; ring.style.top=y+'px';
+  ring.style.borderColor=col; ring.style.boxShadow=`0 0 20px ${col}`;
   ring.classList.add('show');
-  setTimeout(() => ring.classList.remove('show'), 400);
+  setTimeout(()=>ring.classList.remove('show'),400);
 }
 
-function handleClick(clientX, clientY) {
-  const hit = getHoveredCell(clientX, clientY);
-  if(!hit || hit.userData.taken || gameOver) return;
-
-  const i = hit.userData.index;
-  const now = Date.now();
-  const isDouble = (now - lastClickTime < 400) && (lastClickCell === i);
-
-  if(isDouble) {
-    const color = currentPlayer === 'X' ? '#00ffff' : '#ff6600';
-    showRing(clientX, clientY, color);
-    playCell(i);
-    lastClickTime = 0;
-    lastClickCell = -1;
+function tryPlace(cx,cy){
+  const hit=getHit(cx,cy);
+  if(!hit||hit.userData.taken||gameOver||thinking) return;
+  const i=hit.userData.index;
+  const now=Date.now();
+  const isDouble=(now-lastClickTime<420)&&(lastClickIdx===i);
+  if(isDouble){
+    showRing(cx,cy,'#00ffff');
+    playerTurn(i);
+    lastClickTime=0; lastClickIdx=-1;
   } else {
-    // First click: highlight
-    lastClickTime = now;
-    lastClickCell = i;
-    // Flash the cell
-    const prevMat = hit.material;
-    hit.material = hoverMat();
-    setTimeout(() => { if(!hit.userData.taken) hit.material = prevMat; }, 300);
+    lastClickTime=now; lastClickIdx=i;
+    // flash hint
+    const prev=hit.material;
+    hit.material=matHover();
+    setTimeout(()=>{ if(!hit.userData.taken) hit.material=prev; },300);
   }
 }
 
 // Mouse
-let prevMouse = { x:0, y:0 };
-window.addEventListener('mousedown', e => {
-  isDragging = false; dragDist = 0;
-  dragStart = { x: e.clientX, y: e.clientY };
-});
-window.addEventListener('mousemove', e => {
-  // Hover highlight
-  const hit = getHoveredCell(e.clientX, e.clientY);
-  if(hoveredMesh && !hoveredMesh.userData.taken) {
-    hoveredMesh.material.emissive?.setHex(0x000011);
-    hoveredMesh.scale.setScalar(1);
-  }
-  hoveredMesh = null;
-  if(hit && !hit.userData.taken && !gameOver) {
-    hit.material.emissive?.setHex(0x221144);
-    hit.scale.setScalar(1.08);
-    hoveredMesh = hit;
-  }
-
-  const dx = e.clientX - dragStart.x, dy = e.clientY - dragStart.y;
-  dragDist = Math.sqrt(dx*dx+dy*dy);
-  if(dragDist > 4) {
-    isDragging = true;
-    sph.theta -= dx * 0.006;
-    sph.phi = Math.max(0.2, Math.min(Math.PI-0.2, sph.phi + dy * 0.006));
-    dragStart = { x: e.clientX, y: e.clientY };
+window.addEventListener('mousedown',e=>{ isDragging=false; dragStart={x:e.clientX,y:e.clientY}; });
+window.addEventListener('mousemove',e=>{
+  const dx=e.clientX-dragStart.x, dy=e.clientY-dragStart.y;
+  if(Math.hypot(dx,dy)>5){
+    isDragging=true;
+    sph.theta-=dx*0.006;
+    sph.phi=Math.max(0.2,Math.min(Math.PI-0.2,sph.phi+dy*0.006));
+    dragStart={x:e.clientX,y:e.clientY};
     updateCamera();
   }
-});
-window.addEventListener('mouseup', e => {
-  if(dragDist < 5) handleClick(e.clientX, e.clientY);
-  isDragging = false; dragDist = 0;
-});
-
-// Scroll zoom
-window.addEventListener('wheel', e => {
-  sph.r = Math.max(4, Math.min(20, sph.r + e.deltaY * 0.012));
-  updateCamera();
-}, { passive: true });
-
-// Touch: drag + pinch + double-tap
-let touches = {};
-let lastTap = 0, lastTapId = -1;
-let pinchDist0 = null, pinchR0 = null;
-let touchDragStart = null;
-
-function touchDist(t1, t2) {
-  return Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
-}
-
-canvas.addEventListener('touchstart', e => {
-  e.preventDefault();
-  Array.from(e.changedTouches).forEach(t => { touches[t.identifier] = t; });
-  const tArr = Object.values(touches);
-
-  if(tArr.length === 2) {
-    pinchDist0 = touchDist(tArr[0], tArr[1]);
-    pinchR0 = sph.r;
-    touchDragStart = null;
-  } else if(tArr.length === 1) {
-    touchDragStart = { x: tArr[0].clientX, y: tArr[0].clientY };
+  // hover
+  const hit=getHit(e.clientX,e.clientY);
+  if(hoveredMesh&&!hoveredMesh.userData.taken){ hoveredMesh.material.emissive?.setHex(0x000011); hoveredMesh.scale.setScalar(1); }
+  hoveredMesh=null;
+  if(hit&&!hit.userData.taken&&!gameOver&&!thinking){
+    hit.material.emissive?.setHex(0x221144); hit.scale.setScalar(1.08); hoveredMesh=hit;
   }
-}, { passive: false });
+});
+window.addEventListener('mouseup',e=>{ if(!isDragging) tryPlace(e.clientX,e.clientY); isDragging=false; });
+window.addEventListener('wheel',e=>{ sph.r=Math.max(4,Math.min(20,sph.r+e.deltaY*0.012)); updateCamera(); },{passive:true});
 
-canvas.addEventListener('touchmove', e => {
+// Touch
+let touches={}, pinchDist0=null, pinchR0=null, tDragStart=null;
+let lastTap=0, lastTapIdx=-1;
+canvas.addEventListener('touchstart',e=>{
   e.preventDefault();
-  Array.from(e.changedTouches).forEach(t => { touches[t.identifier] = t; });
-  const tArr = Object.values(touches);
-
-  if(tArr.length === 2 && pinchDist0 !== null) {
-    // Pinch zoom
-    const d = touchDist(tArr[0], tArr[1]);
-    sph.r = Math.max(4, Math.min(20, pinchR0 * (pinchDist0 / d)));
-    updateCamera();
-    // Also rotate
-    const cx = (tArr[0].clientX + tArr[1].clientX)/2;
-    const cy = (tArr[0].clientY + tArr[1].clientY)/2;
-    if(touchDragStart) {
-      sph.theta -= (cx - touchDragStart.x) * 0.005;
-      sph.phi = Math.max(0.2, Math.min(Math.PI-0.2, sph.phi + (cy - touchDragStart.y) * 0.005));
-      updateCamera();
-    }
-    touchDragStart = { x: cx, y: cy };
-  } else if(tArr.length === 1 && touchDragStart) {
-    const t = tArr[0];
-    sph.theta -= (t.clientX - touchDragStart.x) * 0.006;
-    sph.phi = Math.max(0.2, Math.min(Math.PI-0.2, sph.phi + (t.clientY - touchDragStart.y) * 0.006));
-    touchDragStart = { x: t.clientX, y: t.clientY };
-    updateCamera();
+  Array.from(e.changedTouches).forEach(t=>touches[t.identifier]=t);
+  const tArr=Object.values(touches);
+  if(tArr.length===2){ pinchDist0=Math.hypot(tArr[0].clientX-tArr[1].clientX,tArr[0].clientY-tArr[1].clientY); pinchR0=sph.r; }
+  else if(tArr.length===1) tDragStart={x:tArr[0].clientX,y:tArr[0].clientY};
+},{passive:false});
+canvas.addEventListener('touchmove',e=>{
+  e.preventDefault();
+  Array.from(e.changedTouches).forEach(t=>touches[t.identifier]=t);
+  const tArr=Object.values(touches);
+  if(tArr.length===2&&pinchDist0!==null){
+    const d=Math.hypot(tArr[0].clientX-tArr[1].clientX,tArr[0].clientY-tArr[1].clientY);
+    sph.r=Math.max(4,Math.min(20,pinchR0*(pinchDist0/d)));
+    const cx=(tArr[0].clientX+tArr[1].clientX)/2, cy=(tArr[0].clientY+tArr[1].clientY)/2;
+    if(tDragStart){ sph.theta-=(cx-tDragStart.x)*0.005; sph.phi=Math.max(0.2,Math.min(Math.PI-0.2,sph.phi+(cy-tDragStart.y)*0.005)); }
+    tDragStart={x:cx,y:cy}; updateCamera();
+  } else if(tArr.length===1&&tDragStart){
+    const t=tArr[0];
+    sph.theta-=(t.clientX-tDragStart.x)*0.006;
+    sph.phi=Math.max(0.2,Math.min(Math.PI-0.2,sph.phi+(t.clientY-tDragStart.y)*0.006));
+    tDragStart={x:t.clientX,y:t.clientY}; updateCamera();
   }
-}, { passive: false });
-
-canvas.addEventListener('touchend', e => {
+},{passive:false});
+canvas.addEventListener('touchend',e=>{
   e.preventDefault();
-  const tArr = Object.values(touches);
-  Array.from(e.changedTouches).forEach(t => { delete touches[t.identifier]; });
-
-  if(tArr.length === 1) {
-    const t = tArr[0];
-    const hit = getHoveredCell(t.clientX, t.clientY);
-    if(hit && !hit.userData.taken && !gameOver) {
-      const i = hit.userData.index;
-      const now = Date.now();
-      const isDouble = (now - lastTap < 400) && (lastTapId === i);
-      if(isDouble) {
-        const color = currentPlayer === 'X' ? '#00ffff' : '#ff6600';
-        showRing(t.clientX, t.clientY, color);
-        playCell(i);
-        lastTap = 0; lastTapId = -1;
-      } else {
-        lastTap = now; lastTapId = i;
-        hit.material.emissive?.setHex(0x333366);
-      }
+  const ended=Array.from(e.changedTouches);
+  const tArr=Object.values(touches);
+  if(tArr.length===1){
+    const t=tArr[0];
+    const hit=getHit(t.clientX,t.clientY);
+    if(hit&&!hit.userData.taken&&!gameOver&&!thinking){
+      const i=hit.userData.index, now=Date.now();
+      if((now-lastTap<420)&&lastTapIdx===i){
+        showRing(t.clientX,t.clientY,'#00ffff');
+        playerTurn(i); lastTap=0; lastTapIdx=-1;
+      } else { lastTap=now; lastTapIdx=i; hit.material.emissive?.setHex(0x221144); }
     }
   }
-  pinchDist0 = null;
-}, { passive: false });
+  ended.forEach(t=>delete touches[t.identifier]);
+  if(Object.keys(touches).length<2) pinchDist0=null;
+},{passive:false});
 
-// ── UI ────────────────────────────────────────────────────────────────────────
-function setStatus(html) { document.getElementById('status').innerHTML = html; }
-function updateScore() {
-  document.getElementById('sX').textContent = scores.X;
-  document.getElementById('sO').textContent = scores.O;
-  document.getElementById('sD').textContent = scores.draw;
+// ─── UI ───────────────────────────────────────────────────────────────────────
+function setStatus(html){ document.getElementById('status').innerHTML=html; }
+function updateScore(){
+  document.getElementById('sX').textContent=scores.X;
+  document.getElementById('sO').textContent=scores.O;
+  document.getElementById('sD').textContent=scores.draw;
 }
-function newGame() {
-  board = Array(27).fill(null);
-  currentPlayer = 'X';
-  gameOver = false;
-  ptPurple.intensity = 0;
-  popQueue = [];
-  hoveredMesh = null;
-  lastClickTime = 0; lastClickCell = -1;
-  lastTap = 0; lastTapId = -1;
+function newGame(){
+  board=Array(27).fill(null);
+  currentPlayer=PLAYER;
+  gameOver=false; thinking=false;
+  ptW.intensity=0; ptAI.intensity=0;
+  popQueue=[]; hoveredMesh=null;
+  lastClickTime=0; lastClickIdx=-1; lastTap=0; lastTapIdx=-1;
   buildBoard();
-  setStatus(`Player <span class="x-col">X</span>'s turn — double-tap to place`);
+  setStatus(`<span class="x-col">YOUR TURN</span>`);
 }
 
-// ── Render Loop ───────────────────────────────────────────────────────────────
-let t = 0;
-let autoRotate = true;
-
-function animate() {
+// ─── Render Loop ──────────────────────────────────────────────────────────────
+let t=0;
+function animate(){
   requestAnimationFrame(animate);
-  t += 0.012;
+  t+=0.013;
 
-  // Pop animation
-  popQueue = popQueue.filter(p => {
-    p.t += 0.07;
-    const s = p.t < 0.5
-      ? p.t * 2
-      : 1 + Math.sin((p.t-0.5)*Math.PI) * 0.2 * (1-Math.min(p.t,1));
-    p.mesh.scale.setScalar(Math.max(0.01, Math.min(1.2, s)));
-    return p.t < 1.5;
+  // Pop
+  popQueue=popQueue.filter(p=>{
+    p.t+=0.07;
+    const s=p.t<0.5?p.t*2:1+Math.sin((p.t-0.5)*Math.PI)*0.2*(1-Math.min(p.t,1));
+    p.mesh.scale.setScalar(Math.max(0.01,Math.min(1.2,s)));
+    return p.t<1.5;
   });
 
   // Win pulse
-  if(winMeshes.length) {
-    const intensity = 3 + Math.sin(t*4)*2;
-    ptPurple.intensity = intensity;
-    winMeshes.forEach(m => {
-      if(m.material.emissive) {
-        const v = 0.3 + 0.2*Math.sin(t*3);
-        m.material.emissive.setRGB(v*0.6, 0, v*0.6);
-      }
-    });
+  if(winMeshes.length){
+    ptW.intensity=3+Math.sin(t*4)*2;
+    winMeshes.forEach(m=>{ if(m.material.emissive){ const v=0.3+0.2*Math.sin(t*3); m.material.emissive.setRGB(v*0.7,0,v*0.7); }});
   }
 
-  // Auto rotate when idle
-  if(autoRotate && !isDragging && !gameOver) {
-    sph.theta += 0.003;
-    updateCamera();
-  }
+  // Thinking flicker
+  if(thinking) ptAI.intensity=2+Math.sin(t*8)*1.5;
 
-  renderer.render(scene, camera);
+  // Gentle auto-rotate when idle
+  if(!isDragging&&!gameOver&&!thinking){ sph.theta+=0.0025; updateCamera(); }
+
+  renderer.render(scene,camera);
 }
 
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
+window.addEventListener('resize',()=>{
+  camera.aspect=window.innerWidth/window.innerHeight;
   camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setSize(window.innerWidth,window.innerHeight);
 });
 
 buildGrid();
