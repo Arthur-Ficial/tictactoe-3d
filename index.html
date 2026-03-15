@@ -541,7 +541,7 @@ function newGame() {
   // Start intro animation
   introActive = true;
   introStart = Date.now();
-  sph.r = 4;
+  sph.r = 17;
   sph.theta = -0.4;
   sph.phi = 1.05;
   updateCamera();
@@ -728,7 +728,7 @@ function animate() {
     } else {
       // Ease-out cubic
       const e = 1 - Math.pow(1 - elapsed, 3);
-      sph.r = 4 + (9.5 - 4) * e;
+      sph.r = 17 + (9.5 - 17) * e;
       sph.theta = -0.4 + Math.PI*2 * e;
       sph.phi = 1.05;
       updateCamera();
