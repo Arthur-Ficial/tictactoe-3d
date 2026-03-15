@@ -360,7 +360,9 @@ let partialTubes = [];       // partial-line threat visuals (rebuilt each turn)
 let popQueue = [];
 let shockQueue = [];
 
+const SHOCKWAVE_ENABLED = false;
 function spawnShockwave(worldPos, color) {
+  if (!SHOCKWAVE_ENABLED) return;
   const geo = new THREE.TorusGeometry(0.8, 0.08, 8, 32);
   const mat = new THREE.MeshBasicMaterial({ color, transparent:true, opacity:0.5 });
   const mesh = new THREE.Mesh(geo, mat);
