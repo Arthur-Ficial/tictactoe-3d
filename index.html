@@ -158,6 +158,7 @@
 <div id="bottom">
   <button onclick="newGame()">NEW GAME</button>
   <div id="hint"><span id="hint-touch">swipe to spin &nbsp;&middot;&nbsp; double-tap to place &nbsp;&middot;&nbsp; pinch to zoom</span><span id="hint-kb" style="display:none">arrows to rotate &nbsp;&middot;&nbsp; tab to select &nbsp;&middot;&nbsp; enter to place</span></div>
+
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -848,6 +849,14 @@ canvas.addEventListener('touchend', e => {
 // KEYBOARD CONTROLS
 // ═══════════════════════════════════════════════════════════════════
 let kbHoverIdx = -1;
+let kbHintsShown = false;
+
+function showKbHints() {
+  if (kbHintsShown) return;
+  kbHintsShown = true;
+  document.getElementById('hint-touch').style.display = 'none';
+  document.getElementById('hint-kb').style.display = '';
+}
 
 function cycleHover(reverse) {
   if (gameOver || thinking) return;
@@ -893,6 +902,7 @@ function placeHovered() {
 window.addEventListener('keydown', e => {
   if (introActive) return;
   touched();
+  showKbHints();
   const step = 0.15;
   switch(e.key) {
     case 'ArrowLeft':  sph.theta += step; updateCamera(); break;
@@ -1146,19 +1156,25 @@ function animate() {
     return p.t < 1.5;
   });
 
-  // Intro animation
+  // Intro animation — blends seamlessly into idle auto-rotate
   if(introActive) {
     const elapsed = (Date.now() - introStart) / 2000; // 0..1 over 2 seconds
+    // Decompose theta rotation: ease-out component + constant baseline
+    // At t=1 the derivative of the ease is 0, so only the constant term
+    // remains — matching auto-rotate speed exactly (no stop-start gap)
+    const autoContrib = 0.15 * 2; // auto-rotate rad/s × duration
+    const easeContrib = Math.PI * 2 - autoContrib;
     if(elapsed >= 1) {
       introActive = false;
-      sph.r = 17; sph.theta = -0.4; sph.phi = 1.05;
+      sph.r = 17;
+      sph.phi = 1.05;
+      // theta stays at its final position — no snap
       lastInteract = 0;
       updateCamera();
     } else {
-      // Ease-out cubic
       const e = 1 - Math.pow(1 - elapsed, 3);
       sph.r = 9.5 + (17 - 9.5) * e;
-      sph.theta = -0.4 + Math.PI*2 * e;
+      sph.theta = -0.4 + autoContrib * elapsed + easeContrib * e;
       sph.phi = 1.05;
       updateCamera();
     }
@@ -1240,10 +1256,6 @@ window.addEventListener('resize', () => {
 
 buildGrid();
 newGame();
-if (!('ontouchstart' in window)) {
-  document.getElementById('hint-touch').style.display='none';
-  document.getElementById('hint-kb').style.display='';
-}
 animate();
 </script>
 </body>
