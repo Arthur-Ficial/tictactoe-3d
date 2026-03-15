@@ -326,6 +326,8 @@ const mouse=new THREE.Vector2();
 let hoveredMesh=null, isDragging=false;
 let dragStart={x:0,y:0};
 let lastClickTime=0, lastClickIdx=-1;
+let lastInteract=0;
+function touched(){ lastInteract=Date.now(); }
 const ring=document.getElementById('ring');
 
 function getHit(cx,cy){
@@ -367,7 +369,7 @@ window.addEventListener('mousedown',e=>{ isDragging=false; dragStart={x:e.client
 window.addEventListener('mousemove',e=>{
   const dx=e.clientX-dragStart.x, dy=e.clientY-dragStart.y;
   if(Math.hypot(dx,dy)>5){
-    isDragging=true;
+    isDragging=true; touched();
     sph.theta-=dx*0.006;
     sph.phi=Math.max(0.2,Math.min(Math.PI-0.2,sph.phi+dy*0.006));
     dragStart={x:e.clientX,y:e.clientY};
@@ -382,13 +384,13 @@ window.addEventListener('mousemove',e=>{
   }
 });
 window.addEventListener('mouseup',e=>{ if(!isDragging) tryPlace(e.clientX,e.clientY); isDragging=false; });
-window.addEventListener('wheel',e=>{ sph.r=Math.max(4,Math.min(20,sph.r+e.deltaY*0.012)); updateCamera(); },{passive:true});
+window.addEventListener('wheel',e=>{ touched(); sph.r=Math.max(4,Math.min(20,sph.r+e.deltaY*0.012)); updateCamera(); },{passive:true});
 
 // Touch
 let touches={}, pinchDist0=null, pinchR0=null, tDragStart=null;
 let lastTap=0, lastTapIdx=-1;
 canvas.addEventListener('touchstart',e=>{
-  e.preventDefault();
+  e.preventDefault(); touched();
   Array.from(e.changedTouches).forEach(t=>touches[t.identifier]=t);
   const tArr=Object.values(touches);
   if(tArr.length===2){ pinchDist0=Math.hypot(tArr[0].clientX-tArr[1].clientX,tArr[0].clientY-tArr[1].clientY); pinchR0=sph.r; }
@@ -471,8 +473,8 @@ function animate(){
   // Thinking flicker
   if(thinking) ptAI.intensity=2+Math.sin(t*8)*1.5;
 
-  // Gentle auto-rotate when idle
-  if(!isDragging&&!gameOver&&!thinking){ sph.theta+=0.0025; updateCamera(); }
+  // Gentle auto-rotate when idle for 7+ seconds
+  if(!isDragging&&!gameOver&&!thinking&&(Date.now()-lastInteract>7000)){ sph.theta+=0.0025; updateCamera(); }
 
   renderer.render(scene,camera);
 }
