@@ -360,6 +360,7 @@ let partialTubes = [];       // partial-line threat visuals (rebuilt each turn)
 let popQueue = [];
 let shockQueue = [];
 
+// Deliberately disabled — felt too dominant/distracting. Set to true to re-enable.
 const SHOCKWAVE_ENABLED = false;
 function spawnShockwave(worldPos, color) {
   if (!SHOCKWAVE_ENABLED) return;
