@@ -1159,21 +1159,20 @@ function animate() {
   // Intro animation — blends seamlessly into idle auto-rotate
   if(introActive) {
     const elapsed = (Date.now() - introStart) / 2000; // 0..1 over 2 seconds
-    // Decompose theta rotation: ease-out component + constant baseline
-    // At t=1 the derivative of the ease is 0, so only the constant term
-    // remains — matching auto-rotate speed exactly (no stop-start gap)
-    const autoContrib = 0.15 * 2; // auto-rotate rad/s × duration
+    // Theta = ease-out quadratic (decelerating) + constant baseline.
+    // At t=1 ease derivative is 0, so ending speed = baseline = auto-rotate speed.
+    const autoSpeed = 0.36; // auto-rotate rad/s (0.006/frame × 60fps)
+    const autoContrib = autoSpeed * 2; // baseline contribution over 2s
     const easeContrib = Math.PI * 2 - autoContrib;
     if(elapsed >= 1) {
       introActive = false;
       sph.r = 17;
       sph.phi = 1.05;
-      // theta stays at its final position — no snap
       lastInteract = 0;
       updateCamera();
     } else {
-      const e = 1 - Math.pow(1 - elapsed, 3);
-      sph.r = 9.5 + (17 - 9.5) * e;
+      const e = 1 - Math.pow(1 - elapsed, 2); // quadratic ease-out (gentler decel)
+      sph.r = 9.5 + (17 - 9.5) * (1 - Math.pow(1 - elapsed, 3)); // zoom stays cubic
       sph.theta = -0.4 + autoContrib * elapsed + easeContrib * e;
       sph.phi = 1.05;
       updateCamera();
@@ -1237,7 +1236,7 @@ function animate() {
 
   // Auto-rotate after 3s idle
   if(!isDragging && !gameOver && !thinking && !introActive && (Date.now()-lastInteract>3000)) {
-    sph.theta += 0.0025; updateCamera();
+    sph.theta += 0.006; updateCamera();
   }
 
   // Show NEW GAME button after 7s idle if board has marks and game not over
