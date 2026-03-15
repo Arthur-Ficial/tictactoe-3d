@@ -541,7 +541,7 @@ function newGame() {
   // Start intro animation
   introActive = true;
   introStart = Date.now();
-  sph.r = 17;
+  sph.r = 9.5;
   sph.theta = -0.4;
   sph.phi = 1.05;
   updateCamera();
@@ -722,13 +722,13 @@ function animate() {
     const elapsed = (Date.now() - introStart) / 2000; // 0..1 over 2 seconds
     if(elapsed >= 1) {
       introActive = false;
-      sph.r = 9.5; sph.theta = -0.4 + Math.PI*2; sph.phi = 1.05;
+      sph.r = 17; sph.theta = -0.4 + Math.PI*2; sph.phi = 1.05;
       lastInteract = Date.now();
       updateCamera();
     } else {
       // Ease-out cubic
       const e = 1 - Math.pow(1 - elapsed, 3);
-      sph.r = 17 + (9.5 - 17) * e;
+      sph.r = 9.5 + (17 - 9.5) * e;
       sph.theta = -0.4 + Math.PI*2 * e;
       sph.phi = 1.05;
       updateCamera();
