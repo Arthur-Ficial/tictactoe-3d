@@ -676,7 +676,7 @@ function tryPlace(cx, cy) {
 // Mouse
 window.addEventListener('mousedown', e => {
   if(introActive) return;
-  mouseDown=true; isDragging=false;
+  mouseDown=true; isDragging=false; touched();
   dragStart={x:e.clientX,y:e.clientY};
   lastDragDelta={x:0,y:0}; lastDragTime=Date.now();
   vel.theta=0; vel.phi=0; // stop momentum when grabbing
@@ -714,7 +714,7 @@ window.addEventListener('mousemove', e => {
   }
 });
 window.addEventListener('mouseup', e => {
-  if(introActive) return;
+  if(introActive) return; touched();
   lpEnd();
   if(!isDragging) tryPlace(e.clientX,e.clientY);
   else {
@@ -762,7 +762,7 @@ canvas.addEventListener('touchstart', e => {
   }
 },{passive:false});
 canvas.addEventListener('touchmove', e => {
-  e.preventDefault(); if(introActive) return;
+  e.preventDefault(); if(introActive) return; touched();
   touchMoved=true;
   Array.from(e.changedTouches).forEach(t=>touches[t.identifier]=t);
   const tArr=getTouchArr(e);
@@ -793,7 +793,7 @@ canvas.addEventListener('touchmove', e => {
   }
 },{passive:false});
 canvas.addEventListener('touchend', e => {
-  e.preventDefault(); if(introActive) return;
+  e.preventDefault(); if(introActive) return; touched();
   lpEnd();
   const ended=Array.from(e.changedTouches);
   const tArr=Object.values(touches);
