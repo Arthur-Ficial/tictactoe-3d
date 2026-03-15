@@ -450,7 +450,7 @@ function makeO() {
 // Draw a completed line — bold glowing tube
 function drawCompletedLine(line, who) {
   const color = who === PLAYER ? 0x00ffff : 0xffff00;
-  const pts = line.map(i => cellMeshes[i].position.clone());
+  const pts = line.map(i => cellMeshes[i] ? cellMeshes[i].position.clone() : cellPos(i));
   const dir = pts[2].clone().sub(pts[0]).normalize().multiplyScalar(0.35);
   pts[0].sub(dir); pts[2].add(dir);
   const curve = new THREE.CatmullRomCurve3(pts);
@@ -592,6 +592,9 @@ function playerTurn(i) {
 
 function newGame() {
   if (cpuTimerId) { clearTimeout(cpuTimerId); cpuTimerId = null; }
+  lpActive = false; lpLocked = false; lpRestoring = false;
+  lpSavedMap = null; lpRestoreSnaps = null; lpStage = 0;
+  if (lpInterval) { clearInterval(lpInterval); lpInterval = null; }
   board = Array(27).fill(null);
   board[CENTER] = '_'; // permanently blocked
   scores = {X:0, O:0};
@@ -687,8 +690,9 @@ function tryPlace(cx, cy) {
   } else {
     lastClickTime = now; lastClickIdx = i;
     const prev = hit.material;
-    hit.material = matHover();
-    setTimeout(()=>{ if(!hit.userData.taken) hit.material = prev; }, 300);
+    const hm = matHover();
+    hit.material = hm;
+    setTimeout(()=>{ hm.dispose(); if(!hit.userData.taken) hit.material = prev; }, 300);
   }
 }
 
