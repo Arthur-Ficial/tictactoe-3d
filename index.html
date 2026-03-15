@@ -720,18 +720,27 @@ window.addEventListener('wheel', e => {
 }, {passive:true});
 
 // Touch
-let touches={}, pinchDist0=null, pinchR0=null, tDragStart=null;
+let touches={}, pinchPrevDist=null, pinchActive=false, tDragStart=null;
 let lastTap=0, lastTapIdx=-1;
 let touchMoved=false;
+
+// Helper: get array of current touch positions from e.touches (always fresh)
+function getTouchArr(e) {
+  const arr=[];
+  for(let i=0;i<e.touches.length;i++) arr.push(e.touches[i]);
+  return arr;
+}
+
 canvas.addEventListener('touchstart', e => {
   e.preventDefault(); if(introActive) return; touched();
   touchMoved=false;
-  vel.theta=0; vel.phi=0; // stop momentum when touching
+  vel.theta=0; vel.phi=0; vel.r=0; // stop all momentum when touching
   Array.from(e.changedTouches).forEach(t=>touches[t.identifier]=t);
-  const tArr=Object.values(touches);
+  const tArr=getTouchArr(e);
   if(tArr.length===2) {
-    pinchDist0=Math.hypot(tArr[0].clientX-tArr[1].clientX,tArr[0].clientY-tArr[1].clientY);
-    pinchR0=sph.r;
+    pinchPrevDist=Math.hypot(tArr[0].clientX-tArr[1].clientX,tArr[0].clientY-tArr[1].clientY);
+    pinchActive=true;
+    tDragStart={x:(tArr[0].clientX+tArr[1].clientX)/2,y:(tArr[0].clientY+tArr[1].clientY)/2};
   } else if(tArr.length===1) {
     tDragStart={x:tArr[0].clientX,y:tArr[0].clientY};
     lastTouchDragDelta={x:0,y:0}; lastTouchDragTime=Date.now();
@@ -742,13 +751,17 @@ canvas.addEventListener('touchmove', e => {
   e.preventDefault(); if(introActive) return;
   touchMoved=true;
   Array.from(e.changedTouches).forEach(t=>touches[t.identifier]=t);
-  const tArr=Object.values(touches);
+  const tArr=getTouchArr(e);
   if(tArr.length===1) lpCheckMove(tArr[0].clientX, tArr[0].clientY);
   if(tArr.length>=2 && lpActive) lpEnd();
-  if(tArr.length===2 && pinchDist0!==null) {
+  if(tArr.length===2 && pinchActive) {
     const d=Math.hypot(tArr[0].clientX-tArr[1].clientX,tArr[0].clientY-tArr[1].clientY);
-    // Springy pinch — allow slight overshoot of bounds
-    sph.r=pinchR0*(pinchDist0/d);
+    if(pinchPrevDist!==null && pinchPrevDist>0) {
+      // Incremental zoom: scale by ratio of current to previous distance
+      const ratio=pinchPrevDist/d;
+      sph.r=Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, sph.r*ratio));
+    }
+    pinchPrevDist=d;
     const cx=(tArr[0].clientX+tArr[1].clientX)/2, cy=(tArr[0].clientY+tArr[1].clientY)/2;
     if(tDragStart){
       const dx=cx-tDragStart.x, dy=cy-tDragStart.y;
@@ -770,7 +783,7 @@ canvas.addEventListener('touchend', e => {
   lpEnd();
   const ended=Array.from(e.changedTouches);
   const tArr=Object.values(touches);
-  if(tArr.length===1) {
+  if(tArr.length===1 && !pinchActive) {
     const t=tArr[0];
     // Launch momentum on swipe release
     if(touchMoved) {
@@ -792,7 +805,7 @@ canvas.addEventListener('touchend', e => {
     }
   }
   ended.forEach(t=>delete touches[t.identifier]);
-  if(Object.keys(touches).length<2) pinchDist0=null;
+  if(Object.keys(touches).length<2) { pinchPrevDist=null; pinchActive=false; }
 },{passive:false});
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1070,20 +1083,22 @@ function animate() {
       }
     }
 
-    // Zoom: velocity-based with spring at boundaries
-    if(Math.abs(vel.r)>0.001) {
-      sph.r += vel.r;
-      vel.r *= ZOOM_FRICTION;
-      needsUpdate = true;
-      touched();
-    }
-    // Spring back if out of bounds
-    if(sph.r < ZOOM_MIN) {
-      vel.r += (ZOOM_MIN - sph.r) * ZOOM_SPRING;
-      needsUpdate = true;
-    } else if(sph.r > ZOOM_MAX) {
-      vel.r += (ZOOM_MAX - sph.r) * ZOOM_SPRING;
-      needsUpdate = true;
+    // Zoom: velocity-based with spring at boundaries (only when not pinching)
+    if(!pinchActive) {
+      if(Math.abs(vel.r)>0.001) {
+        sph.r += vel.r;
+        vel.r *= ZOOM_FRICTION;
+        needsUpdate = true;
+        touched();
+      }
+      // Spring back if out of bounds
+      if(sph.r < ZOOM_MIN) {
+        vel.r += (ZOOM_MIN - sph.r) * ZOOM_SPRING;
+        needsUpdate = true;
+      } else if(sph.r > ZOOM_MAX) {
+        vel.r += (ZOOM_MAX - sph.r) * ZOOM_SPRING;
+        needsUpdate = true;
+      }
     }
     // Spring back phi if out of soft bounds (from touch overshoot)
     if(sph.phi < PHI_MIN && Object.keys(touches).length===0) {
