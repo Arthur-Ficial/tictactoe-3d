@@ -666,12 +666,15 @@ window.addEventListener('mousedown', e => {
   dragStart={x:e.clientX,y:e.clientY};
   lastDragDelta={x:0,y:0}; lastDragTime=Date.now();
   vel.theta=0; vel.phi=0; // stop momentum when grabbing
+  lpStart(e.clientX, e.clientY);
 });
 window.addEventListener('mousemove', e => {
   if(introActive) return;
   if(mouseDown) {
+    lpCheckMove(e.clientX, e.clientY);
     const dx=e.clientX-dragStart.x, dy=e.clientY-dragStart.y;
     if(Math.hypot(dx,dy)>5) {
+      if(lpActive) lpEnd();
       isDragging=true; touched(); canvas.style.cursor='grabbing';
       if(hoveredMesh && !hoveredMesh.userData.taken) {
         hoveredMesh.material.emissive?.setHex(0x000011); hoveredMesh.scale.setScalar(1);
@@ -698,6 +701,7 @@ window.addEventListener('mousemove', e => {
 });
 window.addEventListener('mouseup', e => {
   if(introActive) return;
+  lpEnd();
   if(!isDragging) tryPlace(e.clientX,e.clientY);
   else {
     // Launch with momentum if drag was recent enough
@@ -731,6 +735,7 @@ canvas.addEventListener('touchstart', e => {
   } else if(tArr.length===1) {
     tDragStart={x:tArr[0].clientX,y:tArr[0].clientY};
     lastTouchDragDelta={x:0,y:0}; lastTouchDragTime=Date.now();
+    lpStart(tArr[0].clientX, tArr[0].clientY);
   }
 },{passive:false});
 canvas.addEventListener('touchmove', e => {
@@ -738,6 +743,8 @@ canvas.addEventListener('touchmove', e => {
   touchMoved=true;
   Array.from(e.changedTouches).forEach(t=>touches[t.identifier]=t);
   const tArr=Object.values(touches);
+  if(tArr.length===1) lpCheckMove(tArr[0].clientX, tArr[0].clientY);
+  if(tArr.length>=2 && lpActive) lpEnd();
   if(tArr.length===2 && pinchDist0!==null) {
     const d=Math.hypot(tArr[0].clientX-tArr[1].clientX,tArr[0].clientY-tArr[1].clientY);
     // Springy pinch — allow slight overshoot of bounds
@@ -760,6 +767,7 @@ canvas.addEventListener('touchmove', e => {
 },{passive:false});
 canvas.addEventListener('touchend', e => {
   e.preventDefault(); if(introActive) return;
+  lpEnd();
   const ended=Array.from(e.changedTouches);
   const tArr=Object.values(touches);
   if(tArr.length===1) {
@@ -786,6 +794,222 @@ canvas.addEventListener('touchend', e => {
   ended.forEach(t=>delete touches[t.identifier]);
   if(Object.keys(touches).length<2) pinchDist0=null;
 },{passive:false});
+
+// ═══════════════════════════════════════════════════════════════════
+// LONG-PRESS VISUAL MODES
+// ═══════════════════════════════════════════════════════════════════
+let lpActive = false, lpStage = 0, lpStartTime = 0;
+let lpStartPos = {x:0, y:0};
+let lpInterval = null;
+let lpSavedMap = null;       // Map<material, saved props>
+let lpTubeOwners = null;     // Map<material, 'X'|'O'>
+let lpRestoring = false, lpRestoreStart = 0;
+let lpRestoreSnaps = null;   // Map<material, {from, to}> for lerp
+
+function lpSaveMat(map, mat) {
+  if (map.has(mat)) return;
+  map.set(mat, {
+    color: mat.color.getHex(),
+    emissive: mat.emissive ? mat.emissive.getHex() : null,
+    opacity: mat.opacity !== undefined ? mat.opacity : 1,
+    transparent: !!mat.transparent,
+    visible: mat.visible !== false
+  });
+}
+
+function lpCollectMaterials() {
+  const map = new Map();
+  const owners = new Map();
+  for (const mesh of cellMeshes) {
+    if (!mesh) continue;
+    lpSaveMat(map, mesh.material);
+    for (const child of mesh.children) {
+      if (child.isLineSegments) lpSaveMat(map, child.material);
+      if (child.isGroup) child.traverse(c => { if (c.material) lpSaveMat(map, c.material); });
+    }
+  }
+  for (const tube of [...lineTubes, ...partialTubes]) {
+    lpSaveMat(map, tube.material);
+    owners.set(tube.material, tube.material.color.getHex() === 0x00ffff ? PLAYER : CPU);
+  }
+  return {map, owners};
+}
+
+function lpBoostEmissive(mat, saved) {
+  if (!mat.emissive) return;
+  const base = saved.emissive || 0;
+  const r = Math.min(1, ((base >> 16) & 0xff) / 255 + 0.35);
+  const g = Math.min(1, ((base >> 8) & 0xff) / 255 + 0.35);
+  const b = Math.min(1, (base & 0xff) / 255 + 0.35);
+  mat.emissive.setRGB(r, g, b);
+}
+
+function lpApplyStage(stage) {
+  if (stage === lpStage) return;
+  if (!lpSavedMap) {
+    const collected = lpCollectMaterials();
+    lpSavedMap = collected.map;
+    lpTubeOwners = collected.owners;
+  }
+  lpStage = stage;
+
+  for (const mesh of cellMeshes) {
+    if (!mesh) continue;
+    const mat = mesh.material;
+    const saved = lpSavedMap.get(mat);
+    if (!saved) continue;
+
+    if (stage === 1) {
+      // HIGH CONTRAST: boost emissive, brighter edges
+      lpBoostEmissive(mat, saved);
+      mat.opacity = Math.min(1, saved.opacity + 0.25);
+      mat.transparent = true;
+    } else if (stage >= 2) {
+      // WIREFRAME / BW WIREFRAME: hide cube faces
+      mat.opacity = 0;
+      mat.transparent = true;
+    }
+
+    for (const child of mesh.children) {
+      if (child.isLineSegments) {
+        const eMat = child.material;
+        if (stage === 1) eMat.color.setHex(0x88aaff);
+        else if (stage === 2) eMat.color.setHex(0x6699ff);
+        else if (stage === 3) eMat.color.setHex(0xbbbbbb);
+      }
+      if (child.isGroup) {
+        child.traverse(c => {
+          if (!c.material) return;
+          const ms = lpSavedMap.get(c.material);
+          if (!ms) return;
+          if (stage === 1) {
+            lpBoostEmissive(c.material, ms);
+          } else if (stage === 2) {
+            // markers stay visible in wireframe
+          } else if (stage === 3) {
+            // BW: markers become white/gray
+            c.material.color.setHex(0xcccccc);
+            if (c.material.emissive) c.material.emissive.setHex(0x444444);
+          }
+        });
+      }
+    }
+  }
+
+  // Tubes
+  for (const tube of [...lineTubes, ...partialTubes]) {
+    if (stage === 3) {
+      tube.material.color.setHex(0xffffff);
+    }
+  }
+}
+
+// Animate BW wireframe dashed/dotted effect on tubes
+function lpAnimateTubes() {
+  if (lpStage !== 3 || !lpTubeOwners) return;
+  const now = Date.now() * 0.001;
+  for (const tube of [...lineTubes, ...partialTubes]) {
+    const owner = lpTubeOwners.get(tube.material);
+    const saved = lpSavedMap.get(tube.material);
+    if (!saved) continue;
+    if (owner === PLAYER) {
+      // X: dashed — slow square-wave oscillation
+      tube.material.opacity = saved.opacity * (0.25 + 0.75 * (Math.sin(now * 5) > 0 ? 1 : 0.15));
+    } else {
+      // O: dotted — fast oscillation
+      tube.material.opacity = saved.opacity * (0.2 + 0.8 * Math.max(0, Math.sin(now * 14)));
+    }
+  }
+}
+
+function lpSnapCurrent(mat) {
+  return {
+    color: mat.color.getHex(),
+    emissive: mat.emissive ? mat.emissive.getHex() : null,
+    opacity: mat.opacity !== undefined ? mat.opacity : 1
+  };
+}
+
+function lpStartRestore() {
+  if (!lpSavedMap) { lpStage = 0; return; }
+  // Snapshot current state for lerp
+  lpRestoreSnaps = new Map();
+  for (const [mat, saved] of lpSavedMap) {
+    lpRestoreSnaps.set(mat, lpSnapCurrent(mat));
+  }
+  lpRestoring = true;
+  lpRestoreStart = Date.now();
+}
+
+function lpUpdateRestore() {
+  if (!lpRestoring) return;
+  const progress = Math.min(1, (Date.now() - lpRestoreStart) / 600);
+  const ease = 1 - Math.pow(1 - progress, 2);
+
+  for (const [mat, saved] of lpSavedMap) {
+    const from = lpRestoreSnaps.get(mat);
+    if (!from) continue;
+
+    // Lerp color
+    const fc = new THREE.Color(from.color);
+    const tc = new THREE.Color(saved.color);
+    mat.color.copy(fc.lerp(tc, ease));
+
+    // Lerp emissive
+    if (mat.emissive && saved.emissive !== null && from.emissive !== null) {
+      const fe = new THREE.Color(from.emissive);
+      const te = new THREE.Color(saved.emissive);
+      mat.emissive.copy(fe.lerp(te, ease));
+    }
+
+    // Lerp opacity
+    mat.opacity = from.opacity + (saved.opacity - from.opacity) * ease;
+    mat.transparent = mat.opacity < 1;
+  }
+
+  if (progress >= 1) {
+    // Snap to exact saved values
+    for (const [mat, saved] of lpSavedMap) {
+      mat.color.setHex(saved.color);
+      if (mat.emissive && saved.emissive !== null) mat.emissive.setHex(saved.emissive);
+      mat.opacity = saved.opacity;
+      mat.transparent = saved.transparent;
+      mat.visible = saved.visible;
+    }
+    lpRestoring = false;
+    lpSavedMap = null;
+    lpTubeOwners = null;
+    lpRestoreSnaps = null;
+    lpStage = 0;
+  }
+}
+
+function lpStart(x, y) {
+  if (lpRestoring) return; // don't restart during restore
+  lpStartTime = Date.now();
+  lpStartPos = {x, y};
+  lpActive = true;
+  lpStage = 0;
+  lpInterval = setInterval(() => {
+    if (!lpActive) { clearInterval(lpInterval); lpInterval = null; return; }
+    const elapsed = Date.now() - lpStartTime;
+    if (elapsed >= 3000 && lpStage < 3) lpApplyStage(3);
+    else if (elapsed >= 1500 && lpStage < 2) lpApplyStage(2);
+    else if (elapsed >= 700 && lpStage < 1) lpApplyStage(1);
+  }, 50);
+}
+
+function lpEnd() {
+  if (!lpActive) return;
+  lpActive = false;
+  if (lpInterval) { clearInterval(lpInterval); lpInterval = null; }
+  if (lpStage > 0) lpStartRestore();
+}
+
+function lpCheckMove(x, y) {
+  if (!lpActive) return;
+  if (Math.hypot(x - lpStartPos.x, y - lpStartPos.y) > 8) lpEnd();
+}
 
 // ═══════════════════════════════════════════════════════════════════
 // UI HELPERS
@@ -844,6 +1068,10 @@ function animate() {
       updateCamera();
     }
   }
+
+  // Long-press visual mode updates
+  lpAnimateTubes();
+  lpUpdateRestore();
 
   if(ptW.intensity > 0) ptW.intensity = 4+Math.sin(t*4)*2;
   if(thinking) ptAI.intensity = 2+Math.sin(t*8)*1.5;
