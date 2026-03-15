@@ -674,7 +674,7 @@ window.addEventListener('mousemove', e => {
     lpCheckMove(e.clientX, e.clientY);
     const dx=e.clientX-dragStart.x, dy=e.clientY-dragStart.y;
     if(Math.hypot(dx,dy)>5) {
-      if(lpActive) lpEnd();
+      if(lpActive && !lpLocked && lpStage === 0) lpEnd();
       isDragging=true; touched(); canvas.style.cursor='grabbing';
       if(hoveredMesh && !hoveredMesh.userData.taken) {
         hoveredMesh.material.emissive?.setHex(0x000011); hoveredMesh.scale.setScalar(1);
@@ -801,6 +801,7 @@ canvas.addEventListener('touchend', e => {
 let lpActive = false, lpStage = 0, lpStartTime = 0;
 let lpStartPos = {x:0, y:0};
 let lpInterval = null;
+let lpLocked = false;         // true once user moves while in a visual mode
 let lpSavedMap = null;       // Map<material, saved props>
 let lpTubeOwners = null;     // Map<material, 'X'|'O'>
 let lpRestoring = false, lpRestoreStart = 0;
@@ -989,26 +990,36 @@ function lpStart(x, y) {
   lpStartTime = Date.now();
   lpStartPos = {x, y};
   lpActive = true;
+  lpLocked = false;
   lpStage = 0;
   lpInterval = setInterval(() => {
     if (!lpActive) { clearInterval(lpInterval); lpInterval = null; return; }
     const elapsed = Date.now() - lpStartTime;
-    if (elapsed >= 3000 && lpStage < 3) lpApplyStage(3);
-    else if (elapsed >= 1500 && lpStage < 2) lpApplyStage(2);
+    if (elapsed >= 6000 && lpStage < 3) lpApplyStage(3);
+    else if (elapsed >= 3000 && lpStage < 2) lpApplyStage(2);
     else if (elapsed >= 700 && lpStage < 1) lpApplyStage(1);
   }, 50);
 }
 
 function lpEnd() {
-  if (!lpActive) return;
+  if (!lpActive && !lpLocked) return;
   lpActive = false;
+  lpLocked = false;
   if (lpInterval) { clearInterval(lpInterval); lpInterval = null; }
   if (lpStage > 0) lpStartRestore();
 }
 
 function lpCheckMove(x, y) {
   if (!lpActive) return;
-  if (Math.hypot(x - lpStartPos.x, y - lpStartPos.y) > 8) lpEnd();
+  if (Math.hypot(x - lpStartPos.x, y - lpStartPos.y) > 8) {
+    if (lpStage > 0) {
+      // Lock the current visual mode and stop progressing to further stages
+      lpLocked = true;
+      if (lpInterval) { clearInterval(lpInterval); lpInterval = null; }
+    } else {
+      lpEnd(); // no mode yet, cancel normally
+    }
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════
