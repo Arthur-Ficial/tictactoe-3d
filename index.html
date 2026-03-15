@@ -111,7 +111,7 @@
 
 <div id="bottom">
   <button onclick="newGame()">NEW GAME</button>
-  <div id="hint">drag to rotate  |  double-tap to place  |  pinch to zoom</div>
+  <div id="hint">swipe to spin  |  double-tap to place  |  pinch to zoom</div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -544,6 +544,7 @@ function newGame() {
   sph.r = 9.5;
   sph.theta = -0.4;
   sph.phi = 1.05;
+  vel.theta = 0; vel.phi = 0; vel.r = 0;
   updateCamera();
   lastInteract = Date.now();
   updateButtonState();
@@ -553,6 +554,18 @@ function newGame() {
 // CAMERA ORBIT
 // ═══════════════════════════════════════════════════════════════════
 let sph = {theta:-0.4, phi:1.05, r:9.5};
+// Momentum / inertia state
+let vel = {theta:0, phi:0, r:0};
+const FRICTION = 0.92;       // per-frame velocity decay for rotation
+const ZOOM_FRICTION = 0.85;  // zoom velocity decay
+const ZOOM_SPRING = 0.15;    // spring stiffness for zoom bounds
+const ZOOM_MIN = 4, ZOOM_MAX = 20;
+const PHI_MIN = 0.2, PHI_MAX = Math.PI - 0.2;
+let lastDragTime = 0;
+let lastDragDelta = {x:0, y:0};
+let lastTouchDragDelta = {x:0, y:0};
+let lastTouchDragTime = 0;
+
 function updateCamera() {
   camera.position.x = sph.r * Math.sin(sph.phi) * Math.sin(sph.theta);
   camera.position.y = sph.r * Math.cos(sph.phi);
@@ -610,7 +623,13 @@ function tryPlace(cx, cy) {
 }
 
 // Mouse
-window.addEventListener('mousedown', e => { if(introActive) return; mouseDown=true; isDragging=false; dragStart={x:e.clientX,y:e.clientY}; });
+window.addEventListener('mousedown', e => {
+  if(introActive) return;
+  mouseDown=true; isDragging=false;
+  dragStart={x:e.clientX,y:e.clientY};
+  lastDragDelta={x:0,y:0}; lastDragTime=Date.now();
+  vel.theta=0; vel.phi=0; // stop momentum when grabbing
+});
 window.addEventListener('mousemove', e => {
   if(introActive) return;
   if(mouseDown) {
@@ -621,8 +640,10 @@ window.addEventListener('mousemove', e => {
         hoveredMesh.material.emissive?.setHex(0x000011); hoveredMesh.scale.setScalar(1);
       }
       hoveredMesh=null;
-      sph.theta -= dx*0.006;
-      sph.phi = Math.max(0.2, Math.min(Math.PI-0.2, sph.phi+dy*0.006));
+      const mdx=e.clientX-dragStart.x, mdy=e.clientY-dragStart.y;
+      sph.theta -= mdx*0.006;
+      sph.phi = Math.max(PHI_MIN, Math.min(PHI_MAX, sph.phi+mdy*0.006));
+      lastDragDelta={x:mdx,y:mdy}; lastDragTime=Date.now();
       dragStart = {x:e.clientX,y:e.clientY};
       updateCamera();
     }
@@ -638,38 +659,65 @@ window.addEventListener('mousemove', e => {
     }
   }
 });
-window.addEventListener('mouseup', e => { if(introActive) return; if(!isDragging) tryPlace(e.clientX,e.clientY); isDragging=false; mouseDown=false; canvas.style.cursor=''; });
+window.addEventListener('mouseup', e => {
+  if(introActive) return;
+  if(!isDragging) tryPlace(e.clientX,e.clientY);
+  else {
+    // Launch with momentum if drag was recent enough
+    const dt = Date.now()-lastDragTime;
+    if(dt<80) {
+      vel.theta = -lastDragDelta.x*0.006;
+      vel.phi   =  lastDragDelta.y*0.006;
+    }
+  }
+  isDragging=false; mouseDown=false; canvas.style.cursor='';
+});
 window.addEventListener('wheel', e => {
   if(introActive) return;
-  touched(); sph.r=Math.max(4,Math.min(20,sph.r+e.deltaY*0.012)); updateCamera();
+  touched();
+  vel.r += e.deltaY*0.015; // accumulate zoom velocity for springy feel
 }, {passive:true});
 
 // Touch
 let touches={}, pinchDist0=null, pinchR0=null, tDragStart=null;
 let lastTap=0, lastTapIdx=-1;
+let touchMoved=false;
 canvas.addEventListener('touchstart', e => {
   e.preventDefault(); if(introActive) return; touched();
+  touchMoved=false;
+  vel.theta=0; vel.phi=0; // stop momentum when touching
   Array.from(e.changedTouches).forEach(t=>touches[t.identifier]=t);
   const tArr=Object.values(touches);
   if(tArr.length===2) {
     pinchDist0=Math.hypot(tArr[0].clientX-tArr[1].clientX,tArr[0].clientY-tArr[1].clientY);
     pinchR0=sph.r;
-  } else if(tArr.length===1) tDragStart={x:tArr[0].clientX,y:tArr[0].clientY};
+  } else if(tArr.length===1) {
+    tDragStart={x:tArr[0].clientX,y:tArr[0].clientY};
+    lastTouchDragDelta={x:0,y:0}; lastTouchDragTime=Date.now();
+  }
 },{passive:false});
 canvas.addEventListener('touchmove', e => {
   e.preventDefault(); if(introActive) return;
+  touchMoved=true;
   Array.from(e.changedTouches).forEach(t=>touches[t.identifier]=t);
   const tArr=Object.values(touches);
   if(tArr.length===2 && pinchDist0!==null) {
     const d=Math.hypot(tArr[0].clientX-tArr[1].clientX,tArr[0].clientY-tArr[1].clientY);
-    sph.r=Math.max(4,Math.min(20,pinchR0*(pinchDist0/d)));
+    // Springy pinch — allow slight overshoot of bounds
+    sph.r=pinchR0*(pinchDist0/d);
     const cx=(tArr[0].clientX+tArr[1].clientX)/2, cy=(tArr[0].clientY+tArr[1].clientY)/2;
-    if(tDragStart){ sph.theta-=(cx-tDragStart.x)*0.005; sph.phi=Math.max(0.2,Math.min(Math.PI-0.2,sph.phi+(cy-tDragStart.y)*0.005)); }
+    if(tDragStart){
+      const dx=cx-tDragStart.x, dy=cy-tDragStart.y;
+      sph.theta-=dx*0.005;
+      sph.phi=Math.max(PHI_MIN-0.1, Math.min(PHI_MAX+0.1, sph.phi+dy*0.005));
+    }
     tDragStart={x:cx,y:cy}; updateCamera();
   } else if(tArr.length===1 && tDragStart) {
     const t=tArr[0];
-    sph.theta-=(t.clientX-tDragStart.x)*0.006;
-    sph.phi=Math.max(0.2,Math.min(Math.PI-0.2,sph.phi+(t.clientY-tDragStart.y)*0.006));
+    const dx=t.clientX-tDragStart.x, dy=t.clientY-tDragStart.y;
+    sph.theta-=dx*0.006;
+    sph.phi=Math.max(PHI_MIN-0.1, Math.min(PHI_MAX+0.1, sph.phi+dy*0.006));
+    lastTouchDragDelta={x:dx,y:dy}; lastTouchDragTime=Date.now();
     tDragStart={x:t.clientX,y:t.clientY}; updateCamera();
   }
 },{passive:false});
@@ -679,12 +727,23 @@ canvas.addEventListener('touchend', e => {
   const tArr=Object.values(touches);
   if(tArr.length===1) {
     const t=tArr[0];
-    const hit=getHit(t.clientX,t.clientY);
-    if(hit && !hit.userData.taken && !gameOver && !thinking) {
-      const i=hit.userData.index, now=Date.now();
-      if((now-lastTap<420) && lastTapIdx===i) {
-        showRing(t.clientX,t.clientY,'#00ffff'); playerTurn(i); lastTap=0; lastTapIdx=-1;
-      } else { lastTap=now; lastTapIdx=i; hit.material.emissive?.setHex(0x221144); }
+    // Launch momentum on swipe release
+    if(touchMoved) {
+      const dt=Date.now()-lastTouchDragTime;
+      if(dt<80) {
+        vel.theta=-lastTouchDragDelta.x*0.006;
+        vel.phi=lastTouchDragDelta.y*0.006;
+      }
+    }
+    // Tap detection (only if finger didn't move much)
+    if(!touchMoved || Math.hypot(lastTouchDragDelta.x,lastTouchDragDelta.y)<8) {
+      const hit=getHit(t.clientX,t.clientY);
+      if(hit && !hit.userData.taken && !gameOver && !thinking) {
+        const i=hit.userData.index, now=Date.now();
+        if((now-lastTap<420) && lastTapIdx===i) {
+          showRing(t.clientX,t.clientY,'#00ffff'); playerTurn(i); lastTap=0; lastTapIdx=-1;
+        } else { lastTap=now; lastTapIdx=i; hit.material.emissive?.setHex(0x221144); }
+      }
     }
   }
   ended.forEach(t=>delete touches[t.identifier]);
@@ -745,6 +804,53 @@ function animate() {
 
   if(ptW.intensity > 0) ptW.intensity = 4+Math.sin(t*4)*2;
   if(thinking) ptAI.intensity = 2+Math.sin(t*8)*1.5;
+
+  // ── Physics: momentum & spring ──
+  if(!introActive) {
+    let needsUpdate = false;
+
+    // Rotation momentum (only when not actively dragging)
+    if(!mouseDown && Object.keys(touches).length===0) {
+      if(Math.abs(vel.theta)>0.00001 || Math.abs(vel.phi)>0.00001) {
+        sph.theta += vel.theta;
+        sph.phi   += vel.phi;
+        vel.theta *= FRICTION;
+        vel.phi   *= FRICTION;
+        // Soft bounce at phi limits
+        if(sph.phi < PHI_MIN) { sph.phi = PHI_MIN; vel.phi = Math.abs(vel.phi)*0.3; }
+        if(sph.phi > PHI_MAX) { sph.phi = PHI_MAX; vel.phi = -Math.abs(vel.phi)*0.3; }
+        needsUpdate = true;
+        touched(); // keep idle timer alive during momentum
+      }
+    }
+
+    // Zoom: velocity-based with spring at boundaries
+    if(Math.abs(vel.r)>0.001) {
+      sph.r += vel.r;
+      vel.r *= ZOOM_FRICTION;
+      needsUpdate = true;
+      touched();
+    }
+    // Spring back if out of bounds
+    if(sph.r < ZOOM_MIN) {
+      vel.r += (ZOOM_MIN - sph.r) * ZOOM_SPRING;
+      needsUpdate = true;
+    } else if(sph.r > ZOOM_MAX) {
+      vel.r += (ZOOM_MAX - sph.r) * ZOOM_SPRING;
+      needsUpdate = true;
+    }
+    // Spring back phi if out of soft bounds (from touch overshoot)
+    if(sph.phi < PHI_MIN && Object.keys(touches).length===0) {
+      sph.phi += (PHI_MIN - sph.phi) * 0.15;
+      needsUpdate = true;
+    }
+    if(sph.phi > PHI_MAX && Object.keys(touches).length===0) {
+      sph.phi += (PHI_MAX - sph.phi) * 0.15;
+      needsUpdate = true;
+    }
+
+    if(needsUpdate) updateCamera();
+  }
 
   // Auto-rotate after 3s idle
   if(!isDragging && !gameOver && !thinking && !introActive && (Date.now()-lastInteract>3000)) {
