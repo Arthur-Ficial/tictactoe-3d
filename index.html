@@ -920,6 +920,11 @@ function lpApplyStage(stage) {
     }
   }
 
+  // Hide line tubes and threat tubes in grid views
+  for (const tube of [...lineTubes, ...partialTubes]) {
+    tube.material.opacity = 0;
+    tube.material.transparent = true;
+  }
 }
 
 
