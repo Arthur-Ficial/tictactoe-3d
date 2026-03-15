@@ -723,6 +723,7 @@ function tryPlace(cx, cy) {
 // Mouse
 window.addEventListener('mousedown', e => {
   if(introActive) return;
+  if(e.target === btn) return;
   mouseDown=true; isDragging=false; touched();
   dragStart={x:e.clientX,y:e.clientY};
   lastDragDelta={x:0,y:0}; lastDragTime=Date.now();
@@ -1215,7 +1216,7 @@ function animate() {
       introActive = false;
       sph.r = 17;
       sph.phi = 1.05;
-      lastInteract = 0;
+      lastInteract = Date.now() - 3001;
       updateCamera();
     } else {
       const e = 1 - Math.pow(1 - elapsed, 2); // quadratic ease-out (gentler decel)
