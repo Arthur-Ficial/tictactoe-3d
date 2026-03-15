@@ -723,7 +723,7 @@ function animate() {
     if(elapsed >= 1) {
       introActive = false;
       sph.r = 9.5; sph.theta = -0.4; sph.phi = 1.05;
-      lastInteract = Date.now() - 3000;
+      lastInteract = Date.now();
       updateCamera();
     } else {
       // Ease-out cubic
