@@ -238,6 +238,7 @@ let thinking;
 let introActive = false;
 let introStart = 0;
 let moveCount = 0;  // total moves placed this game (player + CPU)
+let cpuTimerId = null;
 
 // ─── board helpers ────────────────────────────────────────────────
 function isPlayable(b, i) {
@@ -354,6 +355,22 @@ let cellMeshes = [];         // Array(27), null for CENTER
 let lineTubes = [];          // scored line visuals
 let partialTubes = [];       // partial-line threat visuals (rebuilt each turn)
 let popQueue = [];
+const sharedGeo = new THREE.BoxGeometry(CS,CS,CS);
+const sharedEdgeGeo = new THREE.EdgesGeometry(sharedGeo);
+
+function disposeObject(obj) {
+  if (!obj) return;
+  obj.traverse(child => {
+    if (child.geometry && child.geometry !== sharedGeo && child.geometry !== sharedEdgeGeo) {
+      child.geometry.dispose();
+    }
+    if (child.material) child.material.dispose();
+  });
+  if (obj.geometry && obj.geometry !== sharedGeo && obj.geometry !== sharedEdgeGeo) {
+    obj.geometry.dispose();
+  }
+  if (obj.material) obj.material.dispose();
+}
 
 // Materials
 const matEmpty = () => new THREE.MeshPhongMaterial({
@@ -392,22 +409,19 @@ function buildGrid() {
 }
 
 function buildBoard() {
-  cellMeshes.forEach(m => m && pivot.remove(m));
+  cellMeshes.forEach(m => { if (m) { pivot.remove(m); disposeObject(m); } });
   cellMeshes = [];
-  [...lineTubes, ...partialTubes].forEach(o => pivot.remove(o));
+  [...lineTubes, ...partialTubes].forEach(o => { pivot.remove(o); disposeObject(o); });
   lineTubes = []; partialTubes = [];
   popQueue = [];
 
-  const geo  = new THREE.BoxGeometry(CS,CS,CS);
-  const eGeo = new THREE.EdgesGeometry(geo);
-
   for(let i=0;i<27;i++){
     if(i === CENTER){ cellMeshes.push(null); continue; }
-    const mesh = new THREE.Mesh(geo, matEmpty());
+    const mesh = new THREE.Mesh(sharedGeo, matEmpty());
     mesh.position.copy(cellPos(i));
     mesh.castShadow = true;
     mesh.userData = { index:i };
-    mesh.add(new THREE.LineSegments(eGeo, new THREE.LineBasicMaterial({color:0x3355cc})));
+    mesh.add(new THREE.LineSegments(sharedEdgeGeo, new THREE.LineBasicMaterial({color:0x3355cc})));
     pivot.add(mesh);
     cellMeshes.push(mesh);
   }
@@ -455,7 +469,7 @@ function drawCompletedLine(line, who) {
 
 // Draw partial-line threats — dim dashed-style tubes for lines with 2-in-a-row
 function rebuildPartialTubes() {
-  partialTubes.forEach(o => pivot.remove(o));
+  partialTubes.forEach(o => { pivot.remove(o); disposeObject(o); });
   partialTubes = [];
 
   for(const line of WINS) {
@@ -529,10 +543,7 @@ function updateUI() {
   document.getElementById('delta-you').style.width = pctX + '%';
   document.getElementById('delta-cpu').style.width = pctO + '%';
 
-  // Threat counts
-  const tx = countThreats(board, PLAYER, 2);
-  const to = countThreats(board, CPU, 2);
-  document.getElementById('threat-bar').innerHTML = '';
+  document.getElementById('threat-bar').textContent = '';
 }
 
 function checkEnd() {
@@ -565,7 +576,8 @@ function playerTurn(i) {
   const jitter = (Math.random() - 0.3) * 500;
   const delay = Math.max(400, Math.min(2200, base + jitter));
 
-  setTimeout(() => {
+  cpuTimerId = setTimeout(() => {
+    cpuTimerId = null;
     // Pass a COPY of the board to AI so it can't corrupt state
     const move = aiMove([...board]);
     if(move !== -1) placeMarker(move, CPU);
@@ -579,6 +591,7 @@ function playerTurn(i) {
 }
 
 function newGame() {
+  if (cpuTimerId) { clearTimeout(cpuTimerId); cpuTimerId = null; }
   board = Array(27).fill(null);
   board[CENTER] = '_'; // permanently blocked
   scores = {X:0, O:0};
@@ -802,9 +815,12 @@ canvas.addEventListener('touchend', e => {
   e.preventDefault(); if(introActive) return; touched();
   lpEnd();
   const ended=Array.from(e.changedTouches);
-  const tArr=Object.values(touches);
-  if(tArr.length===1 && !pinchActive) {
-    const t=tArr[0];
+  // Use ended touch coords for tap detection before pruning
+  const endedTouch = ended[0];
+  // Prune ended touches BEFORE building remaining set
+  ended.forEach(t=>delete touches[t.identifier]);
+  const remaining=Object.keys(touches).length;
+  if(remaining===0 && ended.length===1 && !pinchActive) {
     // Launch momentum on swipe release
     if(touchMoved) {
       const dt=Date.now()-lastTouchDragTime;
@@ -815,17 +831,16 @@ canvas.addEventListener('touchend', e => {
     }
     // Tap detection (only if finger didn't move much)
     if(!touchMoved || Math.hypot(lastTouchDragDelta.x,lastTouchDragDelta.y)<8) {
-      const hit=getHit(t.clientX,t.clientY);
+      const hit=getHit(endedTouch.clientX,endedTouch.clientY);
       if(hit && !hit.userData.taken && !gameOver && !thinking) {
         const i=hit.userData.index, now=Date.now();
         if((now-lastTap<420) && lastTapIdx===i) {
-          showRing(t.clientX,t.clientY,'#00ffff'); playerTurn(i); lastTap=0; lastTapIdx=-1;
+          showRing(endedTouch.clientX,endedTouch.clientY,'#00ffff'); playerTurn(i); lastTap=0; lastTapIdx=-1;
         } else { lastTap=now; lastTapIdx=i; hit.material.emissive?.setHex(0x221144); }
       }
     }
   }
-  ended.forEach(t=>delete touches[t.identifier]);
-  if(Object.keys(touches).length<2) { pinchPrevDist=null; pinchActive=false; }
+  if(remaining<2) { pinchPrevDist=null; pinchActive=false; }
 },{passive:false});
 
 // ═══════════════════════════════════════════════════════════════════
@@ -991,6 +1006,7 @@ function lpUpdateRestore() {
 
 function lpStart(x, y) {
   if (lpRestoring) return; // don't restart during restore
+  if (lpInterval) { clearInterval(lpInterval); lpInterval = null; }
   lpStartTime = Date.now();
   lpStartPos = {x, y};
   lpActive = true;
