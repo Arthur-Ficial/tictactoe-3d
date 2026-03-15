@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
 <title>3D Tic-Tac-Toe — More Challenging Than You Think</title>
 <meta name="description" content="Play 3D Tic-Tac-Toe on a 3×3×3 board against a smart AI. Harder than you think — align three in any direction across three dimensions to win.">
 <meta name="keywords" content="3D tic-tac-toe, 3D noughts and crosses, 3x3x3 tic-tac-toe, strategy game, browser game, AI game">
@@ -19,14 +22,22 @@
 <meta property="og:image:height" content="630">
 <meta property="og:site_name" content="3D Tic-Tac-Toe">
 <style>
-  *{margin:0;padding:0;box-sizing:border-box;}
-  body{background:#000;overflow:hidden;font-family:'Segoe UI',sans-serif;}
-  canvas{display:block;}
+  *{margin:0;padding:0;box-sizing:border-box;
+    -webkit-touch-callout:none;
+    -webkit-tap-highlight-color:transparent;
+    -webkit-user-select:none;user-select:none;
+  }
+  body{background:#000;overflow:hidden;font-family:'Segoe UI',sans-serif;
+    touch-action:none;
+    overscroll-behavior:none;
+    position:fixed;width:100%;height:100%;
+  }
+  canvas{display:block;touch-action:none;}
 
   #ui{
     position:fixed;top:0;left:0;right:0;
     display:flex;flex-direction:column;align-items:center;
-    pointer-events:none;padding-top:12px;gap:4px;
+    pointer-events:none;padding-top:max(12px, env(safe-area-inset-top));gap:4px;
   }
 
   /* Score bar */
@@ -72,7 +83,7 @@
   .tx{color:#00ffff99;} .to{color:#ff660099;}
 
   #bottom{
-    position:fixed;bottom:14px;left:0;right:0;
+    position:fixed;bottom:max(14px, env(safe-area-inset-bottom));left:0;right:0;
     display:flex;flex-direction:column;align-items:center;gap:7px;
     pointer-events:none;
   }
@@ -507,6 +518,7 @@ function placeMarker(i, who) {
   board[i] = who;
   moveCount++;
   updateHint();
+  if (who === PLAYER && navigator.vibrate) navigator.vibrate(15);
 
   const mesh = cellMeshes[i];
   mesh.material = who === PLAYER ? matX : matO;
@@ -522,6 +534,7 @@ function placeMarker(i, who) {
   if(scored.length) {
     scores[who] += scored.length;
     scored.forEach(line => drawCompletedLine(line, who));
+    if (who === PLAYER && navigator.vibrate) navigator.vibrate([30, 50, 30]);
   }
 
   // Rebuild partial threat tubes
@@ -550,8 +563,8 @@ function checkEnd() {
   gameOver = true;
   ptW.intensity = 0;
   const x = scores[PLAYER], o = scores[CPU];
-  if(x > o)      setStatus(`<span class="w-col">YOU WIN  ${x} - ${o}</span>`), ptW.intensity=6;
-  else if(o > x) setStatus(`<span class="o-col">CPU WINS  ${o} - ${x}</span>`);
+  if(x > o)      { setStatus(`<span class="w-col">YOU WIN  ${x} - ${o}</span>`); ptW.intensity=6; if(navigator.vibrate) navigator.vibrate([50,30,50,30,100]); }
+  else if(o > x) { setStatus(`<span class="o-col">CPU WINS  ${o} - ${x}</span>`); if(navigator.vibrate) navigator.vibrate([100,50,100]); }
   else           setStatus(`<span style="color:#fff">DRAW  ${x} - ${o}</span>`);
   updateButtonState();
   return true;
@@ -1252,6 +1265,12 @@ window.addEventListener('resize', () => {
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
+
+// Prevent native mobile behaviors that break game feel
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('gesturestart', e => e.preventDefault());
+document.addEventListener('gesturechange', e => e.preventDefault());
+document.addEventListener('touchmove', e => { if(e.target === canvas) e.preventDefault(); }, {passive:false});
 
 buildGrid();
 newGame();
