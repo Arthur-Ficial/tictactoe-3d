@@ -79,7 +79,23 @@
     box-shadow:0 0 15px rgba(255,255,255,0.3);
   }
   button:hover{background:rgba(255,255,255,0.2);box-shadow:0 0 28px rgba(255,255,255,0.5);}
-  #hint{color:#2a2a2a;font-size:0.62rem;letter-spacing:1px;pointer-events:none;}
+  #hint{
+    pointer-events:none;
+    transition:font-size 0.5s ease, color 0.5s ease, opacity 0.5s ease,
+               text-shadow 0.5s ease, letter-spacing 0.5s ease;
+  }
+  #hint.hint-big{
+    color:#fff;font-size:1rem;letter-spacing:2px;
+    text-shadow:0 0 12px rgba(255,255,255,0.5);opacity:1;
+  }
+  #hint.hint-small{
+    color:#2a2a2a;font-size:0.62rem;letter-spacing:1px;
+    text-shadow:none;opacity:1;
+  }
+  #hint.hint-hidden{
+    color:#2a2a2a;font-size:0.62rem;letter-spacing:1px;
+    text-shadow:none;opacity:0;
+  }
 
   #ring{
     position:fixed;pointer-events:none;
@@ -191,6 +207,7 @@ let gameOver;
 let thinking;
 let introActive = false;
 let introStart = 0;
+let moveCount = 0;  // total moves placed this game (player + CPU)
 
 // ─── board helpers ────────────────────────────────────────────────
 function isPlayable(b, i) {
@@ -445,6 +462,8 @@ function placeMarker(i, who) {
   if(!isPlayable(board, i)) return false;
 
   board[i] = who;
+  moveCount++;
+  updateHint();
 
   const mesh = cellMeshes[i];
   mesh.material = who === PLAYER ? matX() : matO();
@@ -535,6 +554,7 @@ function newGame() {
   hoveredMesh = null;
   lastClickTime = 0; lastClickIdx = -1;
   lastTap = 0; lastTapIdx = -1;
+  moveCount = 0;
   buildBoard();
   updateUI();
   setStatus('');
@@ -548,6 +568,7 @@ function newGame() {
   updateCamera();
   lastInteract = Date.now();
   updateButtonState();
+  updateHint();
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -754,6 +775,13 @@ canvas.addEventListener('touchend', e => {
 // UI HELPERS
 // ═══════════════════════════════════════════════════════════════════
 function setStatus(html){ document.getElementById('status').innerHTML=html; }
+const hintEl = document.getElementById('hint');
+function updateHint() {
+  hintEl.classList.remove('hint-big','hint-small','hint-hidden');
+  if(moveCount === 0) hintEl.classList.add('hint-big');
+  else if(moveCount === 1) hintEl.classList.add('hint-small');
+  else hintEl.classList.add('hint-hidden');
+}
 const btn = document.querySelector('button');
 function showButton(show) {
   btn.style.opacity = show ? '1' : '0';
