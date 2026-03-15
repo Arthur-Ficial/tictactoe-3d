@@ -101,10 +101,6 @@
     transition:all 0.15s;
     z-index:10;
   }
-  #newgame-btn.visible{
-    color:#888;border:1px solid #444;
-    background:rgba(255,255,255,0.05);
-  }
   #newgame-btn.game-over{
     color:#fff;border:2px solid #fff;
     background:rgba(255,255,255,0.08);
@@ -1160,7 +1156,6 @@ const btn = document.getElementById('newgame-btn');
 function showButton(show) {
   btn.style.opacity = show ? '1' : '0';
   btn.style.pointerEvents = show ? 'all' : 'none';
-  btn.classList.toggle('visible', show && !gameOver);
 }
 function updateButtonState(){
   btn.classList.toggle('game-over', gameOver);
@@ -1220,7 +1215,7 @@ function animate() {
       introActive = false;
       sph.r = 17;
       sph.phi = 1.05;
-      lastInteract = Date.now() - 3001; // auto-rotate starts immediately, but 7s button timer has ~4s left
+      lastInteract = 0;
       updateCamera();
     } else {
       const e = 1 - Math.pow(1 - elapsed, 2); // quadratic ease-out (gentler decel)
