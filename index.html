@@ -559,6 +559,12 @@ function playerTurn(i) {
   ptAI.intensity = 3;
   setStatus(`<span style="color:#ffff00;text-shadow:0 0 15px #ffff00">CPU THINKING</span>`);
 
+  // Natural thinking delay: scales with board complexity + random variance
+  const filled = board.filter((v,i) => i !== CENTER && v !== null).length;
+  const base = 600 + filled * 40;
+  const jitter = (Math.random() - 0.3) * 500;
+  const delay = Math.max(400, Math.min(2200, base + jitter));
+
   setTimeout(() => {
     // Pass a COPY of the board to AI so it can't corrupt state
     const move = aiMove([...board]);
@@ -569,7 +575,7 @@ function playerTurn(i) {
     if(!checkEnd()) {
       setStatus('');
     }
-  }, 320 + Math.random()*200);
+  }, delay);
 }
 
 function newGame() {
