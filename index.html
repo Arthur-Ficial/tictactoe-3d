@@ -27,7 +27,7 @@
   }
   .sc-cpu{
     flex:1;text-align:right;
-    color:#ff6600;text-shadow:0 0 20px #ff6600;
+    color:#ffff00;text-shadow:0 0 20px #ffff00;
   }
   .sc-sep{color:#333;font-size:1rem;text-align:center;flex:0 0 30px;}
 
@@ -64,13 +64,19 @@
   }
   button{
     pointer-events:all;
-    padding:0.5rem 2rem;border:2px solid #fff;
-    background:rgba(255,255,255,0.08);color:#fff;
+    padding:0.5rem 2rem;border:2px solid #555;
+    background:rgba(255,255,255,0.03);color:#555;
     border-radius:6px;font-size:0.85rem;font-weight:900;
     letter-spacing:3px;cursor:pointer;
-    text-shadow:0 0 8px #fff;
-    box-shadow:0 0 12px rgba(255,255,255,0.2);
+    text-shadow:none;
+    box-shadow:none;
     transition:all 0.15s;
+  }
+  button.game-over{
+    color:#fff;border:2px solid #fff;
+    background:rgba(255,255,255,0.08);
+    text-shadow:0 0 8px #fff;
+    box-shadow:0 0 15px rgba(255,255,255,0.3);
   }
   button:hover{background:rgba(255,255,255,0.2);box-shadow:0 0 28px rgba(255,255,255,0.5);}
   #hint{color:#2a2a2a;font-size:0.62rem;letter-spacing:1px;pointer-events:none;}
@@ -475,8 +481,7 @@ function updateUI() {
   // Threat counts
   const tx = countThreats(board, PLAYER, 2);
   const to = countThreats(board, CPU, 2);
-  document.getElementById('threat-bar').innerHTML =
-    `<span class="tx">threats: ${tx}</span>  &nbsp;  <span class="to">threats: ${to}</span>`;
+  document.getElementById('threat-bar').innerHTML = '';
 }
 
 function checkEnd() {
@@ -487,6 +492,7 @@ function checkEnd() {
   if(x > o)      setStatus(`<span class="w-col">YOU WIN  ${x} - ${o}</span>`), ptW.intensity=6;
   else if(o > x) setStatus(`<span class="o-col">CPU WINS  ${o} - ${x}</span>`);
   else           setStatus(`<span style="color:#fff">DRAW  ${x} - ${o}</span>`);
+  updateButtonState();
   return true;
 }
 
@@ -510,9 +516,7 @@ function playerTurn(i) {
     thinking = false;
     updateUI();
     if(!checkEnd()) {
-      const delta = scores[PLAYER] - scores[CPU];
-      const ds = delta > 0 ? ` +${delta}` : delta < 0 ? ` ${delta}` : '';
-      setStatus(`<span class="x-col">YOUR TURN${ds}</span>`);
+      setStatus('');
     }
   }, 320 + Math.random()*200);
 }
@@ -531,7 +535,8 @@ function newGame() {
   lastTap = 0; lastTapIdx = -1;
   buildBoard();
   updateUI();
-  setStatus(`<span class="x-col">YOUR TURN</span>`);
+  setStatus('');
+  updateButtonState();
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -666,6 +671,9 @@ canvas.addEventListener('touchend', e => {
 // UI HELPERS
 // ═══════════════════════════════════════════════════════════════════
 function setStatus(html){ document.getElementById('status').innerHTML=html; }
+function updateButtonState(){
+  document.querySelector('button').classList.toggle('game-over', gameOver);
+}
 
 // ═══════════════════════════════════════════════════════════════════
 // RENDER LOOP
