@@ -361,12 +361,18 @@ let popQueue = [];
 let shockQueue = [];
 
 function spawnShockwave(worldPos, color) {
-  const geo = new THREE.TorusGeometry(0.8, 0.08, 8, 32);
-  const mat = new THREE.MeshBasicMaterial({ color, transparent:true, opacity:0.9 });
+  const geo = new THREE.TorusGeometry(0.8, 0.12, 8, 32);
+  const mat = new THREE.MeshBasicMaterial({ color, transparent:true, opacity:0.8 });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.position.copy(worldPos);
   pivot.add(mesh);
-  shockQueue.push({ mesh, mat, geo, t:0 });
+  // Outer glow ring
+  const glowGeo = new THREE.TorusGeometry(0.8, 0.3, 8, 32);
+  const glowMat = new THREE.MeshBasicMaterial({ color, transparent:true, opacity:0.25 });
+  const glow = new THREE.Mesh(glowGeo, glowMat);
+  glow.position.copy(worldPos);
+  pivot.add(glow);
+  shockQueue.push({ mesh, mat, geo, glow, glowMat, glowGeo, t:0 });
 }
 const sharedGeo = new THREE.BoxGeometry(CS,CS,CS);
 const sharedEdgeGeo = new THREE.EdgesGeometry(sharedGeo);
@@ -617,7 +623,11 @@ function newGame() {
   ptW.intensity = 0;
   ptAI.intensity = 0;
   popQueue = [];
-  shockQueue.forEach(s => { pivot.remove(s.mesh); s.geo.dispose(); s.mat.dispose(); });
+  shockQueue.forEach(s => {
+    pivot.remove(s.mesh); pivot.remove(s.glow);
+    s.geo.dispose(); s.mat.dispose();
+    s.glowGeo.dispose(); s.glowMat.dispose();
+  });
   shockQueue = [];
   hoveredMesh = null;
   lastClickTime = 0; lastClickIdx = -1;
@@ -1163,15 +1173,19 @@ function animate() {
     return p.t < 1.5;
   });
 
-  // 3D shockwave animation
+  // 3D shockwave animation (~830ms, ease-out)
   shockQueue = shockQueue.filter(s => {
-    s.t += 0.04;
-    s.mesh.scale.setScalar(0.3 + s.t * 2.5);
-    s.mat.opacity = Math.max(0, 0.9 - s.t * 1.8);
-    if (s.t >= 0.5) {
-      pivot.remove(s.mesh);
-      s.geo.dispose();
-      s.mat.dispose();
+    s.t += 0.02;
+    const ease = 1 - Math.pow(1 - s.t, 2);
+    const scale = 0.2 + ease * 2.0;
+    s.mesh.scale.setScalar(scale);
+    s.glow.scale.setScalar(scale * 1.3);
+    s.mat.opacity = 0.8 * (1 - s.t * s.t);
+    s.glowMat.opacity = 0.25 * (1 - s.t * s.t);
+    if (s.t >= 1.0) {
+      pivot.remove(s.mesh); pivot.remove(s.glow);
+      s.geo.dispose(); s.mat.dispose();
+      s.glowGeo.dispose(); s.glowMat.dispose();
       return false;
     }
     return true;
