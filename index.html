@@ -566,7 +566,7 @@ updateCamera();
 // ═══════════════════════════════════════════════════════════════════
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
-let hoveredMesh = null, isDragging = false, dragStart = {x:0,y:0};
+let hoveredMesh = null, isDragging = false, mouseDown = false, dragStart = {x:0,y:0};
 let lastClickTime = 0, lastClickIdx = -1;
 let lastInteract = 0;
 const ring = document.getElementById('ring');
@@ -610,27 +610,35 @@ function tryPlace(cx, cy) {
 }
 
 // Mouse
-window.addEventListener('mousedown', e => { if(introActive) return; isDragging=false; dragStart={x:e.clientX,y:e.clientY}; });
+window.addEventListener('mousedown', e => { if(introActive) return; mouseDown=true; isDragging=false; dragStart={x:e.clientX,y:e.clientY}; });
 window.addEventListener('mousemove', e => {
   if(introActive) return;
-  const dx=e.clientX-dragStart.x, dy=e.clientY-dragStart.y;
-  if(Math.hypot(dx,dy)>5) {
-    isDragging=true; touched();
-    sph.theta -= dx*0.006;
-    sph.phi = Math.max(0.2, Math.min(Math.PI-0.2, sph.phi+dy*0.006));
-    dragStart = {x:e.clientX,y:e.clientY};
-    updateCamera();
+  if(mouseDown) {
+    const dx=e.clientX-dragStart.x, dy=e.clientY-dragStart.y;
+    if(Math.hypot(dx,dy)>5) {
+      isDragging=true; touched(); canvas.style.cursor='grabbing';
+      if(hoveredMesh && !hoveredMesh.userData.taken) {
+        hoveredMesh.material.emissive?.setHex(0x000011); hoveredMesh.scale.setScalar(1);
+      }
+      hoveredMesh=null;
+      sph.theta -= dx*0.006;
+      sph.phi = Math.max(0.2, Math.min(Math.PI-0.2, sph.phi+dy*0.006));
+      dragStart = {x:e.clientX,y:e.clientY};
+      updateCamera();
+    }
   }
-  const hit = getHit(e.clientX, e.clientY);
-  if(hoveredMesh && !hoveredMesh.userData.taken) {
-    hoveredMesh.material.emissive?.setHex(0x000011); hoveredMesh.scale.setScalar(1);
-  }
-  hoveredMesh = null;
-  if(hit && !hit.userData.taken && !gameOver && !thinking) {
-    hit.material.emissive?.setHex(0x221144); hit.scale.setScalar(1.08); hoveredMesh=hit;
+  if(!isDragging) {
+    const hit = getHit(e.clientX, e.clientY);
+    if(hoveredMesh && !hoveredMesh.userData.taken) {
+      hoveredMesh.material.emissive?.setHex(0x000011); hoveredMesh.scale.setScalar(1);
+    }
+    hoveredMesh = null;
+    if(hit && !hit.userData.taken && !gameOver && !thinking) {
+      hit.material.emissive?.setHex(0x221144); hit.scale.setScalar(1.08); hoveredMesh=hit;
+    }
   }
 });
-window.addEventListener('mouseup', e => { if(introActive) return; if(!isDragging) tryPlace(e.clientX,e.clientY); isDragging=false; });
+window.addEventListener('mouseup', e => { if(introActive) return; if(!isDragging) tryPlace(e.clientX,e.clientY); isDragging=false; mouseDown=false; canvas.style.cursor=''; });
 window.addEventListener('wheel', e => {
   if(introActive) return;
   touched(); sph.r=Math.max(4,Math.min(20,sph.r+e.deltaY*0.012)); updateCamera();
