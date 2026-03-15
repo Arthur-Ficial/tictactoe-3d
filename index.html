@@ -27,7 +27,7 @@
   }
   .sc-cpu{
     flex:1;text-align:right;
-    color:#ff6600;text-shadow:0 0 20px #ff6600;
+    color:#ffff00;text-shadow:0 0 20px #ffff00;
   }
   .sc-sep{color:#333;font-size:1rem;text-align:center;flex:0 0 30px;}
 
@@ -38,7 +38,7 @@
     display:flex;
   }
   #delta-you{background:#00ffff;height:100%;transition:width 0.4s ease;}
-  #delta-cpu{background:#ff6600;height:100%;transition:width 0.4s ease;}
+  #delta-cpu{background:#ffff00;height:100%;transition:width 0.4s ease;}
 
   /* Status */
   #status{
@@ -47,7 +47,7 @@
     min-height:1.3rem;text-align:center;
   }
   .x-col{color:#00ffff;text-shadow:0 0 15px #00ffff,0 0 40px #00ffff;}
-  .o-col{color:#ff6600;text-shadow:0 0 15px #ff6600,0 0 40px #ff6600;}
+  .o-col{color:#ffff00;text-shadow:0 0 15px #ffff00,0 0 40px #ffff00;}
   .w-col{color:#ff00ff;text-shadow:0 0 25px #ff00ff,0 0 60px #ff00ff;}
 
   /* Threat preview bar */
@@ -55,7 +55,7 @@
     font-size:0.65rem;letter-spacing:2px;color:#444;
     min-height:0.9rem;text-align:center;
   }
-  .tx{color:#00ffff99;} .to{color:#ff660099;}
+  .tx{color:#00ffff99;} .to{color:#ffff0099;}
 
   #bottom{
     position:fixed;bottom:14px;left:0;right:0;
@@ -130,7 +130,7 @@ scene.add(new THREE.AmbientLight(0xffffff, 0.2));
 const sun = new THREE.DirectionalLight(0xffffff, 2.5);
 sun.position.set(10,15,10); sun.castShadow=true; scene.add(sun);
 const ptX  = new THREE.PointLight(0x00ffff, 5, 35); ptX.position.set(-8,4,6);  scene.add(ptX);
-const ptO  = new THREE.PointLight(0xff6600, 5, 35); ptO.position.set( 8,4,6);  scene.add(ptO);
+const ptO  = new THREE.PointLight(0xffff00, 5, 35); ptO.position.set( 8,4,6);  scene.add(ptO);
 const ptW  = new THREE.PointLight(0xff00ff, 0, 30); ptW.position.set( 0,8,0);  scene.add(ptW);
 const ptAI = new THREE.PointLight(0xffff00, 0, 20); ptAI.position.set(0,-4,8); scene.add(ptAI);
 
@@ -298,6 +298,7 @@ const pivot = new THREE.Group(); scene.add(pivot);
 let cellMeshes = [];         // Array(27), null for CENTER
 let lineTubes = [];          // scored line visuals
 let partialTubes = [];       // partial-line threat visuals (rebuilt each turn)
+let tubeAnimQueue = [];      // animated tube growth queue
 let popQueue = [];
 
 // Materials
@@ -311,7 +312,7 @@ const matX = () => new THREE.MeshPhongMaterial({
   color:0x00ffff, emissive:0x007777, shininess:220, specular:0xffffff
 });
 const matO = () => new THREE.MeshPhongMaterial({
-  color:0xff6600, emissive:0xaa3300, shininess:220, specular:0xffcc88
+  color:0xffff00, emissive:0x888800, shininess:220, specular:0xffffff
 });
 
 function buildGrid() {
@@ -370,32 +371,30 @@ function makeX() {
 }
 function makeO() {
   const g = new THREE.Group();
-  const m = new THREE.MeshPhongMaterial({color:0xff6600, emissive:0x993300, shininess:200});
+  const m = new THREE.MeshPhongMaterial({color:0xffff00, emissive:0x888800, shininess:200});
   const t = new THREE.Mesh(new THREE.TorusGeometry(0.42,0.11,14,36),m);
   t.rotation.x = Math.PI/2; g.add(t);
   g.add(new THREE.Mesh(new THREE.SphereGeometry(0.55,10,10),
-    new THREE.MeshPhongMaterial({color:0xff6600,transparent:true,opacity:0.07,emissive:0xff6600})));
+    new THREE.MeshPhongMaterial({color:0xffff00,transparent:true,opacity:0.07,emissive:0xffff00})));
   return g;
 }
 
-// Draw a completed line — bold glowing tube
+// Draw a completed line — animated growing tube
 function drawCompletedLine(line, who) {
-  const color = who === PLAYER ? 0x00ffff : 0xff6600;
+  const color = who === PLAYER ? 0x00ffff : 0xffff00;
   const pts = line.map(i => cellMeshes[i].position.clone());
   const dir = pts[2].clone().sub(pts[0]).normalize().multiplyScalar(0.35);
   pts[0].sub(dir); pts[2].add(dir);
   const curve = new THREE.CatmullRomCurve3(pts);
 
-  const tube = new THREE.Mesh(
-    new THREE.TubeGeometry(curve,10,0.06,8,false),
-    new THREE.MeshBasicMaterial({color, transparent:true, opacity:1.0})
-  );
-  const glow = new THREE.Mesh(
-    new THREE.TubeGeometry(curve,10,0.18,8,false),
-    new THREE.MeshBasicMaterial({color, transparent:true, opacity:0.22})
-  );
+  const tubeMat = new THREE.MeshBasicMaterial({color, transparent:true, opacity:0});
+  const glowMat = new THREE.MeshBasicMaterial({color, transparent:true, opacity:0});
+  const tube = new THREE.Mesh(new THREE.TubeGeometry(curve,10,0.06,8,false), tubeMat);
+  const glow = new THREE.Mesh(new THREE.TubeGeometry(curve,10,0.18,8,false), glowMat);
   pivot.add(tube); pivot.add(glow);
   lineTubes.push(tube, glow);
+
+  tubeAnimQueue.push({ curve, tube, glow, tubeMat, glowMat, frame:0, totalFrames:30 });
 }
 
 // Draw partial-line threats — dim dashed-style tubes for lines with 2-in-a-row
@@ -415,7 +414,7 @@ function rebuildPartialTubes() {
     if(oCount === 2 && xCount === 0) who = CPU;
     if(!who) continue;
 
-    const color = who === PLAYER ? 0x00ffff : 0xff6600;
+    const color = who === PLAYER ? 0x00ffff : 0xffff00;
     const pts = line.map(i => cellMeshes[i] ? cellMeshes[i].position.clone() : cellPos(i));
     const curve = new THREE.CatmullRomCurve3(pts);
 
@@ -529,6 +528,7 @@ function newGame() {
   hoveredMesh = null;
   lastClickTime = 0; lastClickIdx = -1;
   lastTap = 0; lastTapIdx = -1;
+  tubeAnimQueue = [];
   buildBoard();
   updateUI();
   setStatus(`<span class="x-col">YOUR TURN</span>`);
@@ -668,6 +668,39 @@ canvas.addEventListener('touchend', e => {
 function setStatus(html){ document.getElementById('status').innerHTML=html; }
 
 // ═══════════════════════════════════════════════════════════════════
+// TUBE GROWTH ANIMATION
+// ═══════════════════════════════════════════════════════════════════
+function animateTubes() {
+  tubeAnimQueue = tubeAnimQueue.filter(anim => {
+    anim.frame++;
+    const t = Math.min(anim.frame / anim.totalFrames, 1);
+    // Ease-out cubic
+    const progress = 1 - Math.pow(1 - t, 3);
+
+    // Build sub-curve from start to current progress
+    const numPts = 12;
+    const subPts = [];
+    for(let i = 0; i <= numPts; i++) {
+      subPts.push(anim.curve.getPoint((i / numPts) * progress));
+    }
+    if(subPts.length < 2) subPts.push(subPts[0].clone().add(new THREE.Vector3(0.001,0,0)));
+    const subCurve = new THREE.CatmullRomCurve3(subPts);
+
+    // Replace geometry
+    anim.tube.geometry.dispose();
+    anim.tube.geometry = new THREE.TubeGeometry(subCurve, 10, 0.06, 8, false);
+    anim.glow.geometry.dispose();
+    anim.glow.geometry = new THREE.TubeGeometry(subCurve, 10, 0.18, 8, false);
+
+    // Fade in opacity
+    anim.tubeMat.opacity = progress;
+    anim.glowMat.opacity = 0.22 * progress;
+
+    return anim.frame < anim.totalFrames;
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════
 // RENDER LOOP
 // ═══════════════════════════════════════════════════════════════════
 let t=0;
@@ -691,6 +724,7 @@ function animate() {
     sph.theta += 0.0025; updateCamera();
   }
 
+  animateTubes();
   renderer.render(scene, camera);
 }
 
