@@ -380,7 +380,7 @@ function makeO() {
 
 // Draw a completed line — bold glowing tube
 function drawCompletedLine(line, who) {
-  const color = who === PLAYER ? 0x00ffff : 0xff6600;
+  const color = who === PLAYER ? 0x00ffff : 0xffff00;
   const pts = line.map(i => cellMeshes[i].position.clone());
   const dir = pts[2].clone().sub(pts[0]).normalize().multiplyScalar(0.35);
   pts[0].sub(dir); pts[2].add(dir);
@@ -415,7 +415,7 @@ function rebuildPartialTubes() {
     if(oCount === 2 && xCount === 0) who = CPU;
     if(!who) continue;
 
-    const color = who === PLAYER ? 0x00ffff : 0xff6600;
+    const color = who === PLAYER ? 0x00ffff : 0xffff00;
     const pts = line.map(i => cellMeshes[i] ? cellMeshes[i].position.clone() : cellPos(i));
     const curve = new THREE.CatmullRomCurve3(pts);
 
