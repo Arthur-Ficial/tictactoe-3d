@@ -87,7 +87,10 @@
     display:flex;flex-direction:column;align-items:center;gap:7px;
     pointer-events:none;
   }
-  button{
+  #newgame-btn{
+    position:fixed;
+    bottom:max(14px, env(safe-area-inset-bottom));
+    left:50%;transform:translateX(-50%);
     padding:0.5rem 2rem;border:2px solid transparent;
     background:rgba(255,255,255,0.03);color:#555;
     opacity:0;pointer-events:none;
@@ -96,14 +99,15 @@
     text-shadow:none;
     box-shadow:none;
     transition:all 0.15s;
+    z-index:10;
   }
-  button.game-over{
+  #newgame-btn.game-over{
     color:#fff;border:2px solid #fff;
     background:rgba(255,255,255,0.08);
     text-shadow:0 0 8px #fff;
     box-shadow:0 0 15px rgba(255,255,255,0.3);
   }
-  button:hover{background:rgba(255,255,255,0.2);box-shadow:0 0 28px rgba(255,255,255,0.5);}
+  #newgame-btn:hover{background:rgba(255,255,255,0.2);box-shadow:0 0 28px rgba(255,255,255,0.5);}
   #hint{
     pointer-events:none;
     width:100%;text-align:center;
@@ -158,10 +162,9 @@
 </div>
 
 <div id="bottom">
-  <button onclick="newGame()">NEW GAME</button>
   <div id="hint"><span id="hint-touch">swipe to spin &nbsp;&middot;&nbsp; double-tap to place &nbsp;&middot;&nbsp; pinch to zoom</span><span id="hint-kb" style="display:none">arrows to rotate &nbsp;&middot;&nbsp; tab to select &nbsp;&middot;&nbsp; enter to place</span></div>
-
 </div>
+<button id="newgame-btn" onclick="newGame()">NEW GAME</button>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
@@ -1149,7 +1152,7 @@ function updateHint() {
   if(moveCount === 0) hintEl.classList.add('hint-big');
   else hintEl.classList.add('hint-hidden');
 }
-const btn = document.querySelector('button');
+const btn = document.getElementById('newgame-btn');
 function showButton(show) {
   btn.style.opacity = show ? '1' : '0';
   btn.style.pointerEvents = show ? 'all' : 'none';
