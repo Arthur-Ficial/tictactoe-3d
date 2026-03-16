@@ -206,7 +206,8 @@
 // ═══════════════════════════════════════════════════════════════════
 const C = {
   PLAYER:       0x00ffff, PLAYER_EM: 0x007777, PLAYER_MK_EM: 0x004466,
-  CPU:          0xffff00, CPU_EM:    0x999900, CPU_MK_EM:    0x666600, CPU_SPEC: 0xffffaa,
+  CPU:          0xff6600, CPU_EM:    0xaa3300, CPU_MK_EM:    0x993300, CPU_SPEC: 0xffcc88,
+  CPU_LINE:     0xffff00,
   WIN:          0xff00ff,
   CELL:         0x0e1133, CELL_SPEC: 0x4466cc, CELL_EDGE: 0x4477dd,
   HOVER:        0x221144, HOVER_SPEC: 0xaa66ff, HOVER_EM: 0x110033, HOVER_RESET: 0x000011,
@@ -237,7 +238,7 @@ sun.position.set(10,15,10); sun.castShadow=true; scene.add(sun);
 const ptX  = new THREE.PointLight(C.PLAYER, 5, 35); ptX.position.set(-8,4,6);  scene.add(ptX);
 const ptO  = new THREE.PointLight(C.CPU, 5, 35); ptO.position.set( 8,4,6);  scene.add(ptO);
 const ptW  = new THREE.PointLight(C.WIN, 0, 30); ptW.position.set( 0,8,0);  scene.add(ptW);
-const ptAI = new THREE.PointLight(C.CPU, 0, 20); ptAI.position.set(0,-4,8); scene.add(ptAI);
+const ptAI = new THREE.PointLight(C.CPU_LINE, 0, 20); ptAI.position.set(0,-4,8); scene.add(ptAI);
 
 // ═══════════════════════════════════════════════════════════════════
 // CONSTANTS & WIN LINES
@@ -506,7 +507,7 @@ function makeO() {
 
 // Draw a completed line — bold glowing tube
 function drawCompletedLine(line, who) {
-  const color = who === PLAYER ? C.PLAYER : C.CPU;
+  const color = who === PLAYER ? C.PLAYER : C.CPU_LINE;
   const pts = line.map(i => cellMeshes[i] ? cellMeshes[i].position.clone() : cellPos(i));
   const dir = pts[2].clone().sub(pts[0]).normalize().multiplyScalar(0.35);
   pts[0].sub(dir); pts[2].add(dir);
@@ -541,7 +542,7 @@ function rebuildPartialTubes() {
     if(oCount === 2 && xCount === 0) who = CPU;
     if(!who) continue;
 
-    const color = who === PLAYER ? C.PLAYER : C.CPU;
+    const color = who === PLAYER ? C.PLAYER : C.CPU_LINE;
     const pts = line.map(i => cellMeshes[i] ? cellMeshes[i].position.clone() : cellPos(i));
     const curve = new THREE.CatmullRomCurve3(pts);
 

@@ -24,7 +24,7 @@ export function applyTheme(theme) {
   g.ptX.color.setHex(g.C.PLAYER);
   g.ptO.color.setHex(g.C.CPU);
   g.ptW.color.setHex(g.C.WIN);
-  g.ptAI.color.setHex(g.C.CPU);
+  g.ptAI.color.setHex(g.C.CPU_LINE);
 
   // Adjust sun intensity for light vs dark backgrounds
   const bgBrightness = ((g.C.BG >> 16) & 0xff) + ((g.C.BG >> 8) & 0xff) + (g.C.BG & 0xff);
