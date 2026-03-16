@@ -111,9 +111,13 @@ function buildGear() {
   btn.addEventListener('touchstart', e => e.stopPropagation());
   document.body.appendChild(btn);
 
+  let pinned = false;
+  btn.addEventListener('click', () => { pinned = true; });
+
   const hint = document.getElementById('hint');
   const ngBtn = document.getElementById('newgame-btn');
   const sync = () => {
+    if (pinned) return;
     const hintVisible = hint && hint.classList.contains('hint-big');
     const btnVisible = ngBtn && ngBtn.style.opacity === '1';
     const show = hintVisible || btnVisible;
