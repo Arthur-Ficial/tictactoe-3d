@@ -112,7 +112,11 @@ function buildGear() {
   document.body.appendChild(btn);
 
   let pinned = false;
-  btn.addEventListener('click', () => { pinned = true; });
+  btn.addEventListener('click', () => {
+    pinned = true;
+    btn.style.opacity = '0.5';
+    btn.style.pointerEvents = 'all';
+  });
 
   const hint = document.getElementById('hint');
   const ngBtn = document.getElementById('newgame-btn');
