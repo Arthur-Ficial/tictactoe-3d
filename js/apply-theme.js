@@ -41,9 +41,15 @@ export function applyTheme(theme) {
       const m = meshes[i];
       if (!m) continue;
 
-      // Update material for non-taken cells to matEmpty
+      // Force all non-taken cells back to updated matEmpty
       if (!m.userData.taken) {
         m.material = g.matEmpty;
+        m.material.needsUpdate = true;
+      }
+      // Also reset taken cells to correct material
+      if (m.userData.taken) {
+        m.material = board[i] === 'X' ? g.matX : g.matO;
+        m.material.needsUpdate = true;
       }
 
       for (const child of m.children) {

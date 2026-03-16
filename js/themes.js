@@ -1,8 +1,11 @@
 // ═══════════════════════════════════════════════════════════════════
-// themes.js — 9 predefined color themes (SSOT for all color values)
+// themes.js — 12 color themes designed with color theory principles
+// Complementary player/CPU pairs, triadic win, mood-tinted glows
 // ═══════════════════════════════════════════════════════════════════
 
 export const THEMES = [
+
+  // ── 1. DEFAULT ── Cyan vs Yellow on black
   {
     id: 'default', name: 'DEFAULT',
     js: {
@@ -27,6 +30,8 @@ export const THEMES = [
       'c-transparent':'rgba(255,255,255,0)',
     },
   },
+
+  // ── 2. LIGHT ── Blue vs Orange on white
   {
     id: 'light', name: 'LIGHT',
     js: {
@@ -51,6 +56,8 @@ export const THEMES = [
       'c-transparent':'rgba(0,0,0,0)',
     },
   },
+
+  // ── 3. RED vs GREEN ── Classic rivalry
   {
     id: 'redgreen', name: 'RED vs GREEN',
     js: {
@@ -75,6 +82,8 @@ export const THEMES = [
       'c-transparent':'rgba(255,200,200,0)',
     },
   },
+
+  // ── 4. BLACK & WHITE ── Monochrome on gray
   {
     id: 'bw', name: 'BLACK & WHITE',
     js: {
@@ -99,13 +108,41 @@ export const THEMES = [
       'c-transparent':'rgba(255,255,255,0)',
     },
   },
+
+  // ── 5. HIGH CONTRAST ── Maximum accessibility, bold primaries
+  {
+    id: 'highcontrast', name: 'HIGH CONTRAST',
+    js: {
+      PLAYER:0x0088ff, PLAYER_EM:0x004488, PLAYER_MK_EM:0x003366,
+      CPU:0xff6600, CPU_EM:0x883300, CPU_MK_EM:0x662200, CPU_SPEC:0xffaa66,
+      WIN:0xffff00,
+      CELL:0x0a1020, CELL_SPEC:0x223355, CELL_EDGE:0x3366aa,
+      HOVER:0x112244, HOVER_SPEC:0x5588cc, HOVER_EM:0x081830, HOVER_RESET:0x040810,
+      WHITE:0xffffff, BG:0x000000,
+      LP_EDGE_HI:0x5588cc, LP_EDGE_WF:0x4477bb,
+    },
+    css: {
+      'c-player':'#0088ff','c-cpu':'#ff6600','c-win':'#ffff00','c-bg':'#000',
+      'c-white':'#fff','c-sep':'#333','c-muted':'#666','c-dim':'#555',
+      'c-panel':'#0a0a14','c-subtle':'#bbb',
+      'c-player-dim':'rgba(0,136,255,0.6)','c-cpu-dim':'rgba(255,102,0,0.6)',
+      'c-glow-03':'rgba(255,255,255,0.03)','c-glow-05':'rgba(255,255,255,0.05)',
+      'c-glow-08':'rgba(255,255,255,0.08)','c-glow-15':'rgba(255,255,255,0.15)',
+      'c-glow-20':'rgba(255,255,255,0.2)','c-glow-30':'rgba(255,255,255,0.3)',
+      'c-glow-50':'rgba(255,255,255,0.5)',
+      'c-hint':'rgba(255,255,255,0.9)','c-hint-shadow':'rgba(255,255,255,0.2)',
+      'c-transparent':'rgba(255,255,255,0)',
+    },
+  },
+
+  // ── 6. SOLARIZED ── Ethan Schoonover's palette
   {
     id: 'solarized', name: 'SOLARIZED',
     js: {
       PLAYER:0x268bd2, PLAYER_EM:0x134466, PLAYER_MK_EM:0x0d3352,
       CPU:0xb58900, CPU_EM:0x5a4500, CPU_MK_EM:0x443400, CPU_SPEC:0xddcc66,
       WIN:0xd33682,
-      CELL:0x0a4555, CELL_SPEC:0x2a7080, CELL_EDGE:0x2aa198,
+      CELL:0x0d4858, CELL_SPEC:0x2a7080, CELL_EDGE:0x2aa198,
       HOVER:0x0a4a5a, HOVER_SPEC:0x5599aa, HOVER_EM:0x052a35, HOVER_RESET:0x002b36,
       WHITE:0xfdf6e3, BG:0x002b36,
       LP_EDGE_HI:0x4499aa, LP_EDGE_WF:0x338899,
@@ -123,70 +160,50 @@ export const THEMES = [
       'c-transparent':'rgba(253,246,227,0)',
     },
   },
+
+  // ── 7. OCEAN ── Deep sea bioluminescence
   {
-    id: 'spring', name: 'SPRING',
+    id: 'ocean', name: 'OCEAN',
     js: {
-      PLAYER:0x22ee55, PLAYER_EM:0x117733, PLAYER_MK_EM:0x0d5525,
-      CPU:0xff66aa, CPU_EM:0x883355, CPU_MK_EM:0x662244, CPU_SPEC:0xffaacc,
-      WIN:0xffee00,
-      CELL:0x0e2a14, CELL_SPEC:0x337744, CELL_EDGE:0x44aa55,
-      HOVER:0x152a1a, HOVER_SPEC:0x77bb88, HOVER_EM:0x0a1a0f, HOVER_RESET:0x040a06,
-      WHITE:0xeeffee, BG:0x010a03,
-      LP_EDGE_HI:0x55aa66, LP_EDGE_WF:0x449955,
+      PLAYER:0x00ffaa, PLAYER_EM:0x008855, PLAYER_MK_EM:0x006644,
+      CPU:0xff6677, CPU_EM:0x883344, CPU_MK_EM:0x662233, CPU_SPEC:0xffaabb,
+      WIN:0xffcc00,
+      CELL:0x0a1e2e, CELL_SPEC:0x1a4466, CELL_EDGE:0x1a5566,
+      HOVER:0x0e2838, HOVER_SPEC:0x3388aa, HOVER_EM:0x061822, HOVER_RESET:0x030a10,
+      WHITE:0xccffee, BG:0x020a10,
+      LP_EDGE_HI:0x339988, LP_EDGE_WF:0x228877,
     },
     css: {
-      'c-player':'#22ee55','c-cpu':'#ff66aa','c-win':'#ffee00','c-bg':'#010a03',
-      'c-white':'#eeffee','c-sep':'#1a3322','c-muted':'#447744','c-dim':'#336633',
-      'c-panel':'#081a0c','c-subtle':'#77bb77',
-      'c-player-dim':'rgba(34,238,85,0.6)','c-cpu-dim':'rgba(255,102,170,0.6)',
-      'c-glow-03':'rgba(200,255,200,0.03)','c-glow-05':'rgba(200,255,200,0.05)',
-      'c-glow-08':'rgba(200,255,200,0.08)','c-glow-15':'rgba(200,255,200,0.15)',
-      'c-glow-20':'rgba(200,255,200,0.2)','c-glow-30':'rgba(200,255,200,0.3)',
-      'c-glow-50':'rgba(200,255,200,0.5)',
-      'c-hint':'rgba(200,255,200,0.85)','c-hint-shadow':'rgba(200,255,200,0.15)',
-      'c-transparent':'rgba(200,255,200,0)',
+      'c-player':'#00ffaa','c-cpu':'#ff6677','c-win':'#ffcc00','c-bg':'#020a10',
+      'c-white':'#ccffee','c-sep':'#0e2233','c-muted':'#337766','c-dim':'#226655',
+      'c-panel':'#081820','c-subtle':'#66bbaa',
+      'c-player-dim':'rgba(0,255,170,0.6)','c-cpu-dim':'rgba(255,102,119,0.6)',
+      'c-glow-03':'rgba(150,255,220,0.03)','c-glow-05':'rgba(150,255,220,0.05)',
+      'c-glow-08':'rgba(150,255,220,0.08)','c-glow-15':'rgba(150,255,220,0.15)',
+      'c-glow-20':'rgba(150,255,220,0.2)','c-glow-30':'rgba(150,255,220,0.3)',
+      'c-glow-50':'rgba(150,255,220,0.5)',
+      'c-hint':'rgba(150,255,220,0.85)','c-hint-shadow':'rgba(150,255,220,0.15)',
+      'c-transparent':'rgba(150,255,220,0)',
     },
   },
+
+  // ── 8. SUNSET ── Golden hour, amber vs violet
   {
-    id: 'summer', name: 'SUMMER',
+    id: 'sunset', name: 'SUNSET',
     js: {
-      PLAYER:0x00bbff, PLAYER_EM:0x005e80, PLAYER_MK_EM:0x004660,
-      CPU:0xff7700, CPU_EM:0x883c00, CPU_MK_EM:0x662d00, CPU_SPEC:0xffbb66,
-      WIN:0xff1166,
-      CELL:0x0e1230, CELL_SPEC:0x334488, CELL_EDGE:0x4466aa,
-      HOVER:0x141133, HOVER_SPEC:0x6655bb, HOVER_EM:0x0a0822, HOVER_RESET:0x040310,
-      WHITE:0xfffff0, BG:0x000008,
-      LP_EDGE_HI:0x5577cc, LP_EDGE_WF:0x4466aa,
-    },
-    css: {
-      'c-player':'#00bbff','c-cpu':'#ff7700','c-win':'#ff1166','c-bg':'#000008',
-      'c-white':'#fffff0','c-sep':'#1a1a44','c-muted':'#445588','c-dim':'#334477',
-      'c-panel':'#08081e','c-subtle':'#7788bb',
-      'c-player-dim':'rgba(0,187,255,0.6)','c-cpu-dim':'rgba(255,119,0,0.6)',
-      'c-glow-03':'rgba(255,255,240,0.03)','c-glow-05':'rgba(255,255,240,0.05)',
-      'c-glow-08':'rgba(255,255,240,0.08)','c-glow-15':'rgba(255,255,240,0.15)',
-      'c-glow-20':'rgba(255,255,240,0.2)','c-glow-30':'rgba(255,255,240,0.3)',
-      'c-glow-50':'rgba(255,255,240,0.5)',
-      'c-hint':'rgba(255,255,240,0.85)','c-hint-shadow':'rgba(255,255,240,0.15)',
-      'c-transparent':'rgba(255,255,240,0)',
-    },
-  },
-  {
-    id: 'fall', name: 'FALL',
-    js: {
-      PLAYER:0xff8822, PLAYER_EM:0x884411, PLAYER_MK_EM:0x66330a,
-      CPU:0x44bb44, CPU_EM:0x225e22, CPU_MK_EM:0x1a4a1a, CPU_SPEC:0x88dd88,
-      WIN:0xff2222,
-      CELL:0x2a1a0e, CELL_SPEC:0x665533, CELL_EDGE:0x887744,
-      HOVER:0x2a1a10, HOVER_SPEC:0xaa7744, HOVER_EM:0x150d06, HOVER_RESET:0x080604,
-      WHITE:0xffe8cc, BG:0x060300,
+      PLAYER:0xffaa22, PLAYER_EM:0x885511, PLAYER_MK_EM:0x664008,
+      CPU:0xaa44ff, CPU_EM:0x552288, CPU_MK_EM:0x441a66, CPU_SPEC:0xcc88ff,
+      WIN:0xff4466,
+      CELL:0x1a0e1e, CELL_SPEC:0x443355, CELL_EDGE:0x553366,
+      HOVER:0x221428, HOVER_SPEC:0x7744aa, HOVER_EM:0x140a18, HOVER_RESET:0x0a0610,
+      WHITE:0xffeedd, BG:0x0a0408,
       LP_EDGE_HI:0x886644, LP_EDGE_WF:0x775533,
     },
     css: {
-      'c-player':'#ff8822','c-cpu':'#44bb44','c-win':'#ff2222','c-bg':'#060300',
-      'c-white':'#ffe8cc','c-sep':'#33220f','c-muted':'#776644','c-dim':'#665533',
-      'c-panel':'#1a1008','c-subtle':'#aa9966',
-      'c-player-dim':'rgba(255,136,34,0.6)','c-cpu-dim':'rgba(68,187,68,0.6)',
+      'c-player':'#ffaa22','c-cpu':'#aa44ff','c-win':'#ff4466','c-bg':'#0a0408',
+      'c-white':'#ffeedd','c-sep':'#332222','c-muted':'#886666','c-dim':'#775555',
+      'c-panel':'#140a10','c-subtle':'#bb8888',
+      'c-player-dim':'rgba(255,170,34,0.6)','c-cpu-dim':'rgba(170,68,255,0.6)',
       'c-glow-03':'rgba(255,220,180,0.03)','c-glow-05':'rgba(255,220,180,0.05)',
       'c-glow-08':'rgba(255,220,180,0.08)','c-glow-15':'rgba(255,220,180,0.15)',
       'c-glow-20':'rgba(255,220,180,0.2)','c-glow-30':'rgba(255,220,180,0.3)',
@@ -195,30 +212,111 @@ export const THEMES = [
       'c-transparent':'rgba(255,220,180,0)',
     },
   },
+
+  // ── 9. NEON ── Cyberpunk, hot pink vs neon green
   {
-    id: 'winter', name: 'WINTER',
+    id: 'neon', name: 'NEON',
     js: {
-      PLAYER:0x66ccff, PLAYER_EM:0x336688, PLAYER_MK_EM:0x264d66,
-      CPU:0xcc88ff, CPU_EM:0x664488, CPU_MK_EM:0x4d3366, CPU_SPEC:0xddaaff,
+      PLAYER:0xff00cc, PLAYER_EM:0x880066, PLAYER_MK_EM:0x66004d,
+      CPU:0x00ff88, CPU_EM:0x008844, CPU_MK_EM:0x006633, CPU_SPEC:0x88ffbb,
+      WIN:0x0088ff,
+      CELL:0x120a1e, CELL_SPEC:0x332255, CELL_EDGE:0x442266,
+      HOVER:0x1e1030, HOVER_SPEC:0x6633aa, HOVER_EM:0x100820, HOVER_RESET:0x080410,
+      WHITE:0xffddff, BG:0x030008,
+      LP_EDGE_HI:0x6633aa, LP_EDGE_WF:0x552299,
+    },
+    css: {
+      'c-player':'#ff00cc','c-cpu':'#00ff88','c-win':'#0088ff','c-bg':'#030008',
+      'c-white':'#ffddff','c-sep':'#2a1133','c-muted':'#774488','c-dim':'#663377',
+      'c-panel':'#0e0618','c-subtle':'#aa77cc',
+      'c-player-dim':'rgba(255,0,204,0.6)','c-cpu-dim':'rgba(0,255,136,0.6)',
+      'c-glow-03':'rgba(255,180,255,0.03)','c-glow-05':'rgba(255,180,255,0.05)',
+      'c-glow-08':'rgba(255,180,255,0.08)','c-glow-15':'rgba(255,180,255,0.15)',
+      'c-glow-20':'rgba(255,180,255,0.2)','c-glow-30':'rgba(255,180,255,0.3)',
+      'c-glow-50':'rgba(255,180,255,0.5)',
+      'c-hint':'rgba(255,200,255,0.85)','c-hint-shadow':'rgba(255,180,255,0.15)',
+      'c-transparent':'rgba(255,180,255,0)',
+    },
+  },
+
+  // ── 10. CHERRY BLOSSOM ── Japanese spring, sakura pink vs leaf green
+  {
+    id: 'sakura', name: 'CHERRY BLOSSOM',
+    js: {
+      PLAYER:0xff7799, PLAYER_EM:0x883d4d, PLAYER_MK_EM:0x662e3a,
+      CPU:0x44cc55, CPU_EM:0x226633, CPU_MK_EM:0x1a4d26, CPU_SPEC:0x88ee99,
+      WIN:0xffdd22,
+      CELL:0x140a1a, CELL_SPEC:0x3a2244, CELL_EDGE:0x443355,
+      HOVER:0x1e1028, HOVER_SPEC:0x7755aa, HOVER_EM:0x120a18, HOVER_RESET:0x080410,
+      WHITE:0xffeef4, BG:0x060210,
+      LP_EDGE_HI:0x885577, LP_EDGE_WF:0x774466,
+    },
+    css: {
+      'c-player':'#ff7799','c-cpu':'#44cc55','c-win':'#ffdd22','c-bg':'#060210',
+      'c-white':'#ffeef4','c-sep':'#2a1122','c-muted':'#885566','c-dim':'#774455',
+      'c-panel':'#100818','c-subtle':'#bb7799',
+      'c-player-dim':'rgba(255,119,153,0.6)','c-cpu-dim':'rgba(68,204,85,0.6)',
+      'c-glow-03':'rgba(255,200,220,0.03)','c-glow-05':'rgba(255,200,220,0.05)',
+      'c-glow-08':'rgba(255,200,220,0.08)','c-glow-15':'rgba(255,200,220,0.15)',
+      'c-glow-20':'rgba(255,200,220,0.2)','c-glow-30':'rgba(255,200,220,0.3)',
+      'c-glow-50':'rgba(255,200,220,0.5)',
+      'c-hint':'rgba(255,210,230,0.85)','c-hint-shadow':'rgba(255,200,220,0.15)',
+      'c-transparent':'rgba(255,200,220,0)',
+    },
+  },
+
+  // ── 11. AUTUMN ── Harvest amber vs forest green
+  {
+    id: 'autumn', name: 'AUTUMN',
+    js: {
+      PLAYER:0xee7722, PLAYER_EM:0x773c11, PLAYER_MK_EM:0x552d0a,
+      CPU:0x33aa55, CPU_EM:0x1a552b, CPU_MK_EM:0x144020, CPU_SPEC:0x77dd88,
+      WIN:0xdd2233,
+      CELL:0x1e140a, CELL_SPEC:0x554422, CELL_EDGE:0x665522,
+      HOVER:0x281a0e, HOVER_SPEC:0x997744, HOVER_EM:0x180f06, HOVER_RESET:0x0a0804,
+      WHITE:0xffe8cc, BG:0x080400,
+      LP_EDGE_HI:0x886644, LP_EDGE_WF:0x775533,
+    },
+    css: {
+      'c-player':'#ee7722','c-cpu':'#33aa55','c-win':'#dd2233','c-bg':'#080400',
+      'c-white':'#ffe8cc','c-sep':'#33220f','c-muted':'#776644','c-dim':'#665533',
+      'c-panel':'#140e06','c-subtle':'#aa9966',
+      'c-player-dim':'rgba(238,119,34,0.6)','c-cpu-dim':'rgba(51,170,85,0.6)',
+      'c-glow-03':'rgba(255,220,180,0.03)','c-glow-05':'rgba(255,220,180,0.05)',
+      'c-glow-08':'rgba(255,220,180,0.08)','c-glow-15':'rgba(255,220,180,0.15)',
+      'c-glow-20':'rgba(255,220,180,0.2)','c-glow-30':'rgba(255,220,180,0.3)',
+      'c-glow-50':'rgba(255,220,180,0.5)',
+      'c-hint':'rgba(255,220,180,0.85)','c-hint-shadow':'rgba(255,220,180,0.15)',
+      'c-transparent':'rgba(255,220,180,0)',
+    },
+  },
+
+  // ── 12. ARCTIC ── Ice crystal blue vs aurora violet
+  {
+    id: 'arctic', name: 'ARCTIC',
+    js: {
+      PLAYER:0x88ddff, PLAYER_EM:0x446e88, PLAYER_MK_EM:0x335266,
+      CPU:0xbb88ee, CPU_EM:0x5e4477, CPU_MK_EM:0x46335a, CPU_SPEC:0xddbbff,
       WIN:0xff5588,
-      CELL:0x101828, CELL_SPEC:0x3a5577, CELL_EDGE:0x5577aa,
-      HOVER:0x121a33, HOVER_SPEC:0x6677bb, HOVER_EM:0x0a1020, HOVER_RESET:0x050810,
-      WHITE:0xe0eaff, BG:0x020306,
+      CELL:0x0c1422, CELL_SPEC:0x2a3d66, CELL_EDGE:0x3355aa,
+      HOVER:0x141e38, HOVER_SPEC:0x5577bb, HOVER_EM:0x0a1428, HOVER_RESET:0x050810,
+      WHITE:0xe0eaff, BG:0x020408,
       LP_EDGE_HI:0x5577bb, LP_EDGE_WF:0x446699,
     },
     css: {
-      'c-player':'#66ccff','c-cpu':'#cc88ff','c-win':'#ff5588','c-bg':'#020306',
+      'c-player':'#88ddff','c-cpu':'#bb88ee','c-win':'#ff5588','c-bg':'#020408',
       'c-white':'#e0eaff','c-sep':'#152233','c-muted':'#446688','c-dim':'#335577',
       'c-panel':'#080c1a','c-subtle':'#7799cc',
-      'c-player-dim':'rgba(102,204,255,0.6)','c-cpu-dim':'rgba(204,136,255,0.6)',
-      'c-glow-03':'rgba(220,230,255,0.03)','c-glow-05':'rgba(220,230,255,0.05)',
-      'c-glow-08':'rgba(220,230,255,0.08)','c-glow-15':'rgba(220,230,255,0.15)',
-      'c-glow-20':'rgba(220,230,255,0.2)','c-glow-30':'rgba(220,230,255,0.3)',
-      'c-glow-50':'rgba(220,230,255,0.5)',
-      'c-hint':'rgba(220,230,255,0.85)','c-hint-shadow':'rgba(220,230,255,0.15)',
-      'c-transparent':'rgba(220,230,255,0)',
+      'c-player-dim':'rgba(136,221,255,0.6)','c-cpu-dim':'rgba(187,136,238,0.6)',
+      'c-glow-03':'rgba(200,220,255,0.03)','c-glow-05':'rgba(200,220,255,0.05)',
+      'c-glow-08':'rgba(200,220,255,0.08)','c-glow-15':'rgba(200,220,255,0.15)',
+      'c-glow-20':'rgba(200,220,255,0.2)','c-glow-30':'rgba(200,220,255,0.3)',
+      'c-glow-50':'rgba(200,220,255,0.5)',
+      'c-hint':'rgba(200,220,255,0.85)','c-hint-shadow':'rgba(200,220,255,0.15)',
+      'c-transparent':'rgba(200,220,255,0)',
     },
   },
+
 ];
 
 export function getThemeById(id) {
