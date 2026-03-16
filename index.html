@@ -72,7 +72,7 @@
     min-height:1.3rem;text-align:center;
   }
   .x-col{color:#00ffff;text-shadow:0 0 15px #00ffff,0 0 40px #00ffff;}
-  .o-col{color:#ff6600;text-shadow:0 0 15px #ff6600,0 0 40px #ff6600;}
+  .o-col{color:#ffff00;text-shadow:0 0 15px #ffff00,0 0 40px #ffff00;}
   .w-col{color:#ff00ff;text-shadow:0 0 25px #ff00ff,0 0 60px #ff00ff;}
 
   /* Threat preview bar */
@@ -80,7 +80,7 @@
     font-size:0.65rem;letter-spacing:2px;color:#444;
     min-height:0.9rem;text-align:center;
   }
-  .tx{color:#00ffff99;} .to{color:#ff660099;}
+  .tx{color:#00ffff99;} .to{color:#ffff0099;}
 
   #bottom{
     position:fixed;bottom:max(14px, env(safe-area-inset-bottom));left:0;right:0;
@@ -209,7 +209,7 @@ scene.add(new THREE.AmbientLight(0xffffff, 0.2));
 const sun = new THREE.DirectionalLight(0xffffff, 2.5);
 sun.position.set(10,15,10); sun.castShadow=true; scene.add(sun);
 const ptX  = new THREE.PointLight(0x00ffff, 5, 35); ptX.position.set(-8,4,6);  scene.add(ptX);
-const ptO  = new THREE.PointLight(0xff6600, 5, 35); ptO.position.set( 8,4,6);  scene.add(ptO);
+const ptO  = new THREE.PointLight(0xffff00, 5, 35); ptO.position.set( 8,4,6);  scene.add(ptO);
 const ptW  = new THREE.PointLight(0xff00ff, 0, 30); ptW.position.set( 0,8,0);  scene.add(ptW);
 const ptAI = new THREE.PointLight(0xffff00, 0, 20); ptAI.position.set(0,-4,8); scene.add(ptAI);
 
@@ -429,7 +429,7 @@ const matX = new THREE.MeshPhongMaterial({
   color:0x00ffff, emissive:0x007777, shininess:220, specular:0xffffff
 });
 const matO = new THREE.MeshPhongMaterial({
-  color:0xff6600, emissive:0xaa3300, shininess:220, specular:0xffcc88
+  color:0xffff00, emissive:0x999900, shininess:220, specular:0xffffaa
 });
 const sharedMats = new Set([matEmpty, matHover, matX, matO]);
 
@@ -470,11 +470,11 @@ function makeX() {
 }
 function makeO() {
   const g = new THREE.Group();
-  const m = new THREE.MeshPhongMaterial({color:0xff6600, emissive:0x993300, shininess:200});
+  const m = new THREE.MeshPhongMaterial({color:0xffff00, emissive:0x666600, shininess:200});
   const t = new THREE.Mesh(new THREE.TorusGeometry(0.42,0.11,14,36),m);
   t.rotation.x = Math.PI/2; g.add(t);
   g.add(new THREE.Mesh(new THREE.SphereGeometry(0.55,10,10),
-    new THREE.MeshPhongMaterial({color:0xff6600,transparent:true,opacity:0.07,emissive:0xff6600})));
+    new THREE.MeshPhongMaterial({color:0xffff00,transparent:true,opacity:0.07,emissive:0xffff00})));
   return g;
 }
 
@@ -549,7 +549,7 @@ function placeMarker(i, who) {
   mesh.add(sym);
   mesh.scale.setScalar(0.01);
   popQueue.push({mesh, t:0});
-  spawnShockwave(mesh.position.clone(), who === PLAYER ? 0x00ffff : 0xff6600);
+  spawnShockwave(mesh.position.clone(), who === PLAYER ? 0x00ffff : 0xffff00);
 
   // Score new lines
   const scored = newLinesAt(board, i, who);
@@ -1170,7 +1170,7 @@ function shareGame() {
   const x = scores[PLAYER], o = scores[CPU];
   let resultText, resultColor;
   if(x > o)      { resultText = `YOU WIN ${x} - ${o}`; resultColor = '#ff00ff'; }
-  else if(o > x) { resultText = `CPU WINS ${o} - ${x}`; resultColor = '#ff6600'; }
+  else if(o > x) { resultText = `CPU WINS ${o} - ${x}`; resultColor = '#ffff00'; }
   else           { resultText = `DRAW ${x} - ${o}`; resultColor = '#ffffff'; }
   const fontSize = Math.round(w * 0.04);
   ctx.textAlign = 'center';
