@@ -446,7 +446,7 @@ function disposeObject(obj) {
 
 // Shared materials (cached singletons — never dispose these)
 const matEmpty = new THREE.MeshPhongMaterial({
-  color:C.CELL, transparent:true, opacity:0.55, shininess:50, specular:C.CELL_SPEC
+  color:C.CELL, transparent:true, opacity:0.55, shininess:18, specular:C.CELL_SPEC
 });
 const matHover = new THREE.MeshPhongMaterial({
   color:C.HOVER, transparent:true, opacity:0.9, shininess:120, specular:C.HOVER_SPEC, emissive:C.HOVER_EM
@@ -1398,7 +1398,7 @@ animate();
 
 // Bridge for ES modules — exposes game internals for theme system
 window._game = {
-  renderer, C, matX, matO, matEmpty, matHover,
+  renderer, C, sun, matX, matO, matEmpty, matHover,
   ptX, ptO, ptW, ptAI,
   get cellMeshes(){return cellMeshes;},
   get board(){return board;},
