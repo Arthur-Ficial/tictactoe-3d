@@ -64,7 +64,10 @@ export function applyTheme(theme) {
     }
   }
 
-  // 7. Meta theme-color
+  // 7. Rebuild all line tubes with new colors
+  if (g.rebuildTubes) g.rebuildTubes();
+
+  // 8. Meta theme-color
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.content = '#' + g.C.BG.toString(16).padStart(6, '0');
 }

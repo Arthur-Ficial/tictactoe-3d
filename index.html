@@ -1402,8 +1402,20 @@ window._game = {
   ptX, ptO, ptW, ptAI,
   get cellMeshes(){return cellMeshes;},
   get board(){return board;},
-  get lineTubes(){return lineTubes;},
-  get partialTubes(){return partialTubes;}
+  rebuildTubes() {
+    // Clear existing tubes
+    lineTubes.forEach(o => { pivot.remove(o); disposeObject(o); });
+    lineTubes = [];
+    // Rebuild completed lines from board state
+    for(const line of WINS) {
+      const v = board[line[0]];
+      if(v && v !== '_' && line.every(i => board[i] === v)) {
+        drawCompletedLine(line, v);
+      }
+    }
+    // Rebuild partial threat tubes
+    rebuildPartialTubes();
+  }
 };
 </script>
 <script type="module" src="js/main.js"></script>
