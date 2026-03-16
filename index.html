@@ -729,7 +729,7 @@ function tryPlace(cx, cy) {
 // Mouse
 window.addEventListener('mousedown', e => {
   if(introActive) return;
-  if(e.target === btn || e.target === shareBtn) return;
+  if(e.target === btn || e.target === shareBtn || e.target.id === 'settings-btn') return;
   mouseDown=true; isDragging=false; touched();
   dragStart={x:e.clientX,y:e.clientY};
   lastDragDelta={x:0,y:0}; lastDragTime=Date.now();
