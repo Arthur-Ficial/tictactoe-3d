@@ -26,13 +26,20 @@
     --c-player:#00ffff;--c-cpu:#ff6600;--c-cpu-line:#ffff00;
     --c-win:#ff00ff;--c-bg:#000;
     --c-player-dim:rgba(0,255,255,0.6);--c-cpu-dim:rgba(255,102,0,0.6);
+    --c-white:#fff;--c-sep:#333;--c-muted:#555;--c-dim:#444;
+    --c-panel:#111;--c-subtle:#aaa;
+    --c-glow-03:rgba(255,255,255,0.03);--c-glow-05:rgba(255,255,255,0.05);
+    --c-glow-08:rgba(255,255,255,0.08);--c-glow-15:rgba(255,255,255,0.15);
+    --c-glow-20:rgba(255,255,255,0.2);--c-glow-30:rgba(255,255,255,0.3);
+    --c-glow-50:rgba(255,255,255,0.5);
+    --c-hint:rgba(255,255,255,0.85);--c-hint-shadow:rgba(255,255,255,0.15);
   }
   *{margin:0;padding:0;box-sizing:border-box;
     -webkit-touch-callout:none;
     -webkit-tap-highlight-color:transparent;
     -webkit-user-select:none;user-select:none;
   }
-  body{background:#000;overflow:hidden;font-family:'Segoe UI',sans-serif;
+  body{background:var(--c-bg);overflow:hidden;font-family:'Segoe UI',sans-serif;
     touch-action:none;
     overscroll-behavior:none;
     position:fixed;width:100%;height:100%;
@@ -59,12 +66,12 @@
     flex:1;text-align:right;
     color:var(--c-cpu-line);text-shadow:0 0 20px var(--c-cpu-line);
   }
-  .sc-sep{color:#333;font-size:1rem;text-align:center;flex:0 0 30px;}
+  .sc-sep{color:var(--c-sep);font-size:1rem;text-align:center;flex:0 0 30px;}
 
   /* Delta bar */
   #delta-wrap{
     width:320px;height:8px;
-    background:#111;border-radius:4px;overflow:hidden;
+    background:var(--c-panel);border-radius:4px;overflow:hidden;
     display:flex;
   }
   #delta-you{background:var(--c-player);height:100%;transition:width 0.4s ease;}
@@ -73,7 +80,7 @@
   /* Status */
   #status{
     font-size:1rem;font-weight:800;letter-spacing:3px;
-    color:#fff;text-shadow:0 0 12px #fff;
+    color:var(--c-white);text-shadow:0 0 12px var(--c-white);
     min-height:1.3rem;text-align:center;
   }
   .x-col{color:var(--c-player);text-shadow:0 0 15px var(--c-player),0 0 40px var(--c-player);}
@@ -82,7 +89,7 @@
 
   /* Threat preview bar */
   #threat-bar{
-    font-size:0.65rem;letter-spacing:2px;color:#444;
+    font-size:0.65rem;letter-spacing:2px;color:var(--c-dim);
     min-height:0.9rem;text-align:center;
   }
   .tx{color:var(--c-player-dim);} .to{color:var(--c-cpu-dim);}
@@ -97,7 +104,7 @@
     bottom:calc(max(14px, env(safe-area-inset-bottom)) + 44px);
     left:50%;transform:translateX(-50%);
     padding:0.5rem 2rem;border:2px solid transparent;
-    background:rgba(255,255,255,0.03);color:#555;
+    background:var(--c-glow-03);color:var(--c-muted);
     opacity:0;pointer-events:none;
     border-radius:6px;font-size:0.85rem;font-weight:900;
     letter-spacing:3px;cursor:pointer;white-space:nowrap;
@@ -107,19 +114,19 @@
     z-index:10;
   }
   #newgame-btn.game-over{
-    color:#fff;border:2px solid #fff;
-    background:rgba(255,255,255,0.08);
-    text-shadow:0 0 8px #fff;
-    box-shadow:0 0 15px rgba(255,255,255,0.3);
+    color:var(--c-white);border:2px solid var(--c-white);
+    background:var(--c-glow-08);
+    text-shadow:0 0 8px var(--c-white);
+    box-shadow:0 0 15px var(--c-glow-30);
   }
-  #newgame-btn:hover{background:rgba(255,255,255,0.2);box-shadow:0 0 28px rgba(255,255,255,0.5);}
+  #newgame-btn:hover{background:var(--c-glow-20);box-shadow:0 0 28px var(--c-glow-50);}
 
   #share-btn{
     position:fixed;
     bottom:max(14px, env(safe-area-inset-bottom));
     left:50%;transform:translateX(-50%);
     padding:0.4rem 1.6rem;border:2px solid transparent;
-    background:rgba(255,255,255,0.03);color:#555;
+    background:var(--c-glow-03);color:var(--c-muted);
     opacity:0;pointer-events:none;
     border-radius:6px;font-size:0.72rem;font-weight:900;
     letter-spacing:3px;cursor:pointer;white-space:nowrap;
@@ -129,10 +136,10 @@
   }
   #share-btn.visible{
     opacity:1;pointer-events:all;
-    color:#aaa;border:2px solid #555;
-    background:rgba(255,255,255,0.05);
+    color:var(--c-subtle);border:2px solid var(--c-muted);
+    background:var(--c-glow-05);
   }
-  #share-btn:hover{background:rgba(255,255,255,0.15);box-shadow:0 0 20px rgba(255,255,255,0.3);color:#fff;border-color:#fff;}
+  #share-btn:hover{background:var(--c-glow-15);box-shadow:0 0 20px var(--c-glow-30);color:var(--c-white);border-color:var(--c-white);}
   #hint{
     pointer-events:none;
     width:100%;text-align:center;
@@ -149,16 +156,16 @@
     transform-style:preserve-3d;
   }
   #hint.hint-big{
-    color:rgba(255,255,255,0.85);
+    color:var(--c-hint);
     font-size:0.72rem;
     letter-spacing:0.28em;
-    text-shadow:0 0 20px rgba(255,255,255,0.15);
+    text-shadow:0 0 20px var(--c-hint-shadow);
     opacity:1;
     transform:perspective(600px) rotateX(0deg) translateY(0) translateZ(0);
     filter:blur(0);
   }
   #hint.hint-hidden{
-    color:rgba(255,255,255,0);
+    color:transparent;
     font-size:0.72rem;
     letter-spacing:0.28em;
     text-shadow:none;
@@ -204,7 +211,10 @@ const C = {
   WIN:          0xff00ff,
   CELL:         0x0a0a22, CELL_SPEC:    0x3344aa, CELL_EDGE:    0x3355cc,
   HOVER:        0x221144, HOVER_SPEC:   0xaa66ff, HOVER_EM:     0x110033,
+  HOVER_RESET:  0x000011,
+  WHITE:        0xffffff,
   BG:           0x000000,
+  LP_EDGE_HI:   0x88aaff, LP_EDGE_WF:   0x6699ff,
 };
 const h = n => '#' + n.toString(16).padStart(6, '0');
 
@@ -224,8 +234,8 @@ const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHei
 // ═══════════════════════════════════════════════════════════════════
 // LIGHTS
 // ═══════════════════════════════════════════════════════════════════
-scene.add(new THREE.AmbientLight(0xffffff, 0.2));
-const sun = new THREE.DirectionalLight(0xffffff, 2.5);
+scene.add(new THREE.AmbientLight(C.WHITE, 0.2));
+const sun = new THREE.DirectionalLight(C.WHITE, 2.5);
 sun.position.set(10,15,10); sun.castShadow=true; scene.add(sun);
 const ptX  = new THREE.PointLight(C.PLAYER, 5, 35); ptX.position.set(-8,4,6);  scene.add(ptX);
 const ptO  = new THREE.PointLight(C.CPU, 5, 35); ptO.position.set( 8,4,6);  scene.add(ptO);
@@ -445,7 +455,7 @@ const matHover = new THREE.MeshPhongMaterial({
   color:C.HOVER, transparent:true, opacity:0.9, shininess:120, specular:C.HOVER_SPEC, emissive:C.HOVER_EM
 });
 const matX = new THREE.MeshPhongMaterial({
-  color:C.PLAYER, emissive:C.PLAYER_EM, shininess:220, specular:0xffffff
+  color:C.PLAYER, emissive:C.PLAYER_EM, shininess:220, specular:C.WHITE
 });
 const matO = new THREE.MeshPhongMaterial({
   color:C.CPU, emissive:C.CPU_EM, shininess:220, specular:C.CPU_SPEC
@@ -763,7 +773,7 @@ window.addEventListener('mousemove', e => {
       if(lpActive && !lpLocked && lpStage === 0) lpEnd();
       isDragging=true; touched(); canvas.style.cursor='grabbing';
       if(hoveredMesh && !hoveredMesh.userData.taken) {
-        hoveredMesh.material.emissive?.setHex(0x000011); hoveredMesh.scale.setScalar(1);
+        hoveredMesh.material.emissive?.setHex(C.HOVER_RESET); hoveredMesh.scale.setScalar(1);
       }
       hoveredMesh=null;
       const mdx=e.clientX-dragStart.x, mdy=e.clientY-dragStart.y;
@@ -777,7 +787,7 @@ window.addEventListener('mousemove', e => {
   if(!isDragging) {
     const hit = getHit(e.clientX, e.clientY);
     if(hoveredMesh && !hoveredMesh.userData.taken) {
-      hoveredMesh.material.emissive?.setHex(0x000011); hoveredMesh.scale.setScalar(1);
+      hoveredMesh.material.emissive?.setHex(C.HOVER_RESET); hoveredMesh.scale.setScalar(1);
     }
     hoveredMesh = null;
     if(hit && !hit.userData.taken && !gameOver && !thinking) {
@@ -1043,8 +1053,8 @@ function lpApplyStage(stage) {
     for (const child of mesh.children) {
       if (child.isLineSegments) {
         const eMat = child.material;
-        if (stage === 1) eMat.color.setHex(0x88aaff);
-        else if (stage === 2) eMat.color.setHex(0x6699ff);
+        if (stage === 1) eMat.color.setHex(C.LP_EDGE_HI);
+        else if (stage === 2) eMat.color.setHex(C.LP_EDGE_WF);
       }
       if (child.isGroup) {
         child.traverse(c => {
