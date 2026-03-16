@@ -45,12 +45,13 @@ function injectCSS() {
   const s = document.createElement('style');
   s.textContent = `
     #theme-gear{
-      position:fixed;bottom:2px;right:2px;z-index:50;
+      position:fixed!important;bottom:2px!important;right:2px!important;z-index:999!important;
       background:none;border:none;cursor:pointer;
       padding:8px;border-radius:6px;
-      opacity:0.4;pointer-events:all;transition:opacity 0.3s;
+      opacity:0.4!important;pointer-events:all!important;
+      visibility:visible!important;display:block!important;
     }
-    #theme-gear:hover{opacity:0.7;}
+    #theme-gear:hover{opacity:0.7!important;}
     #theme-overlay{
       position:fixed;inset:0;z-index:100;
       background:rgba(0,0,0,0.88);
