@@ -22,24 +22,12 @@
 <meta property="og:image:height" content="630">
 <meta property="og:site_name" content="3D Tic-Tac-Toe">
 <style>
-  :root{
-    --c-player:#00ffff;--c-cpu:#ff6600;--c-cpu-line:#ffff00;
-    --c-win:#ff00ff;--c-bg:#000;
-    --c-player-dim:rgba(0,255,255,0.6);--c-cpu-dim:rgba(255,102,0,0.6);
-    --c-white:#fff;--c-sep:#333;--c-muted:#555;--c-dim:#444;
-    --c-panel:#111;--c-subtle:#aaa;
-    --c-glow-03:rgba(255,255,255,0.03);--c-glow-05:rgba(255,255,255,0.05);
-    --c-glow-08:rgba(255,255,255,0.08);--c-glow-15:rgba(255,255,255,0.15);
-    --c-glow-20:rgba(255,255,255,0.2);--c-glow-30:rgba(255,255,255,0.3);
-    --c-glow-50:rgba(255,255,255,0.5);
-    --c-hint:rgba(255,255,255,0.85);--c-hint-shadow:rgba(255,255,255,0.15);
-  }
   *{margin:0;padding:0;box-sizing:border-box;
     -webkit-touch-callout:none;
     -webkit-tap-highlight-color:transparent;
     -webkit-user-select:none;user-select:none;
   }
-  body{background:var(--c-bg);overflow:hidden;font-family:'Segoe UI',sans-serif;
+  body{background:#000;overflow:hidden;font-family:'Segoe UI',sans-serif;
     touch-action:none;
     overscroll-behavior:none;
     position:fixed;width:100%;height:100%;
@@ -60,39 +48,39 @@
   }
   .sc-you{
     flex:1;text-align:left;
-    color:var(--c-player);text-shadow:0 0 20px var(--c-player);
+    color:#00ffff;text-shadow:0 0 20px #00ffff;
   }
   .sc-cpu{
     flex:1;text-align:right;
-    color:var(--c-cpu-line);text-shadow:0 0 20px var(--c-cpu-line);
+    color:#ffff00;text-shadow:0 0 20px #ffff00;
   }
-  .sc-sep{color:var(--c-sep);font-size:1rem;text-align:center;flex:0 0 30px;}
+  .sc-sep{color:#333;font-size:1rem;text-align:center;flex:0 0 30px;}
 
   /* Delta bar */
   #delta-wrap{
     width:320px;height:8px;
-    background:var(--c-panel);border-radius:4px;overflow:hidden;
+    background:#111;border-radius:4px;overflow:hidden;
     display:flex;
   }
-  #delta-you{background:var(--c-player);height:100%;transition:width 0.4s ease;}
-  #delta-cpu{background:var(--c-cpu-line);height:100%;transition:width 0.4s ease;}
+  #delta-you{background:#00ffff;height:100%;transition:width 0.4s ease;}
+  #delta-cpu{background:#ffff00;height:100%;transition:width 0.4s ease;}
 
   /* Status */
   #status{
     font-size:1rem;font-weight:800;letter-spacing:3px;
-    color:var(--c-white);text-shadow:0 0 12px var(--c-white);
+    color:#fff;text-shadow:0 0 12px #fff;
     min-height:1.3rem;text-align:center;
   }
-  .x-col{color:var(--c-player);text-shadow:0 0 15px var(--c-player),0 0 40px var(--c-player);}
-  .o-col{color:var(--c-cpu);text-shadow:0 0 15px var(--c-cpu),0 0 40px var(--c-cpu);}
-  .w-col{color:var(--c-win);text-shadow:0 0 25px var(--c-win),0 0 60px var(--c-win);}
+  .x-col{color:#00ffff;text-shadow:0 0 15px #00ffff,0 0 40px #00ffff;}
+  .o-col{color:#ff6600;text-shadow:0 0 15px #ff6600,0 0 40px #ff6600;}
+  .w-col{color:#ff00ff;text-shadow:0 0 25px #ff00ff,0 0 60px #ff00ff;}
 
   /* Threat preview bar */
   #threat-bar{
-    font-size:0.65rem;letter-spacing:2px;color:var(--c-dim);
+    font-size:0.65rem;letter-spacing:2px;color:#444;
     min-height:0.9rem;text-align:center;
   }
-  .tx{color:var(--c-player-dim);} .to{color:var(--c-cpu-dim);}
+  .tx{color:#00ffff99;} .to{color:#ff660099;}
 
   #bottom{
     position:fixed;bottom:max(14px, env(safe-area-inset-bottom));left:0;right:0;
@@ -104,7 +92,7 @@
     bottom:calc(max(14px, env(safe-area-inset-bottom)) + 44px);
     left:50%;transform:translateX(-50%);
     padding:0.5rem 2rem;border:2px solid transparent;
-    background:var(--c-glow-03);color:var(--c-muted);
+    background:rgba(255,255,255,0.03);color:#555;
     opacity:0;pointer-events:none;
     border-radius:6px;font-size:0.85rem;font-weight:900;
     letter-spacing:3px;cursor:pointer;white-space:nowrap;
@@ -114,19 +102,19 @@
     z-index:10;
   }
   #newgame-btn.game-over{
-    color:var(--c-white);border:2px solid var(--c-white);
-    background:var(--c-glow-08);
-    text-shadow:0 0 8px var(--c-white);
-    box-shadow:0 0 15px var(--c-glow-30);
+    color:#fff;border:2px solid #fff;
+    background:rgba(255,255,255,0.08);
+    text-shadow:0 0 8px #fff;
+    box-shadow:0 0 15px rgba(255,255,255,0.3);
   }
-  #newgame-btn:hover{background:var(--c-glow-20);box-shadow:0 0 28px var(--c-glow-50);}
+  #newgame-btn:hover{background:rgba(255,255,255,0.2);box-shadow:0 0 28px rgba(255,255,255,0.5);}
 
   #share-btn{
     position:fixed;
     bottom:max(14px, env(safe-area-inset-bottom));
     left:50%;transform:translateX(-50%);
     padding:0.4rem 1.6rem;border:2px solid transparent;
-    background:var(--c-glow-03);color:var(--c-muted);
+    background:rgba(255,255,255,0.03);color:#555;
     opacity:0;pointer-events:none;
     border-radius:6px;font-size:0.72rem;font-weight:900;
     letter-spacing:3px;cursor:pointer;white-space:nowrap;
@@ -136,10 +124,10 @@
   }
   #share-btn.visible{
     opacity:1;pointer-events:all;
-    color:var(--c-subtle);border:2px solid var(--c-muted);
-    background:var(--c-glow-05);
+    color:#aaa;border:2px solid #555;
+    background:rgba(255,255,255,0.05);
   }
-  #share-btn:hover{background:var(--c-glow-15);box-shadow:0 0 20px var(--c-glow-30);color:var(--c-white);border-color:var(--c-white);}
+  #share-btn:hover{background:rgba(255,255,255,0.15);box-shadow:0 0 20px rgba(255,255,255,0.3);color:#fff;border-color:#fff;}
   #hint{
     pointer-events:none;
     width:100%;text-align:center;
@@ -156,16 +144,16 @@
     transform-style:preserve-3d;
   }
   #hint.hint-big{
-    color:var(--c-hint);
+    color:rgba(255,255,255,0.85);
     font-size:0.72rem;
     letter-spacing:0.28em;
-    text-shadow:0 0 20px var(--c-hint-shadow);
+    text-shadow:0 0 20px rgba(255,255,255,0.15);
     opacity:1;
     transform:perspective(600px) rotateX(0deg) translateY(0) translateZ(0);
     filter:blur(0);
   }
   #hint.hint-hidden{
-    color:transparent;
+    color:rgba(255,255,255,0);
     font-size:0.72rem;
     letter-spacing:0.28em;
     text-shadow:none;
@@ -202,30 +190,13 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════════
-// COLOR PALETTE — Single Source of Truth for all colors
-// ═══════════════════════════════════════════════════════════════════
-const C = {
-  PLAYER:       0x00ffff, PLAYER_EM:    0x007777, PLAYER_MK_EM: 0x004466,
-  CPU:          0xff6600, CPU_EM:       0xaa3300, CPU_MK_EM:    0x993300, CPU_SPEC: 0xffcc88,
-  CPU_LINE:     0xffff00,
-  WIN:          0xff00ff,
-  CELL:         0x0a0a22, CELL_SPEC:    0x3344aa, CELL_EDGE:    0x3355cc,
-  HOVER:        0x221144, HOVER_SPEC:   0xaa66ff, HOVER_EM:     0x110033,
-  HOVER_RESET:  0x000011,
-  WHITE:        0xffffff,
-  BG:           0x000000,
-  LP_EDGE_HI:   0x88aaff, LP_EDGE_WF:   0x6699ff,
-};
-const h = n => '#' + n.toString(16).padStart(6, '0');
-
-// ═══════════════════════════════════════════════════════════════════
 // RENDERER
 // ═══════════════════════════════════════════════════════════════════
 const canvas = document.getElementById('canvas');
 const renderer = new THREE.WebGLRenderer({canvas, antialias:true, preserveDrawingBuffer:true});
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-renderer.setClearColor(C.BG);
+renderer.setClearColor(0x000000);
 renderer.shadowMap.enabled = true;
 
 const scene = new THREE.Scene();
@@ -234,13 +205,13 @@ const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHei
 // ═══════════════════════════════════════════════════════════════════
 // LIGHTS
 // ═══════════════════════════════════════════════════════════════════
-scene.add(new THREE.AmbientLight(C.WHITE, 0.2));
-const sun = new THREE.DirectionalLight(C.WHITE, 2.5);
+scene.add(new THREE.AmbientLight(0xffffff, 0.2));
+const sun = new THREE.DirectionalLight(0xffffff, 2.5);
 sun.position.set(10,15,10); sun.castShadow=true; scene.add(sun);
-const ptX  = new THREE.PointLight(C.PLAYER, 5, 35); ptX.position.set(-8,4,6);  scene.add(ptX);
-const ptO  = new THREE.PointLight(C.CPU, 5, 35); ptO.position.set( 8,4,6);  scene.add(ptO);
-const ptW  = new THREE.PointLight(C.WIN, 0, 30); ptW.position.set( 0,8,0);  scene.add(ptW);
-const ptAI = new THREE.PointLight(C.CPU_LINE, 0, 20); ptAI.position.set(0,-4,8); scene.add(ptAI);
+const ptX  = new THREE.PointLight(0x00ffff, 5, 35); ptX.position.set(-8,4,6);  scene.add(ptX);
+const ptO  = new THREE.PointLight(0xff6600, 5, 35); ptO.position.set( 8,4,6);  scene.add(ptO);
+const ptW  = new THREE.PointLight(0xff00ff, 0, 30); ptW.position.set( 0,8,0);  scene.add(ptW);
+const ptAI = new THREE.PointLight(0xffff00, 0, 20); ptAI.position.set(0,-4,8); scene.add(ptAI);
 
 // ═══════════════════════════════════════════════════════════════════
 // CONSTANTS & WIN LINES
@@ -449,16 +420,16 @@ function disposeObject(obj) {
 
 // Shared materials (cached singletons — never dispose these)
 const matEmpty = new THREE.MeshPhongMaterial({
-  color:C.CELL, transparent:true, opacity:0.55, shininess:50, specular:C.CELL_SPEC
+  color:0x0a0a22, transparent:true, opacity:0.55, shininess:50, specular:0x3344aa
 });
 const matHover = new THREE.MeshPhongMaterial({
-  color:C.HOVER, transparent:true, opacity:0.9, shininess:120, specular:C.HOVER_SPEC, emissive:C.HOVER_EM
+  color:0x221144, transparent:true, opacity:0.9, shininess:120, specular:0xaa66ff, emissive:0x110033
 });
 const matX = new THREE.MeshPhongMaterial({
-  color:C.PLAYER, emissive:C.PLAYER_EM, shininess:220, specular:C.WHITE
+  color:0x00ffff, emissive:0x007777, shininess:220, specular:0xffffff
 });
 const matO = new THREE.MeshPhongMaterial({
-  color:C.CPU, emissive:C.CPU_EM, shininess:220, specular:C.CPU_SPEC
+  color:0xff6600, emissive:0xaa3300, shininess:220, specular:0xffcc88
 });
 const sharedMats = new Set([matEmpty, matHover, matX, matO]);
 
@@ -481,7 +452,7 @@ function buildBoard() {
     mesh.position.copy(cellPos(i));
     mesh.castShadow = true;
     mesh.userData = { index:i };
-    mesh.add(new THREE.LineSegments(sharedEdgeGeo, new THREE.LineBasicMaterial({color:C.CELL_EDGE})));
+    mesh.add(new THREE.LineSegments(sharedEdgeGeo, new THREE.LineBasicMaterial({color:0x3355cc})));
     pivot.add(mesh);
     cellMeshes.push(mesh);
   }
@@ -489,27 +460,27 @@ function buildBoard() {
 
 function makeX() {
   const g = new THREE.Group();
-  const m = new THREE.MeshPhongMaterial({color:C.PLAYER, emissive:C.PLAYER_MK_EM, shininess:200});
+  const m = new THREE.MeshPhongMaterial({color:0x00ffff, emissive:0x004466, shininess:200});
   const bar = new THREE.CylinderGeometry(0.1,0.1,1.1,10);
   const b1 = new THREE.Mesh(bar,m); b1.rotation.z= Math.PI/4; g.add(b1);
   const b2 = new THREE.Mesh(bar,m); b2.rotation.z=-Math.PI/4; g.add(b2);
   g.add(new THREE.Mesh(new THREE.SphereGeometry(0.55,10,10),
-    new THREE.MeshPhongMaterial({color:C.PLAYER,transparent:true,opacity:0.07,emissive:C.PLAYER})));
+    new THREE.MeshPhongMaterial({color:0x00ffff,transparent:true,opacity:0.07,emissive:0x00ffff})));
   return g;
 }
 function makeO() {
   const g = new THREE.Group();
-  const m = new THREE.MeshPhongMaterial({color:C.CPU, emissive:C.CPU_MK_EM, shininess:200});
+  const m = new THREE.MeshPhongMaterial({color:0xff6600, emissive:0x993300, shininess:200});
   const t = new THREE.Mesh(new THREE.TorusGeometry(0.42,0.11,14,36),m);
   t.rotation.x = Math.PI/2; g.add(t);
   g.add(new THREE.Mesh(new THREE.SphereGeometry(0.55,10,10),
-    new THREE.MeshPhongMaterial({color:C.CPU,transparent:true,opacity:0.07,emissive:C.CPU})));
+    new THREE.MeshPhongMaterial({color:0xff6600,transparent:true,opacity:0.07,emissive:0xff6600})));
   return g;
 }
 
 // Draw a completed line — bold glowing tube
 function drawCompletedLine(line, who) {
-  const color = who === PLAYER ? C.PLAYER : C.CPU_LINE;
+  const color = who === PLAYER ? 0x00ffff : 0xffff00;
   const pts = line.map(i => cellMeshes[i] ? cellMeshes[i].position.clone() : cellPos(i));
   const dir = pts[2].clone().sub(pts[0]).normalize().multiplyScalar(0.35);
   pts[0].sub(dir); pts[2].add(dir);
@@ -544,7 +515,7 @@ function rebuildPartialTubes() {
     if(oCount === 2 && xCount === 0) who = CPU;
     if(!who) continue;
 
-    const color = who === PLAYER ? C.PLAYER : C.CPU_LINE;
+    const color = who === PLAYER ? 0x00ffff : 0xffff00;
     const pts = line.map(i => cellMeshes[i] ? cellMeshes[i].position.clone() : cellPos(i));
     const curve = new THREE.CatmullRomCurve3(pts);
 
@@ -578,7 +549,7 @@ function placeMarker(i, who) {
   mesh.add(sym);
   mesh.scale.setScalar(0.01);
   popQueue.push({mesh, t:0});
-  spawnShockwave(mesh.position.clone(), who === PLAYER ? C.PLAYER : C.CPU);
+  spawnShockwave(mesh.position.clone(), who === PLAYER ? 0x00ffff : 0xff6600);
 
   // Score new lines
   const scored = newLinesAt(board, i, who);
@@ -631,7 +602,7 @@ function playerTurn(i) {
 
   thinking = true;
   ptAI.intensity = 3;
-  setStatus(`<span style="color:var(--c-cpu-line);text-shadow:0 0 15px var(--c-cpu-line)">CPU THINKING</span>`);
+  setStatus(`<span style="color:#ffff00;text-shadow:0 0 15px #ffff00">CPU THINKING</span>`);
 
   // Natural thinking delay: scales with board complexity + random variance
   const filled = board.filter((v,i) => i !== CENTER && v !== null).length;
@@ -773,7 +744,7 @@ window.addEventListener('mousemove', e => {
       if(lpActive && !lpLocked && lpStage === 0) lpEnd();
       isDragging=true; touched(); canvas.style.cursor='grabbing';
       if(hoveredMesh && !hoveredMesh.userData.taken) {
-        hoveredMesh.material.emissive?.setHex(C.HOVER_RESET); hoveredMesh.scale.setScalar(1);
+        hoveredMesh.material.emissive?.setHex(0x000011); hoveredMesh.scale.setScalar(1);
       }
       hoveredMesh=null;
       const mdx=e.clientX-dragStart.x, mdy=e.clientY-dragStart.y;
@@ -787,11 +758,11 @@ window.addEventListener('mousemove', e => {
   if(!isDragging) {
     const hit = getHit(e.clientX, e.clientY);
     if(hoveredMesh && !hoveredMesh.userData.taken) {
-      hoveredMesh.material.emissive?.setHex(C.HOVER_RESET); hoveredMesh.scale.setScalar(1);
+      hoveredMesh.material.emissive?.setHex(0x000011); hoveredMesh.scale.setScalar(1);
     }
     hoveredMesh = null;
     if(hit && !hit.userData.taken && !gameOver && !thinking) {
-      hit.material.emissive?.setHex(C.HOVER); hit.scale.setScalar(1.08); hoveredMesh=hit;
+      hit.material.emissive?.setHex(0x221144); hit.scale.setScalar(1.08); hoveredMesh=hit;
     }
   }
 });
@@ -899,7 +870,7 @@ canvas.addEventListener('touchend', e => {
         const i=hit.userData.index, now=Date.now();
         if((now-lastTap<420) && lastTapIdx===i) {
           playerTurn(i); lastTap=0; lastTapIdx=-1;
-        } else { lastTap=now; lastTapIdx=i; hit.material.emissive?.setHex(C.HOVER); }
+        } else { lastTap=now; lastTapIdx=i; hit.material.emissive?.setHex(0x221144); }
       }
     }
   }
@@ -1053,8 +1024,8 @@ function lpApplyStage(stage) {
     for (const child of mesh.children) {
       if (child.isLineSegments) {
         const eMat = child.material;
-        if (stage === 1) eMat.color.setHex(C.LP_EDGE_HI);
-        else if (stage === 2) eMat.color.setHex(C.LP_EDGE_WF);
+        if (stage === 1) eMat.color.setHex(0x88aaff);
+        else if (stage === 2) eMat.color.setHex(0x6699ff);
       }
       if (child.isGroup) {
         child.traverse(c => {
@@ -1198,8 +1169,8 @@ function shareGame() {
   ctx.drawImage(canvas, 0, 0);
   const x = scores[PLAYER], o = scores[CPU];
   let resultText, resultColor;
-  if(x > o)      { resultText = `YOU WIN ${x} - ${o}`; resultColor = h(C.WIN); }
-  else if(o > x) { resultText = `CPU WINS ${o} - ${x}`; resultColor = h(C.CPU); }
+  if(x > o)      { resultText = `YOU WIN ${x} - ${o}`; resultColor = '#ff00ff'; }
+  else if(o > x) { resultText = `CPU WINS ${o} - ${x}`; resultColor = '#ff6600'; }
   else           { resultText = `DRAW ${x} - ${o}`; resultColor = '#ffffff'; }
   const fontSize = Math.round(w * 0.04);
   ctx.textAlign = 'center';
