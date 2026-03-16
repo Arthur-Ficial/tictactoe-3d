@@ -37,12 +37,10 @@ function injectCSS() {
     #settings-btn{
       position:fixed;bottom:max(2px, env(safe-area-inset-bottom));right:2px;
       z-index:50;background:none;border:none;cursor:pointer;
-      font-size:1.4rem;color:#444;line-height:1;
-      padding:6px 8px;border-radius:6px;
-      transition:opacity 0.3s;opacity:0.6;
+      line-height:1;padding:8px;border-radius:6px;
+      opacity:0;pointer-events:none;
+      transition:opacity 0.3s;
     }
-    #settings-btn:hover{opacity:1;}
-    #settings-btn:active{opacity:1;}
 
     #settings-overlay{
       position:fixed;inset:0;z-index:100;
@@ -148,11 +146,23 @@ function injectCSS() {
 function buildHamburger() {
   const btn = document.createElement('button');
   btn.id = 'settings-btn';
-  btn.textContent = '\u2699';
+  btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6.5.5h3l.4 2 .8.3 1.6-1.2 2.1 2.1-1.2 1.6.3.8 2 .4v3l-2 .4-.3.8 1.2 1.6-2.1 2.1-1.6-1.2-.8.3-.4 2h-3l-.4-2-.8-.3-1.6 1.2L1.6 12.4l1.2-1.6-.3-.8-2-.4v-3l2-.4.3-.8L1.6 3.7 3.7 1.6l1.6 1.2.8-.3L6.5.5z" stroke="#555" stroke-width="1"/><circle cx="8" cy="8" r="2" stroke="#555" stroke-width="1"/></svg>';
   btn.addEventListener('click', open);
   btn.addEventListener('mousedown', e => e.stopPropagation());
   btn.addEventListener('touchstart', e => e.stopPropagation());
   document.body.appendChild(btn);
+
+  // Sync visibility with NEW GAME button
+  const ngBtn = document.getElementById('newgame-btn');
+  if (ngBtn) {
+    const sync = () => {
+      const visible = ngBtn.style.opacity === '1';
+      btn.style.opacity = visible ? '0.5' : '0';
+      btn.style.pointerEvents = visible ? 'all' : 'none';
+    };
+    new MutationObserver(sync).observe(ngBtn, { attributes: true, attributeFilter: ['style'] });
+    sync();
+  }
 }
 
 function buildOverlay(applyFn) {
