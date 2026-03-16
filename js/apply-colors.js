@@ -17,11 +17,10 @@ export function applyColors(c) {
   root.setProperty('--c-player-dim', hexToRGBA(c.player, 0.6));
   root.setProperty('--c-cpu-dim', hexToRGBA(c.cpu, 0.6));
 
-  // Player / CPU materials
+  // Player material (tracks player color)
   g.matX.color.setHex(hexToInt(c.player));
   g.matX.emissive.setHex(deriveEmissive(c.player, 0.47));
-  g.matO.color.setHex(hexToInt(c.cpu));
-  g.matO.emissive.setHex(deriveEmissive(c.cpu, 0.5));
+  // matO stays at original orange (#ff6600) — not changed by picker
 
   // Empty cell material
   const cellInt = hexToInt(c.cell);
@@ -41,7 +40,7 @@ export function applyColors(c) {
 
   // Point lights
   g.ptX.color.setHex(hexToInt(c.player));
-  g.ptO.color.setHex(hexToInt(c.cpu));
+  // ptO stays at original orange (#ff6600) — not changed by picker
   g.ptW.color.setHex(hexToInt(c.win));
 
   // Background
