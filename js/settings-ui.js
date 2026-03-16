@@ -100,6 +100,13 @@ function injectCSS() {
       font-size:0.65rem;font-weight:700;letter-spacing:1.5px;color:#999;
       line-height:1;white-space:nowrap;
     }
+    #theme-reset{
+      margin-top:12px;padding:8px;width:100%;
+      background:none;border:1px solid rgba(255,255,255,0.06);border-radius:6px;
+      color:#555;font-size:0.5rem;font-weight:700;letter-spacing:1.5px;
+      cursor:pointer;transition:all 0.15s;touch-action:manipulation;
+    }
+    #theme-reset:hover{color:#ff4444;border-color:rgba(255,70,70,0.3);}
     #theme-close{
       position:absolute;top:8px;right:10px;
       background:none;border:none;color:#444;font-size:1rem;
@@ -165,6 +172,18 @@ function buildOverlay(onChange) {
   }
 
   panel.appendChild(grid);
+
+  const resetBtn = document.createElement('button');
+  resetBtn.id = 'theme-reset';
+  resetBtn.textContent = 'RESET ALL';
+  resetBtn.addEventListener('click', () => {
+    localStorage.clear();
+    activeId = 'default';
+    for (const id in cards) cards[id].classList.toggle('active', id === 'default');
+    onChange('default');
+    close();
+  });
+  panel.appendChild(resetBtn);
 
   const closeBtn = document.createElement('button');
   closeBtn.id = 'theme-close';
