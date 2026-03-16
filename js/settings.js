@@ -7,8 +7,9 @@ import { getColors, set, resetAll } from './colors.js';
 const PICKERS = [
   { key: 'player', label: 'YOU' },
   { key: 'cpu',    label: 'CPU' },
-  { key: 'win',    label: 'WIN' },
+  { key: 'cell',   label: 'CELL' },
   { key: 'bg',     label: 'BG' },
+  { key: 'win',    label: 'WIN' },
 ];
 
 let overlay = null;
@@ -57,8 +58,8 @@ function injectCSS() {
       background:rgba(18,18,24,0.95);
       border:1px solid rgba(255,255,255,0.08);
       border-radius:14px;
-      padding:32px 36px 24px;
-      min-width:260px;max-width:320px;
+      padding:32px 28px 24px;
+      width:min(300px, calc(100vw - 40px));
       display:flex;flex-direction:column;gap:0;
       backdrop-filter:blur(20px);
       -webkit-backdrop-filter:blur(20px);
@@ -72,29 +73,31 @@ function injectCSS() {
 
     #settings-title{
       font-size:0.65rem;font-weight:900;letter-spacing:5px;
-      color:#555;text-align:center;margin-bottom:20px;
+      color:#555;text-align:center;margin-bottom:16px;
       text-transform:uppercase;
     }
 
     .settings-row{
       display:flex;align-items:center;justify-content:space-between;
-      padding:10px 0;
+      padding:12px 4px;
       border-bottom:1px solid rgba(255,255,255,0.04);
+      min-height:48px;
     }
     .settings-row:last-of-type{border-bottom:none;}
 
     .settings-label{
-      font-size:0.7rem;font-weight:600;letter-spacing:2px;color:#777;
+      font-size:0.75rem;font-weight:600;letter-spacing:2px;color:#777;
     }
 
     .settings-color{
       -webkit-appearance:none;appearance:none;
-      width:44px;height:30px;
+      width:52px;height:36px;
       border:2px solid rgba(255,255,255,0.12);border-radius:6px;
       background:none;cursor:pointer;padding:0;
       transition:border-color 0.15s,box-shadow 0.15s;
+      touch-action:manipulation;
     }
-    .settings-color:hover{
+    .settings-color:hover,.settings-color:focus{
       border-color:rgba(255,255,255,0.3);
       box-shadow:0 0 12px rgba(255,255,255,0.1);
     }
@@ -107,25 +110,27 @@ function injectCSS() {
     }
 
     #settings-save{
-      flex:1;padding:10px 12px;
+      flex:2;padding:14px 12px;
       background:rgba(255,255,255,0.1);
       border:1px solid rgba(255,255,255,0.2);border-radius:8px;
-      color:#ddd;font-size:0.7rem;font-weight:700;letter-spacing:2px;
+      color:#ddd;font-size:0.75rem;font-weight:700;letter-spacing:2px;
       cursor:pointer;transition:all 0.15s;
+      touch-action:manipulation;min-height:48px;
     }
-    #settings-save:hover{
+    #settings-save:hover,#settings-save:active{
       background:rgba(255,255,255,0.18);
       border-color:rgba(255,255,255,0.4);color:#fff;
     }
 
     #settings-reset{
-      flex:1;padding:10px 12px;
+      flex:1;padding:14px 12px;
       background:none;
       border:1px solid rgba(255,255,255,0.08);border-radius:8px;
-      color:#555;font-size:0.6rem;font-weight:700;letter-spacing:1px;
+      color:#555;font-size:0.65rem;font-weight:700;letter-spacing:1px;
       cursor:pointer;transition:all 0.15s;
+      touch-action:manipulation;min-height:48px;
     }
-    #settings-reset:hover{
+    #settings-reset:hover,#settings-reset:active{
       color:#aaa;border-color:rgba(255,255,255,0.2);
     }
 

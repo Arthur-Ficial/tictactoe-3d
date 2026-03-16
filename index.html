@@ -1372,7 +1372,7 @@ newGame();
 animate();
 
 // Bridge for ES modules — exposes game internals for settings/color system
-window._game = {renderer,matX,matO,matEmpty,matHover,ptX,ptO,ptW,ptAI,makeX,makeO,drawCompletedLine,rebuildPartialTubes,PLAYER,CPU,scores,board};
+window._game = {renderer,matX,matO,matEmpty,matHover,ptX,ptO,ptW,ptAI,makeX,makeO,drawCompletedLine,rebuildPartialTubes,PLAYER,CPU,scores,board,get cellMeshes(){return cellMeshes;}};
 </script>
 <script type="module" src="js/main.js"></script>
 </body>

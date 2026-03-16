@@ -7,8 +7,9 @@ const STORAGE_KEY = 'ttt3d-colors';
 const DEFAULTS = {
   player:  '#00ffff',
   cpu:     '#ff6600',
-  win:     '#ff00ff',
+  cell:    '#0a0a22',
   bg:      '#000000',
+  win:     '#ff00ff',
 };
 
 let current = { ...DEFAULTS };
