@@ -24,13 +24,13 @@ function injectCSS() {
   const s = document.createElement('style');
   s.textContent = `
     #settings-btn{
-      position:fixed;top:max(12px, env(safe-area-inset-top));right:14px;
+      position:fixed;bottom:max(14px, env(safe-area-inset-bottom));right:14px;
       z-index:50;background:none;border:none;cursor:pointer;
       font-size:1.6rem;color:#555;line-height:1;
       padding:4px 8px;border-radius:4px;
       transition:color 0.15s,background 0.15s;
     }
-    #settings-btn:hover{color:#fff;background:rgba(255,255,255,0.1);}
+    #settings-btn:hover{color:#555;background:none;}
     #settings-overlay{
       position:fixed;inset:0;z-index:100;
       background:rgba(0,0,0,0.85);
