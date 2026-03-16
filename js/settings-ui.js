@@ -61,36 +61,42 @@ function injectCSS() {
       position:relative;
       background:rgba(18,18,24,0.95);
       border:1px solid rgba(255,255,255,0.08);border-radius:14px;
-      padding:28px 24px 20px;
-      width:min(320px,calc(100vw - 32px));
+      padding:28px 20px 16px;
+      width:min(280px,calc(100vw - 32px));
+      max-height:min(480px,calc(100vh - 60px));
       backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
       box-shadow:0 20px 60px rgba(0,0,0,0.6);
       transform:scale(0.95) translateY(10px);transition:transform 0.25s ease;
+      display:flex;flex-direction:column;
     }
     #theme-overlay.open #theme-panel{transform:scale(1) translateY(0);}
     #theme-title{
       font-size:0.6rem;font-weight:900;letter-spacing:5px;
-      color:#666;text-align:center;margin-bottom:16px;text-transform:uppercase;
+      color:#666;text-align:center;margin-bottom:12px;text-transform:uppercase;
+      flex-shrink:0;
     }
     #theme-grid{
-      display:grid;grid-template-columns:repeat(3,1fr);gap:10px;
+      display:flex;flex-direction:column;gap:6px;
+      overflow-y:auto;overflow-x:hidden;
+      -webkit-overflow-scrolling:touch;
+      padding-right:4px;
     }
     .theme-card{
       cursor:pointer;border:2px solid rgba(255,255,255,0.08);
-      border-radius:8px;padding:8px 6px 6px;
+      border-radius:8px;padding:8px 12px;
       background:rgba(255,255,255,0.02);transition:all 0.15s;
-      display:flex;flex-direction:column;align-items:center;gap:6px;
-      min-height:56px;touch-action:manipulation;
+      display:flex;align-items:center;gap:12px;
+      min-height:44px;touch-action:manipulation;flex-shrink:0;
     }
     .theme-card:hover{border-color:rgba(255,255,255,0.2);}
     .theme-card.active{border-color:var(--c-player);box-shadow:0 0 12px rgba(255,255,255,0.1);}
     .theme-swatch{
-      display:flex;gap:3px;width:100%;height:10px;border-radius:3px;overflow:hidden;
+      display:flex;gap:2px;width:60px;height:16px;border-radius:4px;overflow:hidden;flex-shrink:0;
     }
     .theme-swatch span{flex:1;display:block;}
     .theme-name{
-      font-size:0.5rem;font-weight:700;letter-spacing:1px;color:#888;
-      text-align:center;line-height:1;
+      font-size:0.65rem;font-weight:700;letter-spacing:1.5px;color:#999;
+      line-height:1;white-space:nowrap;
     }
     #theme-close{
       position:absolute;top:8px;right:10px;
