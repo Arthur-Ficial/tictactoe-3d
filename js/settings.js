@@ -35,7 +35,7 @@ function injectCSS() {
   const s = document.createElement('style');
   s.textContent = `
     #settings-btn{
-      position:fixed;bottom:max(6px, env(safe-area-inset-bottom));right:6px;
+      position:fixed;bottom:max(2px, env(safe-area-inset-bottom));right:2px;
       z-index:50;background:none;border:none;cursor:pointer;
       font-size:1.4rem;color:#444;line-height:1;
       padding:6px 8px;border-radius:6px;
