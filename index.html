@@ -434,35 +434,9 @@ const matO = new THREE.MeshPhongMaterial({
 const sharedMats = new Set([matEmpty, matHover, matX, matO]);
 
 function buildGrid() {
-  // Grid lines only in the GAPS between cells — never through cell volumes.
-  // Fixes: blue middle-lines on filled cell faces (z-fighting / transparent-over-opaque).
-  const lm = new THREE.LineBasicMaterial({color:0x2244aa, transparent:true, opacity:0.7});
-  const vm = new THREE.LineBasicMaterial({color:0x112266, transparent:true, opacity:0.4});
-  const hw = SP + CS/2;
-  const gaps = [[-SP + CS/2, -CS/2], [CS/2, SP - CS/2]];
-  const linePos = [-hw, -hw + SP, -hw + 2*SP, hw];
-  const layers = [-SP, 0, SP];
-
-  // XY-plane segments in each z-layer (gap-only)
-  const xy = [];
-  for(const z of layers)
-    for(const p of linePos)
-      for(const [a,b] of gaps){
-        xy.push(a,p,z, b,p,z);   // horizontal
-        xy.push(p,a,z, p,b,z);   // vertical
-      }
-  const xyGeo = new THREE.BufferGeometry();
-  xyGeo.setAttribute('position', new THREE.Float32BufferAttribute(xy, 3));
-  pivot.add(new THREE.LineSegments(xyGeo, lm));
-
-  // Z-axis connectors at corners (gap-only)
-  const zv = [];
-  for(const [cx,cy] of [[-hw,-hw],[hw,-hw],[hw,hw],[-hw,hw]])
-    for(const [a,b] of gaps)
-      zv.push(cx,cy,a, cx,cy,b);
-  const zGeo = new THREE.BufferGeometry();
-  zGeo.setAttribute('position', new THREE.Float32BufferAttribute(zv, 3));
-  pivot.add(new THREE.LineSegments(zGeo, vm));
+  // Grid framework lines removed — cell edge outlines (EdgesGeometry)
+  // provide sufficient spatial structure. Previous grid lines caused
+  // z-fighting artifacts on filled cells.
 }
 
 function buildBoard() {
