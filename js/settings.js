@@ -62,6 +62,13 @@ function injectCSS() {
     .settings-color::-webkit-color-swatch-wrapper{padding:0;}
     .settings-color::-webkit-color-swatch{border:none;border-radius:2px;}
     .settings-color::-moz-color-swatch{border:none;border-radius:2px;}
+    #settings-save{
+      margin-top:6px;padding:8px 12px;
+      background:rgba(255,255,255,0.1);border:1px solid #666;border-radius:4px;
+      color:#ccc;font-size:0.7rem;font-weight:700;letter-spacing:2px;
+      cursor:pointer;transition:all 0.15s;
+    }
+    #settings-save:hover{color:#fff;border-color:#fff;background:rgba(255,255,255,0.2);}
     #settings-reset{
       margin-top:6px;padding:6px 12px;
       background:none;border:1px solid #444;border-radius:4px;
@@ -122,6 +129,12 @@ function buildOverlay(applyFn) {
     row.appendChild(input);
     panel.appendChild(row);
   }
+
+  const saveBtn = document.createElement('button');
+  saveBtn.id = 'settings-save';
+  saveBtn.textContent = 'SAVE';
+  saveBtn.addEventListener('click', () => overlay.classList.add('hidden'));
+  panel.appendChild(saveBtn);
 
   const resetBtn = document.createElement('button');
   resetBtn.id = 'settings-reset';
