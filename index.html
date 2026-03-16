@@ -89,7 +89,7 @@
   }
   #newgame-btn{
     position:fixed;
-    bottom:max(14px, env(safe-area-inset-bottom));
+    bottom:calc(max(14px, env(safe-area-inset-bottom)) + 44px);
     left:50%;transform:translateX(-50%);
     padding:0.5rem 2rem;border:2px solid transparent;
     background:rgba(255,255,255,0.03);color:#555;
@@ -108,6 +108,26 @@
     box-shadow:0 0 15px rgba(255,255,255,0.3);
   }
   #newgame-btn:hover{background:rgba(255,255,255,0.2);box-shadow:0 0 28px rgba(255,255,255,0.5);}
+
+  #share-btn{
+    position:fixed;
+    bottom:max(14px, env(safe-area-inset-bottom));
+    left:50%;transform:translateX(-50%);
+    padding:0.4rem 1.6rem;border:2px solid transparent;
+    background:rgba(255,255,255,0.03);color:#555;
+    opacity:0;pointer-events:none;
+    border-radius:6px;font-size:0.72rem;font-weight:900;
+    letter-spacing:3px;cursor:pointer;white-space:nowrap;
+    text-shadow:none;box-shadow:none;
+    transition:all 0.15s;
+    z-index:10;
+  }
+  #share-btn.visible{
+    opacity:1;pointer-events:all;
+    color:#aaa;border:2px solid #555;
+    background:rgba(255,255,255,0.05);
+  }
+  #share-btn:hover{background:rgba(255,255,255,0.15);box-shadow:0 0 20px rgba(255,255,255,0.3);color:#fff;border-color:#fff;}
   #hint{
     pointer-events:none;
     width:100%;text-align:center;
@@ -165,6 +185,7 @@
   <div id="hint"><span id="hint-touch">swipe to spin &nbsp;&middot;&nbsp; double-tap to place &nbsp;&middot;&nbsp; pinch to zoom</span><span id="hint-kb" style="display:none">arrows to rotate &nbsp;&middot;&nbsp; tab to select &nbsp;&middot;&nbsp; enter to place</span></div>
 </div>
 <button id="newgame-btn" onclick="newGame()">NEW GAME</button>
+<button id="share-btn" onclick="shareGame()">SHARE</button>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
@@ -172,7 +193,7 @@
 // RENDERER
 // ═══════════════════════════════════════════════════════════════════
 const canvas = document.getElementById('canvas');
-const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true, preserveDrawingBuffer:true});
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setClearColor(0x000000);
@@ -723,7 +744,7 @@ function tryPlace(cx, cy) {
 // Mouse
 window.addEventListener('mousedown', e => {
   if(introActive) return;
-  if(e.target === btn) return;
+  if(e.target === btn || e.target === shareBtn) return;
   mouseDown=true; isDragging=false; touched();
   dragStart={x:e.clientX,y:e.clientY};
   lastDragDelta={x:0,y:0}; lastDragTime=Date.now();
@@ -1146,7 +1167,61 @@ function lpCheckMove(x, y) {
 // ═══════════════════════════════════════════════════════════════════
 // UI HELPERS
 // ═══════════════════════════════════════════════════════════════════
-function setStatus(html){ document.getElementById('status').innerHTML=html; }
+function setStatus(h){ document.getElementById('status').innerHTML=h; }
+
+// ═══════════════════════════════════════════════════════════════════
+// SHARE
+// ═══════════════════════════════════════════════════════════════════
+const shareBtn = document.getElementById('share-btn');
+function showShareButton(show) {
+  shareBtn.classList.toggle('visible', show);
+}
+function shareGame() {
+  renderer.render(scene, camera);
+  const w = canvas.width, h = canvas.height;
+  const comp = document.createElement('canvas');
+  comp.width = w; comp.height = h;
+  const ctx = comp.getContext('2d');
+  ctx.drawImage(canvas, 0, 0);
+  const x = scores[PLAYER], o = scores[CPU];
+  let resultText, resultColor;
+  if(x > o)      { resultText = `YOU WIN ${x} - ${o}`; resultColor = '#ff00ff'; }
+  else if(o > x) { resultText = `CPU WINS ${o} - ${x}`; resultColor = '#ff6600'; }
+  else           { resultText = `DRAW ${x} - ${o}`; resultColor = '#ffffff'; }
+  const fontSize = Math.round(w * 0.04);
+  ctx.textAlign = 'center';
+  ctx.font = `bold ${fontSize}px 'Segoe UI', sans-serif`;
+  ctx.shadowColor = resultColor;
+  ctx.shadowBlur = 25;
+  ctx.fillStyle = resultColor;
+  ctx.fillText(resultText, w / 2, h * 0.07);
+  ctx.shadowBlur = 15;
+  ctx.fillText(resultText, w / 2, h * 0.07);
+  ctx.shadowBlur = 0;
+  const subSize = Math.round(w * 0.02);
+  ctx.font = `bold ${subSize}px 'Segoe UI', sans-serif`;
+  ctx.fillStyle = '#555';
+  ctx.fillText('3D TIC-TAC-TOE', w / 2, h * 0.96);
+  comp.toBlob(async (blob) => {
+    const file = new File([blob], 'tictactoe3d.png', { type: 'image/png' });
+    if(navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ title: '3D Tic-Tac-Toe', text: resultText, files: [file] });
+      } catch(e) {
+        if(e.name !== 'AbortError') downloadShareImage(blob);
+      }
+    } else {
+      downloadShareImage(blob);
+    }
+  }, 'image/png');
+}
+function downloadShareImage(blob) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'tictactoe3d.png';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 const hintEl = document.getElementById('hint');
 function updateHint() {
   hintEl.classList.remove('hint-big','hint-hidden');
@@ -1160,8 +1235,8 @@ function showButton(show) {
 }
 function updateButtonState(){
   btn.classList.toggle('game-over', gameOver);
-  if(gameOver) showButton(true);
-  else showButton(false);
+  if(gameOver) { showButton(true); showShareButton(true); }
+  else { showButton(false); showShareButton(false); }
 }
 function boardHasMarks() {
   return board && board.some((v,i) => i !== CENTER && v !== null);
