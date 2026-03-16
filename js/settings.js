@@ -1,14 +1,14 @@
 // ═══════════════════════════════════════════════════════════════════
-// settings.js — Hamburger menu + overlay + color pickers
+// settings.js — Hamburger menu + settings overlay + color pickers
 // ═══════════════════════════════════════════════════════════════════
 
 import { getColors, set, resetAll } from './colors.js';
 
 const PICKERS = [
-  { key: 'player', label: 'PLAYER' },
+  { key: 'player', label: 'YOU' },
   { key: 'cpu',    label: 'CPU' },
   { key: 'win',    label: 'WIN' },
-  { key: 'bg',     label: 'BACKGROUND' },
+  { key: 'bg',     label: 'BG' },
 ];
 
 let overlay = null;
@@ -18,6 +18,16 @@ export function init(applyFn) {
   injectCSS();
   buildHamburger();
   buildOverlay(applyFn);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') close();
+  });
+}
+
+function close() { overlay.classList.remove('open'); }
+function open()  {
+  const c = getColors();
+  for (const { key } of PICKERS) inputs[key].value = c[key];
+  overlay.classList.add('open');
 }
 
 function injectCSS() {
@@ -26,62 +36,106 @@ function injectCSS() {
     #settings-btn{
       position:fixed;bottom:max(14px, env(safe-area-inset-bottom));right:14px;
       z-index:50;background:none;border:none;cursor:pointer;
-      font-size:1.6rem;color:#555;line-height:1;
-      padding:4px 8px;border-radius:4px;
-      transition:color 0.15s,background 0.15s;
+      font-size:1.4rem;color:#444;line-height:1;
+      padding:6px 8px;border-radius:6px;
+      transition:opacity 0.3s;opacity:0.6;
     }
-    #settings-btn:hover{color:#555;background:none;}
+    #settings-btn:hover{opacity:1;}
+    #settings-btn:active{opacity:1;}
+
     #settings-overlay{
       position:fixed;inset:0;z-index:100;
-      background:rgba(0,0,0,0.85);
+      background:rgba(0,0,0,0.88);
       display:flex;align-items:center;justify-content:center;
-      transition:opacity 0.2s;
+      opacity:0;pointer-events:none;
+      transition:opacity 0.25s ease;
     }
-    #settings-overlay.hidden{opacity:0;pointer-events:none;}
+    #settings-overlay.open{opacity:1;pointer-events:all;}
+
     #settings-panel{
       position:relative;
-      background:#111;border:1px solid #333;border-radius:10px;
-      padding:28px 32px 20px;min-width:240px;
-      display:flex;flex-direction:column;gap:14px;
+      background:rgba(18,18,24,0.95);
+      border:1px solid rgba(255,255,255,0.08);
+      border-radius:14px;
+      padding:32px 36px 24px;
+      min-width:260px;max-width:320px;
+      display:flex;flex-direction:column;gap:0;
+      backdrop-filter:blur(20px);
+      -webkit-backdrop-filter:blur(20px);
+      box-shadow:0 20px 60px rgba(0,0,0,0.6);
+      transform:scale(0.95) translateY(10px);
+      transition:transform 0.25s ease;
     }
+    #settings-overlay.open #settings-panel{
+      transform:scale(1) translateY(0);
+    }
+
     #settings-title{
-      font-size:0.8rem;font-weight:900;letter-spacing:4px;
-      color:#666;text-align:center;margin-bottom:4px;
+      font-size:0.65rem;font-weight:900;letter-spacing:5px;
+      color:#555;text-align:center;margin-bottom:20px;
+      text-transform:uppercase;
     }
+
     .settings-row{
-      display:flex;align-items:center;justify-content:space-between;gap:16px;
+      display:flex;align-items:center;justify-content:space-between;
+      padding:10px 0;
+      border-bottom:1px solid rgba(255,255,255,0.04);
     }
+    .settings-row:last-of-type{border-bottom:none;}
+
     .settings-label{
-      font-size:0.72rem;font-weight:700;letter-spacing:2px;color:#888;
+      font-size:0.7rem;font-weight:600;letter-spacing:2px;color:#777;
     }
+
     .settings-color{
       -webkit-appearance:none;appearance:none;
-      width:40px;height:28px;border:2px solid #444;border-radius:4px;
+      width:44px;height:30px;
+      border:2px solid rgba(255,255,255,0.12);border-radius:6px;
       background:none;cursor:pointer;padding:0;
+      transition:border-color 0.15s,box-shadow 0.15s;
+    }
+    .settings-color:hover{
+      border-color:rgba(255,255,255,0.3);
+      box-shadow:0 0 12px rgba(255,255,255,0.1);
     }
     .settings-color::-webkit-color-swatch-wrapper{padding:0;}
-    .settings-color::-webkit-color-swatch{border:none;border-radius:2px;}
-    .settings-color::-moz-color-swatch{border:none;border-radius:2px;}
+    .settings-color::-webkit-color-swatch{border:none;border-radius:4px;}
+    .settings-color::-moz-color-swatch{border:none;border-radius:4px;}
+
+    .settings-actions{
+      display:flex;gap:8px;margin-top:20px;
+    }
+
     #settings-save{
-      margin-top:6px;padding:8px 12px;
-      background:rgba(255,255,255,0.1);border:1px solid #666;border-radius:4px;
-      color:#ccc;font-size:0.7rem;font-weight:700;letter-spacing:2px;
+      flex:1;padding:10px 12px;
+      background:rgba(255,255,255,0.1);
+      border:1px solid rgba(255,255,255,0.2);border-radius:8px;
+      color:#ddd;font-size:0.7rem;font-weight:700;letter-spacing:2px;
       cursor:pointer;transition:all 0.15s;
     }
-    #settings-save:hover{color:#fff;border-color:#fff;background:rgba(255,255,255,0.2);}
+    #settings-save:hover{
+      background:rgba(255,255,255,0.18);
+      border-color:rgba(255,255,255,0.4);color:#fff;
+    }
+
     #settings-reset{
-      margin-top:6px;padding:6px 12px;
-      background:none;border:1px solid #444;border-radius:4px;
-      color:#666;font-size:0.65rem;font-weight:700;letter-spacing:2px;
+      flex:1;padding:10px 12px;
+      background:none;
+      border:1px solid rgba(255,255,255,0.08);border-radius:8px;
+      color:#555;font-size:0.6rem;font-weight:700;letter-spacing:1px;
       cursor:pointer;transition:all 0.15s;
     }
-    #settings-reset:hover{color:#fff;border-color:#fff;}
-    #settings-close{
-      position:absolute;top:8px;right:10px;
-      background:none;border:none;color:#555;font-size:1.1rem;
-      cursor:pointer;padding:2px 6px;line-height:1;
+    #settings-reset:hover{
+      color:#aaa;border-color:rgba(255,255,255,0.2);
     }
-    #settings-close:hover{color:#fff;}
+
+    #settings-close{
+      position:absolute;top:10px;right:12px;
+      background:none;border:none;color:#444;font-size:1rem;
+      cursor:pointer;padding:4px 8px;line-height:1;
+      transition:color 0.15s;
+    }
+    #settings-close:hover{color:#aaa;}
   `;
   document.head.appendChild(s);
 }
@@ -89,22 +143,23 @@ function injectCSS() {
 function buildHamburger() {
   const btn = document.createElement('button');
   btn.id = 'settings-btn';
-  btn.textContent = '\u2630';
-  btn.addEventListener('click', () => overlay.classList.remove('hidden'));
+  btn.textContent = '\u2699';
+  btn.addEventListener('click', open);
+  btn.addEventListener('mousedown', e => e.stopPropagation());
+  btn.addEventListener('touchstart', e => e.stopPropagation());
   document.body.appendChild(btn);
 }
 
 function buildOverlay(applyFn) {
   overlay = document.createElement('div');
   overlay.id = 'settings-overlay';
-  overlay.classList.add('hidden');
 
   const panel = document.createElement('div');
   panel.id = 'settings-panel';
 
   const title = document.createElement('div');
   title.id = 'settings-title';
-  title.textContent = 'COLORS';
+  title.textContent = 'Colors';
   panel.appendChild(title);
 
   for (const { key, label } of PICKERS) {
@@ -130,31 +185,36 @@ function buildOverlay(applyFn) {
     panel.appendChild(row);
   }
 
+  const actions = document.createElement('div');
+  actions.className = 'settings-actions';
+
   const saveBtn = document.createElement('button');
   saveBtn.id = 'settings-save';
-  saveBtn.textContent = 'SAVE';
-  saveBtn.addEventListener('click', () => overlay.classList.add('hidden'));
-  panel.appendChild(saveBtn);
+  saveBtn.textContent = 'DONE';
+  saveBtn.addEventListener('click', close);
+  actions.appendChild(saveBtn);
 
   const resetBtn = document.createElement('button');
   resetBtn.id = 'settings-reset';
-  resetBtn.textContent = 'RESET TO DEFAULTS';
+  resetBtn.textContent = 'RESET';
   resetBtn.addEventListener('click', () => {
     resetAll();
     const c = getColors();
     for (const { key } of PICKERS) inputs[key].value = c[key];
     applyFn(c);
   });
-  panel.appendChild(resetBtn);
+  actions.appendChild(resetBtn);
+
+  panel.appendChild(actions);
 
   const closeBtn = document.createElement('button');
   closeBtn.id = 'settings-close';
   closeBtn.textContent = '\u2715';
-  closeBtn.addEventListener('click', () => overlay.classList.add('hidden'));
+  closeBtn.addEventListener('click', close);
   panel.appendChild(closeBtn);
 
   overlay.addEventListener('click', e => {
-    if (e.target === overlay) overlay.classList.add('hidden');
+    if (e.target === overlay) close();
   });
   overlay.appendChild(panel);
   document.body.appendChild(overlay);
