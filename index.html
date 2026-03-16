@@ -754,7 +754,7 @@ function tryPlace(cx, cy) {
 // Mouse
 window.addEventListener('mousedown', e => {
   if(introActive) return;
-  if(e.target === btn || e.target === shareBtn) return;
+  if(e.target === btn || e.target === shareBtn || e.target.closest('#theme-gear')) return;
   mouseDown=true; isDragging=false; touched();
   dragStart={x:e.clientX,y:e.clientY};
   lastDragDelta={x:0,y:0}; lastDragTime=Date.now();
@@ -1395,6 +1395,17 @@ document.addEventListener('touchmove', e => { if(e.target === canvas) e.preventD
 buildGrid();
 newGame();
 animate();
+
+// Bridge for ES modules — exposes game internals for theme system
+window._game = {
+  renderer, C, matX, matO, matEmpty, matHover,
+  ptX, ptO, ptW, ptAI,
+  get cellMeshes(){return cellMeshes;},
+  get board(){return board;},
+  get lineTubes(){return lineTubes;},
+  get partialTubes(){return partialTubes;}
+};
 </script>
+<script type="module" src="js/main.js"></script>
 </body>
 </html>
