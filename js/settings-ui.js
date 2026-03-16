@@ -48,8 +48,9 @@ function injectCSS() {
       position:fixed;bottom:2px;right:2px;z-index:50;
       background:none;border:none;cursor:pointer;
       padding:8px;border-radius:6px;
-      opacity:0;pointer-events:none;transition:opacity 0.3s;
+      opacity:0.4;pointer-events:all;transition:opacity 0.3s;
     }
+    #theme-gear:hover{opacity:0.7;}
     #theme-overlay{
       position:fixed;inset:0;z-index:100;
       background:rgba(0,0,0,0.88);
@@ -116,27 +117,6 @@ function buildGear() {
   btn.addEventListener('mousedown', e => e.stopPropagation());
   btn.addEventListener('touchstart', e => e.stopPropagation());
   document.body.appendChild(btn);
-
-  let pinned = false;
-  btn.addEventListener('click', () => {
-    pinned = true;
-    btn.style.opacity = '0.5';
-    btn.style.pointerEvents = 'all';
-  });
-
-  const hint = document.getElementById('hint');
-  const ngBtn = document.getElementById('newgame-btn');
-  const sync = () => {
-    if (pinned) return;
-    const hintVisible = hint && hint.classList.contains('hint-big');
-    const btnVisible = ngBtn && ngBtn.style.opacity === '1';
-    const show = hintVisible || btnVisible;
-    btn.style.opacity = show ? '0.5' : '0';
-    btn.style.pointerEvents = show ? 'all' : 'none';
-  };
-  if (hint) new MutationObserver(sync).observe(hint, { attributes: true, attributeFilter: ['class'] });
-  if (ngBtn) new MutationObserver(sync).observe(ngBtn, { attributes: true, attributeFilter: ['style'] });
-  sync();
 }
 
 function buildOverlay(onChange) {
