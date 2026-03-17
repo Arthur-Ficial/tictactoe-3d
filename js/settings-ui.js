@@ -7,15 +7,24 @@ import { THEMES } from './themes.js';
 let overlay = null;
 let activeId = 'default';
 let activeDifficulty = 'normal';
+let activeCpuVsCpu = false;
+let activeFirstMove = 'player';
+let activeThinkingTime = 5;
 let cards = {};
 let initialized = false;
 let difficultyBtn = null;
+let cpuVsCpuBtn = null;
+let firstMoveBtn = null;
+let thinkingTimeBtn = null;
 
 export function init(config) {
   if (initialized) return;
   initialized = true;
   activeId = config.themeId;
   activeDifficulty = normalizeDifficulty(config.difficulty);
+  activeCpuVsCpu = config.cpuVsCpu || false;
+  activeFirstMove = config.firstMove || 'player';
+  activeThinkingTime = config.thinkingTime || 5;
   injectCSS();
   buildGear();
   buildOverlay(config);
@@ -102,45 +111,80 @@ function injectCSS() {
       display:flex;gap:2px;width:60px;height:16px;border-radius:4px;overflow:hidden;flex-shrink:0;
     }
     .theme-swatch span{flex:1;display:block;}
-	    .theme-name{
-	      font-size:0.65rem;font-weight:700;letter-spacing:1.5px;color:#999;
-	      line-height:1;white-space:nowrap;
-	    }
-	    .settings-spacer{
-	      min-height:140px;flex-shrink:0;
-	    }
-	    .settings-section{
-	      font-size:0.5rem;font-weight:900;letter-spacing:2.5px;
-	      color:#666;text-transform:uppercase;
-	      margin-top:6px;padding-top:12px;
-	      border-top:1px solid rgba(255,255,255,0.08);
-	    }
-	    #difficulty-toggle{
-	      width:100%;min-height:48px;
-	      border:1px solid rgba(255,255,255,0.08);border-radius:10px;
-	      background:rgba(255,255,255,0.03);color:#bbb;
-	      font-size:0.62rem;font-weight:800;letter-spacing:1.4px;
-	      padding:12px;cursor:pointer;transition:all 0.15s;
-	      touch-action:manipulation;text-align:left;
-	    }
-	    #difficulty-toggle:hover{
-	      border-color:rgba(255,255,255,0.18);color:#fff;
-	    }
-	    #difficulty-toggle[data-difficulty="super-hard"]{
-	      border-color:rgba(255,102,0,0.3);
-	      box-shadow:0 0 18px rgba(255,102,0,0.12);
-	      color:#ffb677;
-	    }
-	    #settings-save{
-	      margin-top:16px;padding:10px;width:100%;
-	      background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:6px;
-	      color:#aaa;font-size:0.55rem;font-weight:800;letter-spacing:2px;
-	      cursor:pointer;transition:all 0.15s;touch-action:manipulation;
-	    }
-	    #settings-save:hover{color:#fff;border-color:rgba(255,255,255,0.3);background:rgba(255,255,255,0.1);}
-	    #theme-reset{
-	      margin-top:12px;padding:8px;width:100%;
-	      background:none;border:1px solid rgba(255,255,255,0.06);border-radius:6px;
+    .theme-name{
+      font-size:0.65rem;font-weight:700;letter-spacing:1.5px;color:#999;
+      line-height:1;white-space:nowrap;
+    }
+    .settings-spacer{
+      min-height:140px;flex-shrink:0;
+    }
+    .settings-section{
+      font-size:0.5rem;font-weight:900;letter-spacing:2.5px;
+      color:#666;text-transform:uppercase;
+      margin-top:6px;padding-top:12px;
+      border-top:1px solid rgba(255,255,255,0.08);
+    }
+    .settings-toggle{
+      width:100%;min-height:48px;
+      border:1px solid rgba(255,255,255,0.08);border-radius:10px;
+      background:rgba(255,255,255,0.03);color:#bbb;
+      font-size:0.62rem;font-weight:800;letter-spacing:1.4px;
+      padding:12px;cursor:pointer;transition:all 0.15s;
+      touch-action:manipulation;text-align:left;
+    }
+    .settings-toggle:hover{
+      border-color:rgba(255,255,255,0.18);color:#fff;
+    }
+    #difficulty-toggle{
+      width:100%;min-height:48px;
+      border:1px solid rgba(255,255,255,0.08);border-radius:10px;
+      background:rgba(255,255,255,0.03);color:#bbb;
+      font-size:0.62rem;font-weight:800;letter-spacing:1.4px;
+      padding:12px;cursor:pointer;transition:all 0.15s;
+      touch-action:manipulation;text-align:left;
+    }
+    #difficulty-toggle:hover{
+      border-color:rgba(255,255,255,0.18);color:#fff;
+    }
+    #difficulty-toggle[data-difficulty="super-hard"]{
+      border-color:rgba(255,102,0,0.3);
+      box-shadow:0 0 18px rgba(255,102,0,0.12);
+      color:#ffb677;
+    }
+    #cpu-vs-cpu-toggle[data-active="true"]{
+      border-color:rgba(0,200,255,0.3);
+      box-shadow:0 0 18px rgba(0,200,255,0.12);
+      color:#77ddff;
+    }
+    #first-move-toggle[data-active="cpu"]{
+      border-color:rgba(255,200,0,0.3);
+      box-shadow:0 0 18px rgba(255,200,0,0.12);
+      color:#ffdd77;
+    }
+    #thinking-time-toggle{
+      position:relative;
+    }
+    #thinking-time-toggle .time-dots{
+      display:flex;gap:4px;margin-top:6px;
+    }
+    #thinking-time-toggle .time-dot{
+      width:6px;height:6px;border-radius:50%;
+      background:rgba(255,255,255,0.15);transition:all 0.15s;
+    }
+    #thinking-time-toggle .time-dot.active{
+      background:rgba(255,255,255,0.6);
+      box-shadow:0 0 6px rgba(255,255,255,0.3);
+    }
+    #settings-save{
+      margin-top:16px;padding:10px;width:100%;
+      background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:6px;
+      color:#aaa;font-size:0.55rem;font-weight:800;letter-spacing:2px;
+      cursor:pointer;transition:all 0.15s;touch-action:manipulation;
+    }
+    #settings-save:hover{color:#fff;border-color:rgba(255,255,255,0.3);background:rgba(255,255,255,0.1);}
+    #theme-reset{
+      margin-top:12px;padding:8px;width:100%;
+      background:none;border:1px solid rgba(255,255,255,0.06);border-radius:6px;
       color:#555;font-size:0.5rem;font-weight:700;letter-spacing:1.5px;
       cursor:pointer;transition:all 0.15s;touch-action:manipulation;
     }
@@ -180,6 +224,7 @@ function buildOverlay(config) {
   const grid = document.createElement('div');
   grid.id = 'theme-grid';
 
+  // ── Theme cards ──
   for (const theme of THEMES) {
     const card = document.createElement('div');
     card.className = 'theme-card' + (theme.id === activeId ? ' active' : '');
@@ -213,6 +258,26 @@ function buildOverlay(config) {
   spacer.className = 'settings-spacer';
   grid.appendChild(spacer);
 
+  // ── CPU vs CPU (above Difficulty) ──
+  const cpuVsCpuLabel = document.createElement('div');
+  cpuVsCpuLabel.className = 'settings-section';
+  cpuVsCpuLabel.textContent = 'Game Mode';
+  grid.appendChild(cpuVsCpuLabel);
+
+  cpuVsCpuBtn = document.createElement('button');
+  cpuVsCpuBtn.id = 'cpu-vs-cpu-toggle';
+  cpuVsCpuBtn.className = 'settings-toggle';
+  cpuVsCpuBtn.type = 'button';
+  cpuVsCpuBtn.addEventListener('click', () => {
+    activeCpuVsCpu = !activeCpuVsCpu;
+    updateCpuVsCpuButton();
+    updateFirstMoveVisibility();
+    config.onCpuVsCpuChange(activeCpuVsCpu);
+  });
+  updateCpuVsCpuButton();
+  grid.appendChild(cpuVsCpuBtn);
+
+  // ── Difficulty ──
   const difficultyLabel = document.createElement('div');
   difficultyLabel.className = 'settings-section';
   difficultyLabel.textContent = 'Difficulty';
@@ -229,6 +294,48 @@ function buildOverlay(config) {
   updateDifficultyButton();
   grid.appendChild(difficultyBtn);
 
+  // ── First Move (below Difficulty) ──
+  const firstMoveLabel = document.createElement('div');
+  firstMoveLabel.className = 'settings-section';
+  firstMoveLabel.id = 'first-move-section';
+  firstMoveLabel.textContent = 'First Move';
+  grid.appendChild(firstMoveLabel);
+
+  firstMoveBtn = document.createElement('button');
+  firstMoveBtn.id = 'first-move-toggle';
+  firstMoveBtn.className = 'settings-toggle';
+  firstMoveBtn.type = 'button';
+  firstMoveBtn.addEventListener('click', () => {
+    activeFirstMove = activeFirstMove === 'player' ? 'cpu' : 'player';
+    updateFirstMoveButton();
+    config.onFirstMoveChange(activeFirstMove);
+  });
+  updateFirstMoveButton();
+  grid.appendChild(firstMoveBtn);
+
+  // ── Thinking Time (below First Move) ──
+  const thinkingLabel = document.createElement('div');
+  thinkingLabel.className = 'settings-section';
+  thinkingLabel.textContent = 'Thinking Time';
+  grid.appendChild(thinkingLabel);
+
+  thinkingTimeBtn = document.createElement('button');
+  thinkingTimeBtn.id = 'thinking-time-toggle';
+  thinkingTimeBtn.className = 'settings-toggle';
+  thinkingTimeBtn.type = 'button';
+  thinkingTimeBtn.addEventListener('click', () => {
+    const times = [5, 10, 15];
+    const idx = times.indexOf(activeThinkingTime);
+    activeThinkingTime = times[(idx + 1) % times.length];
+    updateThinkingTimeButton();
+    config.onThinkingTimeChange(activeThinkingTime);
+  });
+  updateThinkingTimeButton();
+  grid.appendChild(thinkingTimeBtn);
+
+  // Hide first-move when CPU vs CPU is on
+  updateFirstMoveVisibility();
+
   const saveBtn = document.createElement('button');
   saveBtn.id = 'settings-save';
   saveBtn.textContent = 'SAVE';
@@ -243,8 +350,15 @@ function buildOverlay(config) {
   resetBtn.addEventListener('click', () => {
     activeId = 'default';
     activeDifficulty = 'normal';
+    activeCpuVsCpu = false;
+    activeFirstMove = 'player';
+    activeThinkingTime = 5;
     for (const id in cards) cards[id].classList.toggle('active', id === 'default');
     updateDifficultyButton();
+    updateCpuVsCpuButton();
+    updateFirstMoveButton();
+    updateThinkingTimeButton();
+    updateFirstMoveVisibility();
     config.onReset();
     close();
   });
@@ -261,12 +375,53 @@ function buildOverlay(config) {
   document.body.appendChild(overlay);
 }
 
+// ── Button update helpers ──
+
 function updateDifficultyButton() {
   if (!difficultyBtn) return;
   difficultyBtn.dataset.difficulty = activeDifficulty;
   difficultyBtn.textContent = activeDifficulty === 'super-hard'
     ? 'Difficulty: Super Hard'
     : 'Difficulty: Normal';
+}
+
+function updateCpuVsCpuButton() {
+  if (!cpuVsCpuBtn) return;
+  cpuVsCpuBtn.dataset.active = activeCpuVsCpu;
+  cpuVsCpuBtn.textContent = activeCpuVsCpu
+    ? 'Mode: CPU vs CPU'
+    : 'Mode: Player vs CPU';
+}
+
+function updateFirstMoveButton() {
+  if (!firstMoveBtn) return;
+  firstMoveBtn.dataset.active = activeFirstMove;
+  firstMoveBtn.textContent = activeFirstMove === 'cpu'
+    ? 'First Move: CPU'
+    : 'First Move: Player';
+}
+
+function updateThinkingTimeButton() {
+  if (!thinkingTimeBtn) return;
+  thinkingTimeBtn.textContent = '';
+  const text = document.createElement('div');
+  text.textContent = `Thinking Time: ${activeThinkingTime}s`;
+  thinkingTimeBtn.appendChild(text);
+
+  const dots = document.createElement('div');
+  dots.className = 'time-dots';
+  for (const t of [5, 10, 15]) {
+    const dot = document.createElement('div');
+    dot.className = 'time-dot' + (t <= activeThinkingTime ? ' active' : '');
+    dots.appendChild(dot);
+  }
+  thinkingTimeBtn.appendChild(dots);
+}
+
+function updateFirstMoveVisibility() {
+  const section = document.getElementById('first-move-section');
+  if (section) section.style.display = activeCpuVsCpu ? 'none' : '';
+  if (firstMoveBtn) firstMoveBtn.style.display = activeCpuVsCpu ? 'none' : '';
 }
 
 function normalizeDifficulty(mode) {
