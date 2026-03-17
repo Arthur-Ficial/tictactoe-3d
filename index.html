@@ -201,8 +201,8 @@
 <button id="share-btn" onclick="shareGame()">SHARE</button>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="js/cpu-normal.js?v=b3c365b"></script>
-<script src="js/cpu-super-hard.js?v=b3c365b"></script>
+<script src="js/cpu-normal.js?v=b6d8a09"></script>
+<script src="js/cpu-super-hard.js?v=b6d8a09"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════════
 // COLOR PALETTE — Single Source of Truth for all JS colors
@@ -652,6 +652,24 @@ function cancelCineCam() { cineCam = null; }
 
 function scheduleCpuMove(who) {
   if(gameOver) return;
+
+  // In CPU vs CPU, each player's first move is random for variety
+  if(cpuVsCpu && moveCount < 2) {
+    thinking = true;
+    ptAI.intensity = 3;
+    setStatus(`<span style="color:var(--c-cpu);text-shadow:0 0 15px var(--c-cpu)">CPU THINKING</span>`);
+    const empties = getEmpties(board);
+    const randomMove = empties[Math.floor(Math.random() * empties.length)];
+    const requestId = ++cpuRequestId;
+    const delay = 600 + Math.random() * 400;
+    cpuTimerId = setTimeout(() => {
+      cpuTimerId = null;
+      if(requestId !== cpuRequestId) return;
+      finishCpuMove(requestId, who, randomMove);
+    }, delay);
+    return;
+  }
+
   thinking = true;
   ptAI.intensity = 3;
   setStatus(`<span style="color:var(--c-cpu);text-shadow:0 0 15px var(--c-cpu)">CPU THINKING</span>`);
@@ -1597,6 +1615,6 @@ window._game = {
 updateCpuLabel();
 window.addEventListener('beforeunload', () => superHardCpu.terminate());
 </script>
-<script type="module">import('./js/main.js?v=b3c365b');</script>
+<script type="module">import('./js/main.js?v=b6d8a09');</script>
 </body>
 </html>
