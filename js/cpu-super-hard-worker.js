@@ -5,6 +5,8 @@ const FLAG_LOWER = 1;
 const FLAG_UPPER = 2;
 const INF = 1e9;
 const MAX_TT_SIZE = 500000;
+const NODE_CHECK_INTERVAL = 2048;
+const DEFAULT_TIME_LIMIT = 2500;
 
 let cpu = 'O';
 let player = 'X';
@@ -19,6 +21,11 @@ let cellToLines = [];
 let cellLineCounts = [];
 let rotationBitValues = [];
 let transposition = new Map();
+
+let searchStartTime = 0;
+let searchTimeLimit = 0;
+let searchAborted = false;
+let nodeCount = 0;
 
 self.onmessage = event => {
   const message = event.data || {};
@@ -104,6 +111,10 @@ function initSolver(config) {
   ready = true;
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// ITERATIVE DEEPENING SOLVER
+// ═══════════════════════════════════════════════════════════════════
+
 function solveBoard(board) {
   const { cpuMask, playerMask } = boardToMasks(board);
   const occupiedMask = (cpuMask | playerMask) >>> 0;
@@ -111,34 +122,80 @@ function solveBoard(board) {
     return { move: -1, scoreDiff: 0 };
   }
 
-  let alpha = -INF;
-  let bestMove = -1;
+  const emptyCount = bitToBoard.length - popcount(occupiedMask);
+  const moves = buildOrderedMoves(cpuMask, playerMask, true);
+  if (moves.length === 0) return { move: -1, scoreDiff: 0 };
+
+  searchStartTime = performance.now();
+  searchTimeLimit = DEFAULT_TIME_LIMIT;
+  nodeCount = 0;
+
+  let bestMove = bitToBoard[moves[0].bit];
   let bestScore = -INF;
 
-  const moves = buildOrderedMoves(cpuMask, playerMask, true);
-  for (const move of moves) {
-    const gain = move.immediate;
-    const score = gain + solveState((cpuMask | bitMasks[move.bit]) >>> 0, playerMask, false, alpha - gain, INF - gain);
-    if (score > bestScore) {
-      bestScore = score;
-      bestMove = bitToBoard[move.bit];
+  for (let maxDepth = 2; maxDepth <= emptyCount; maxDepth += 2) {
+    transposition.clear();
+    searchAborted = false;
+
+    let iterBestMove = -1;
+    let iterBestScore = -INF;
+    let alpha = -INF;
+    let aborted = false;
+
+    for (const move of moves) {
+      const gain = move.immediate;
+      const score = gain + solveState(
+        (cpuMask | bitMasks[move.bit]) >>> 0,
+        playerMask, false,
+        alpha - gain, INF - gain,
+        maxDepth - 1
+      );
+
+      if (searchAborted) { aborted = true; break; }
+
+      if (score > iterBestScore) {
+        iterBestScore = score;
+        iterBestMove = bitToBoard[move.bit];
+      }
+      if (score > alpha) alpha = score;
     }
-    if (score > alpha) alpha = score;
+
+    if (!aborted) {
+      bestMove = iterBestMove;
+      bestScore = iterBestScore;
+    }
+
+    if (maxDepth >= emptyCount) break;
+    if (performance.now() - searchStartTime > searchTimeLimit * 0.7) break;
   }
 
   return { move: bestMove, scoreDiff: bestScore };
 }
 
-function solveState(cpuMask, playerMask, cpuTurn, alpha, beta) {
+// ═══════════════════════════════════════════════════════════════════
+// DEPTH-LIMITED MINIMAX WITH ALPHA-BETA
+// ═══════════════════════════════════════════════════════════════════
+
+function solveState(cpuMask, playerMask, cpuTurn, alpha, beta, depth) {
+  nodeCount += 1;
+  if ((nodeCount & (NODE_CHECK_INTERVAL - 1)) === 0) {
+    if (performance.now() - searchStartTime > searchTimeLimit) {
+      searchAborted = true;
+      return 0;
+    }
+  }
+  if (searchAborted) return 0;
+
   const occupiedMask = (cpuMask | playerMask) >>> 0;
   if (occupiedMask === fullMask) return 0;
+  if (depth <= 0) return evaluate(cpuMask, playerMask);
 
   const alphaOrig = alpha;
   const betaOrig = beta;
   const key = makeKey(cpuMask, playerMask, cpuTurn);
   const cached = transposition.get(key);
 
-  if (cached) {
+  if (cached && cached.depth >= depth) {
     if (cached.flag === FLAG_EXACT) return cached.value;
     if (cached.flag === FLAG_LOWER && cached.value > alpha) alpha = cached.value;
     else if (cached.flag === FLAG_UPPER && cached.value < beta) beta = cached.value;
@@ -151,7 +208,11 @@ function solveState(cpuMask, playerMask, cpuTurn, alpha, beta) {
   if (cpuTurn) {
     for (const move of moves) {
       const gain = move.immediate;
-      const value = gain + solveState((cpuMask | bitMasks[move.bit]) >>> 0, playerMask, false, alpha - gain, beta - gain);
+      const value = gain + solveState(
+        (cpuMask | bitMasks[move.bit]) >>> 0, playerMask, false,
+        alpha - gain, beta - gain, depth - 1
+      );
+      if (searchAborted) return 0;
       if (value > bestValue) bestValue = value;
       if (value > alpha) alpha = value;
       if (alpha >= beta) break;
@@ -159,22 +220,62 @@ function solveState(cpuMask, playerMask, cpuTurn, alpha, beta) {
   } else {
     for (const move of moves) {
       const gain = move.immediate;
-      const value = solveState(cpuMask, (playerMask | bitMasks[move.bit]) >>> 0, true, alpha + gain, beta + gain) - gain;
+      const value = solveState(
+        cpuMask, (playerMask | bitMasks[move.bit]) >>> 0, true,
+        alpha + gain, beta + gain, depth - 1
+      ) - gain;
+      if (searchAborted) return 0;
       if (value < bestValue) bestValue = value;
       if (value < beta) beta = value;
       if (alpha >= beta) break;
     }
   }
 
-  if (transposition.size < MAX_TT_SIZE) {
+  if (!searchAborted && transposition.size < MAX_TT_SIZE) {
     let flag = FLAG_EXACT;
     if (bestValue <= alphaOrig) flag = FLAG_UPPER;
     else if (bestValue >= betaOrig) flag = FLAG_LOWER;
-    transposition.set(key, { value: bestValue, flag });
+    transposition.set(key, { value: bestValue, flag, depth });
   }
 
   return bestValue;
 }
+
+// ═══════════════════════════════════════════════════════════════════
+// STATIC EVALUATION
+// ═══════════════════════════════════════════════════════════════════
+
+function popcount(x) {
+  x = x - ((x >> 1) & 0x55555555);
+  x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
+  return (((x + (x >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
+}
+
+function evaluate(cpuMask, playerMask) {
+  let score = 0;
+
+  for (let i = 0; i < lineMasks.length; i += 1) {
+    const lm = lineMasks[i];
+    const cpuHits = popcount(cpuMask & lm);
+    const plrHits = popcount(playerMask & lm);
+
+    if (cpuHits === 3) { score += 1; continue; }
+    if (plrHits === 3) { score -= 1; continue; }
+    if (cpuHits > 0 && plrHits > 0) continue;
+
+    if (cpuHits === 2) score += 0.15;
+    else if (cpuHits === 1) score += 0.02;
+
+    if (plrHits === 2) score -= 0.15;
+    else if (plrHits === 1) score -= 0.02;
+  }
+
+  return score;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// MOVE ORDERING
+// ═══════════════════════════════════════════════════════════════════
 
 function buildOrderedMoves(cpuMask, playerMask, cpuTurn) {
   const occupiedMask = (cpuMask | playerMask) >>> 0;
@@ -229,6 +330,10 @@ function blockedThreats(cpuMask, playerMask, bitIdx, cpuTurn) {
 
   return blocked;
 }
+
+// ═══════════════════════════════════════════════════════════════════
+// BITBOARD UTILITIES
+// ═══════════════════════════════════════════════════════════════════
 
 function boardToMasks(board) {
   if (!Array.isArray(board) || board.length !== 27) {

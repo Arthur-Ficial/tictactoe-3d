@@ -200,8 +200,8 @@
 <button id="share-btn" onclick="shareGame()">SHARE</button>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="js/cpu-normal.js"></script>
-<script src="js/cpu-super-hard.js"></script>
+<script src="js/cpu-normal.js?v=f5f9d48"></script>
+<script src="js/cpu-super-hard.js?v=f5f9d48"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════════
 // COLOR PALETTE — Single Source of Truth for all JS colors
@@ -1393,6 +1393,6 @@ window._game = {
 };
 window.addEventListener('beforeunload', () => superHardCpu.terminate());
 </script>
-<script type="module" src="js/main.js"></script>
+<script type="module">import('./js/main.js?v=f5f9d48');</script>
 </body>
 </html>

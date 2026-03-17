@@ -5,7 +5,8 @@
   const cpuNS = root.TTT3DCPU || (root.TTT3DCPU = {});
 
   cpuNS.createSuperHardSolver = function createSuperHardSolver(config) {
-    const worker = new Worker('js/cpu-super-hard-worker.js');
+    const workerUrl = 'js/cpu-super-hard-worker.js?v=' + Date.now();
+    const worker = new Worker(workerUrl);
     const pending = new Map();
     let nextRequestId = 1;
     let initialized = false;
