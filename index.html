@@ -201,8 +201,8 @@
 <button id="share-btn" onclick="shareGame()">SHARE</button>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="js/cpu-normal.js?v=a522310"></script>
-<script src="js/cpu-super-hard.js?v=a522310"></script>
+<script src="js/cpu-normal.js?v=c3e630d"></script>
+<script src="js/cpu-super-hard.js?v=c3e630d"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════════
 // COLOR PALETTE — Single Source of Truth for all JS colors
@@ -297,6 +297,9 @@ let firstMoveCpu = false; // true = CPU goes first
 let thinkingTimeSec = 0; // 0 = off (natural delay), 5/10/15 = timer seconds
 let countdownInterval = null; // timer interval for countdown display
 let countdownStart = 0; // timestamp when countdown started
+
+// ── Cinematic camera for CPU vs CPU ──
+let cineCam = null; // {targetTheta, targetPhi, startTheta, startPhi, startTime, duration, onDone}
 const superHardCpu = window.TTT3DCPU.createSuperHardSolver({
   wins: WINS,
   center: CENTER,
@@ -599,6 +602,54 @@ function stopCountdown() {
   if(sep) { sep.textContent = '|'; sep.classList.remove('timer-active'); }
 }
 
+// ── Cinematic camera: smoothly orbit to face a cell before placement ──
+function cineAngleForCell(cellIdx) {
+  const pos = cellPos(cellIdx);
+  // Camera goes opposite the cell so it's front-and-center in view
+  const theta = Math.atan2(-pos.x, -pos.z);
+  // Slight elevation bias toward cell's y position
+  const dist = Math.sqrt(pos.x * pos.x + pos.z * pos.z) || 0.001;
+  const phi = Math.PI / 2 - Math.atan2(pos.y * 0.5, dist);
+  return { theta, phi: Math.max(PHI_MIN + 0.1, Math.min(PHI_MAX - 0.1, phi)) };
+}
+
+function shortAngleDist(from, to) {
+  const d = ((to - from) % (Math.PI * 2) + Math.PI * 3) % (Math.PI * 2) - Math.PI;
+  return d;
+}
+
+function startCineMove(cellIdx, duration, onDone) {
+  const target = cineAngleForCell(cellIdx);
+  cineCam = {
+    targetTheta: sph.theta + shortAngleDist(sph.theta, target.theta),
+    targetPhi: target.phi,
+    startTheta: sph.theta,
+    startPhi: sph.phi,
+    startTime: Date.now(),
+    duration,
+    onDone,
+  };
+}
+
+function updateCineCam() {
+  if (!cineCam) return false;
+  const elapsed = Date.now() - cineCam.startTime;
+  const t = Math.min(1, elapsed / cineCam.duration);
+  // Ease-out cubic for smooth deceleration
+  const e = 1 - Math.pow(1 - t, 3);
+  sph.theta = cineCam.startTheta + (cineCam.targetTheta - cineCam.startTheta) * e;
+  sph.phi = cineCam.startPhi + (cineCam.targetPhi - cineCam.startPhi) * e;
+  updateCamera();
+  if (t >= 1) {
+    const done = cineCam.onDone;
+    cineCam = null;
+    if (done) done();
+  }
+  return true;
+}
+
+function cancelCineCam() { cineCam = null; }
+
 function scheduleCpuMove(who) {
   if(gameOver) return;
   thinking = true;
@@ -662,7 +713,23 @@ function cpuFallback(snapshot, who) {
 
 function finishCpuMove(requestId, who, move) {
   if(requestId !== cpuRequestId) return;
-  if(move !== -1) placeMarker(move, who);
+  if(move === -1) { completeCpuTurn(requestId, who); return; }
+
+  if(cpuVsCpu) {
+    // Cinematic: animate camera to the cell, then place marker
+    startCineMove(move, 800, () => {
+      if(requestId !== cpuRequestId) return;
+      placeMarker(move, who);
+      completeCpuTurn(requestId, who);
+    });
+  } else {
+    placeMarker(move, who);
+    completeCpuTurn(requestId, who);
+  }
+}
+
+function completeCpuTurn(requestId, who) {
+  if(requestId !== cpuRequestId) return;
   ptAI.intensity = 0;
   thinking = false;
   updateUI();
@@ -678,6 +745,7 @@ function newGame() {
   cpuRequestId++;
   if (cpuTimerId) { clearTimeout(cpuTimerId); cpuTimerId = null; }
   stopCountdown();
+  cancelCineCam();
   lpActive = false; lpLocked = false; lpRestoring = false;
   lpSavedMap = null; lpRestoreSnaps = null; lpStage = 0;
   if (lpInterval) { clearInterval(lpInterval); lpInterval = null; }
@@ -1446,10 +1514,16 @@ function animate() {
     if(needsUpdate) updateCamera();
   }
 
-  // Auto-rotate: always in CPU vs CPU mode, otherwise after 3s idle
-  if(!isDragging && !introActive) {
+  // Cinematic camera animation (CPU vs CPU)
+  const cineActive = updateCineCam();
+
+  // Auto-rotate: gentle drift in CPU vs CPU (when not animating), otherwise after 3s idle
+  if(!isDragging && !introActive && !cineActive) {
     const shouldRotate = cpuVsCpu || (!gameOver && !thinking && (Date.now()-lastInteract>3000));
-    if(shouldRotate) { sph.theta += 0.006; updateCamera(); }
+    if(shouldRotate) {
+      sph.theta += cpuVsCpu ? 0.003 : 0.006; // slower drift in spectator mode
+      updateCamera();
+    }
   }
 
   // Show NEW GAME button after 7s idle if board has marks and game not over (not in CPU vs CPU)
@@ -1522,6 +1596,6 @@ window._game = {
 updateCpuLabel();
 window.addEventListener('beforeunload', () => superHardCpu.terminate());
 </script>
-<script type="module">import('./js/main.js?v=a522310');</script>
+<script type="module">import('./js/main.js?v=c3e630d');</script>
 </body>
 </html>

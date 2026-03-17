@@ -26,6 +26,11 @@ window._game?.setDifficulty(savedDifficulty);
 window._game?.setThinkingTime(savedThinkingTime);
 window._game?.setFirstMoveCpu(savedFirstMove === 'cpu');
 
+// If CPU goes first, restart game so the setting takes effect
+if (savedFirstMove === 'cpu') {
+  window._game?.newGame();
+}
+
 initUI({
   themeId: savedThemeId,
   difficulty: savedDifficulty,
