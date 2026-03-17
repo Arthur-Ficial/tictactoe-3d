@@ -1166,10 +1166,11 @@ function shareGame() {
   const ctx = comp.getContext('2d');
   ctx.drawImage(canvas, 0, 0);
   const x = scores[PLAYER], o = scores[CPU];
-  let resultText, resultColor;
-  if(x > o)      { resultText = `YOU WIN ${x} - ${o}`; resultColor = h(C.WIN); }
-  else if(o > x) { resultText = `CPU WINS ${o} - ${x}`; resultColor = h(C.CPU); }
-  else           { resultText = `DRAW ${x} - ${o}`; resultColor = h(C.WHITE); }
+  let resultText, resultColor, shareText;
+  if(x > o)      { resultText = `YOU WIN ${x} - ${o}`; resultColor = h(C.WIN); shareText = `I just won ${x} to ${o}!`; }
+  else if(o > x) { resultText = `CPU WINS ${o} - ${x}`; resultColor = h(C.CPU); shareText = `I just lost ${o} to ${x}!`; }
+  else           { resultText = `DRAW ${x} - ${o}`; resultColor = h(C.WHITE); shareText = `I just drew ${x} to ${o}!`; }
+  shareText += ' 3D Tic-Tac-Toe — More Challenging Than You Think';
   const fontSize = Math.round(w * 0.04);
   ctx.textAlign = 'center';
   ctx.font = `bold ${fontSize}px 'Segoe UI', sans-serif`;
@@ -1188,7 +1189,7 @@ function shareGame() {
     const file = new File([blob], 'tictactoe3d.png', { type: 'image/png' });
     if(navigator.canShare && navigator.canShare({ files: [file] })) {
       try {
-        await navigator.share({ title: '3D Tic-Tac-Toe', text: resultText, url: 'https://arthur-ficial.github.io/tictactoe-3d', files: [file] });
+        await navigator.share({ title: '3D Tic-Tac-Toe', text: shareText, url: 'https://arthur-ficial.github.io/tictactoe-3d', files: [file] });
       } catch(e) {
         if(e.name !== 'AbortError') downloadShareImage(blob);
       }
