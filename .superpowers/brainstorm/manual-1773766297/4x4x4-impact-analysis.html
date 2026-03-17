@@ -1,0 +1,85 @@
+<h2>4×4×4 Mode: What Changes?</h2>
+<p class="subtitle">Side-by-side comparison of how every dimension of the game is affected</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">Current: 3×3×3</div>
+    <div class="mockup-body" style="font-family: monospace; font-size: 14px; line-height: 1.8;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+        <div><span style="color: #888;">Cells:</span></div><div><strong>27</strong> (26 playable)</div>
+        <div><span style="color: #888;">Blocked:</span></div><div><strong>1</strong> (center cell)</div>
+        <div><span style="color: #888;">Win lines:</span></div><div><strong>36</strong></div>
+        <div><span style="color: #888;">Moves/game:</span></div><div><strong>26</strong> total</div>
+        <div><span style="color: #888;">Per player:</span></div><div><strong>13</strong> moves each</div>
+        <div><span style="color: #888;">Game states:</span></div><div><strong>~10<sup>12</sup></strong></div>
+        <div><span style="color: #888;">Bitmask bits:</span></div><div><strong>26</strong> (fits 32-bit int ✅)</div>
+        <div><span style="color: #888;">Cube rotations:</span></div><div><strong>24</strong> symmetries</div>
+        <div><span style="color: #888;">AI depth:</span></div><div><strong>Full solve</strong> in 2.5s</div>
+        <div><span style="color: #888;">3D objects:</span></div><div><strong>~54</strong> meshes</div>
+        <div><span style="color: #888;">Inner cells:</span></div><div><strong>1</strong> (blocked)</div>
+        <div><span style="color: #888;">Visibility:</span></div><div><strong>Easy</strong> — all cells reachable</div>
+      </div>
+    </div>
+  </div>
+  <div class="mockup">
+    <div class="mockup-header">New: 4×4×4</div>
+    <div class="mockup-body" style="font-family: monospace; font-size: 14px; line-height: 1.8;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+        <div><span style="color: #888;">Cells:</span></div><div><strong>64</strong> (all playable)</div>
+        <div><span style="color: #888;">Blocked:</span></div><div><strong>0</strong> (no center!)</div>
+        <div><span style="color: #888;">Win lines:</span></div><div><strong>76</strong></div>
+        <div><span style="color: #888;">Moves/game:</span></div><div><strong>64</strong> total</div>
+        <div><span style="color: #888;">Per player:</span></div><div><strong>32</strong> moves each</div>
+        <div><span style="color: #888;">Game states:</span></div><div><strong>~10<sup>28</sup></strong></div>
+        <div><span style="color: #888;">Bitmask bits:</span></div><div><strong>64</strong> (needs BigInt ⚠️)</div>
+        <div><span style="color: #888;">Cube rotations:</span></div><div><strong>24</strong> symmetries</div>
+        <div><span style="color: #888;">AI depth:</span></div><div><strong>~4-6 ply</strong> heuristic only</div>
+        <div><span style="color: #888;">3D objects:</span></div><div><strong>~128</strong> meshes</div>
+        <div><span style="color: #888;">Inner cells:</span></div><div><strong>8</strong> (hard to see/click)</div>
+        <div><span style="color: #888;">Visibility:</span></div><div><strong>Hard</strong> — 8 hidden interior cells</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h3 style="margin-top: 32px;">The 5 Big Implications</h3>
+
+<div class="options">
+  <div class="option" data-choice="ai" onclick="toggleSelect(this)">
+    <div class="letter" style="background: #e74c3c;">!</div>
+    <div class="content">
+      <h3>🧠 AI: Perfect play is impossible</h3>
+      <p>The Super Hard solver uses minimax with 26 cells and barely finishes in 2.5s. With 64 cells, the game tree is <strong>10<sup>16</sup>× larger</strong>. You'd need a completely different AI approach — Monte Carlo Tree Search (MCTS), neural network evaluation, or pure heuristics. No "perfect" solver is feasible.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="bitmask" onclick="toggleSelect(this)">
+    <div class="letter" style="background: #e67e22;">!</div>
+    <div class="content">
+      <h3>⚙️ Bitmask: 32-bit overflow</h3>
+      <p>Current solver stores board state as 26-bit integers using JavaScript's <code>&gt;&gt;&gt;</code> operator (max 32 bits). 64 cells won't fit. Need either <strong>BigInt</strong> (slow), <strong>two 32-bit masks</strong> (complex), or <strong>array-based representation</strong> (simplest but no bit tricks).</p>
+    </div>
+  </div>
+  <div class="option" data-choice="ux" onclick="toggleSelect(this)">
+    <div class="letter" style="background: #f39c12;">!</div>
+    <div class="content">
+      <h3>👁️ UX: Inner cells are invisible</h3>
+      <p>A 4×4×4 cube has <strong>8 fully interior cells</strong> (2×2×2 inner core) that are completely hidden behind outer cells. Current 3×3×3 has only 1 interior cell (which is blocked). You'd need <strong>exploded view</strong>, <strong>layer slicing</strong>, or <strong>transparency tricks</strong> to make the inner cells accessible.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="gameplay" onclick="toggleSelect(this)">
+    <div class="letter" style="background: #2ecc71;">✓</div>
+    <div class="content">
+      <h3>🎮 Gameplay: Deeper & longer</h3>
+      <p>76 win lines vs 36 = more scoring. 32 moves per player vs 13 = much longer games. The strategy goes from "tactical" to "positional" — more like chess than tic-tac-toe. <strong>This is the upside.</strong> It becomes a genuinely different, deeper game.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="rendering" onclick="toggleSelect(this)">
+    <div class="letter" style="background: #3498db;">~</div>
+    <div class="content">
+      <h3>📐 Rendering: 2.4× more geometry</h3>
+      <p>64 cells + edges + markers + line tubes = roughly 2.4× the mesh count. Three.js can handle this fine on desktop, but <strong>mobile performance</strong> could suffer. The board also needs to be physically larger or cells smaller, affecting camera and spacing.</p>
+    </div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top: 24px;">Click any item you want to discuss further, or tell me in the terminal what interests you most.</p>

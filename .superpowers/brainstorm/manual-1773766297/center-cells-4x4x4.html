@@ -1,0 +1,171 @@
+<h2>Blocked Center Cells: 3×3×3 → 4×4×4</h2>
+<p class="subtitle">Same design principle — block the center region</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">3×3×3 — 1 center cell blocked</div>
+    <div class="mockup-body" style="text-align: center; padding: 20px;">
+      <p style="color: #888; margin-bottom: 12px;">Layer by layer (bottom → top)</p>
+      <div style="display: flex; justify-content: center; gap: 24px; flex-wrap: wrap;">
+        <div>
+          <div style="font-size: 11px; color: #666; margin-bottom: 4px;">Layer 0 (bottom)</div>
+          <div style="display: grid; grid-template-columns: repeat(3, 36px); gap: 3px;">
+            <div style="width:36px;height:36px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#556;">0</div>
+            <div style="width:36px;height:36px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#556;">1</div>
+            <div style="width:36px;height:36px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#556;">2</div>
+            <div style="width:36px;height:36px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#556;">3</div>
+            <div style="width:36px;height:36px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#556;">4</div>
+            <div style="width:36px;height:36px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#556;">5</div>
+            <div style="width:36px;height:36px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#556;">6</div>
+            <div style="width:36px;height:36px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#556;">7</div>
+            <div style="width:36px;height:36px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#556;">8</div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size: 11px; color: #666; margin-bottom: 4px;">Layer 1 (middle)</div>
+          <div style="display: grid; grid-template-columns: repeat(3, 36px); gap: 3px;">
+            <div style="width:36px;height:36px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#556;">9</div>
+            <div style="width:36px;height:36px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#556;">10</div>
+            <div style="width:36px;height:36px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#556;">11</div>
+            <div style="width:36px;height:36px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#556;">12</div>
+            <div style="width:36px;height:36px;background:#e74c3c;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;font-weight:bold;">✕</div>
+            <div style="width:36px;height:36px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#556;">14</div>
+            <div style="width:36px;height:36px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#556;">15</div>
+            <div style="width:36px;height:36px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#556;">16</div>
+            <div style="width:36px;height:36px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#556;">17</div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size: 11px; color: #666; margin-bottom: 4px;">Layer 2 (top)</div>
+          <div style="display: grid; grid-template-columns: repeat(3, 36px); gap: 3px;">
+            <div style="width:36px;height:36px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#556;">18</div>
+            <div style="width:36px;height:36px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#556;">19</div>
+            <div style="width:36px;height:36px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#556;">20</div>
+            <div style="width:36px;height:36px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#556;">21</div>
+            <div style="width:36px;height:36px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#556;">22</div>
+            <div style="width:36px;height:36px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#556;">23</div>
+            <div style="width:36px;height:36px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#556;">24</div>
+            <div style="width:36px;height:36px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#556;">25</div>
+            <div style="width:36px;height:36px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#556;">26</div>
+          </div>
+        </div>
+      </div>
+      <p style="margin-top: 12px; font-size: 13px;"><strong>27 cells − 1 blocked = 26 playable</strong></p>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">4×4×4 — 8 center cells blocked (2×2×2 core)</div>
+    <div class="mockup-body" style="text-align: center; padding: 20px;">
+      <p style="color: #888; margin-bottom: 12px;">Layer by layer (bottom → top)</p>
+      <div style="display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;">
+        <div>
+          <div style="font-size: 11px; color: #666; margin-bottom: 4px;">Layer 0</div>
+          <div style="display: grid; grid-template-columns: repeat(4, 32px); gap: 3px;">
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">0</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">1</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">2</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">3</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">4</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">5</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">6</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">7</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">8</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">9</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">10</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">11</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">12</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">13</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">14</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">15</div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size: 11px; color: #666; margin-bottom: 4px;">Layer 1</div>
+          <div style="display: grid; grid-template-columns: repeat(4, 32px); gap: 3px;">
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">16</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">17</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">18</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">19</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">20</div>
+            <div style="width:32px;height:32px;background:#e74c3c;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;font-weight:bold;">✕</div>
+            <div style="width:32px;height:32px;background:#e74c3c;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;font-weight:bold;">✕</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">23</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">24</div>
+            <div style="width:32px;height:32px;background:#e74c3c;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;font-weight:bold;">✕</div>
+            <div style="width:32px;height:32px;background:#e74c3c;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;font-weight:bold;">✕</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">27</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">28</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">29</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">30</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">31</div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size: 11px; color: #666; margin-bottom: 4px;">Layer 2</div>
+          <div style="display: grid; grid-template-columns: repeat(4, 32px); gap: 3px;">
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">32</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">33</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">34</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">35</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">36</div>
+            <div style="width:32px;height:32px;background:#e74c3c;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;font-weight:bold;">✕</div>
+            <div style="width:32px;height:32px;background:#e74c3c;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;font-weight:bold;">✕</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">39</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">40</div>
+            <div style="width:32px;height:32px;background:#e74c3c;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;font-weight:bold;">✕</div>
+            <div style="width:32px;height:32px;background:#e74c3c;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;font-weight:bold;">✕</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">43</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">44</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">45</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">46</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">47</div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size: 11px; color: #666; margin-bottom: 4px;">Layer 3</div>
+          <div style="display: grid; grid-template-columns: repeat(4, 32px); gap: 3px;">
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">48</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">49</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">50</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">51</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">52</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">53</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">54</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">55</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">56</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">57</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">58</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">59</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">60</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">61</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">62</div>
+            <div style="width:32px;height:32px;background:#2a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#556;">63</div>
+          </div>
+        </div>
+      </div>
+      <p style="margin-top: 12px; font-size: 13px;"><strong>64 cells − 8 blocked = 56 playable</strong></p>
+    </div>
+  </div>
+</div>
+
+<h3 style="margin-top: 32px;">Revised numbers with 8 blocked center cells</h3>
+<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; font-family: monospace; font-size: 14px; max-width: 700px; margin: 0 auto;">
+  <div style="padding: 16px; background: #1a1a2e; border-radius: 8px; text-align: center;">
+    <div style="color: #888; font-size: 11px;">PLAYABLE CELLS</div>
+    <div style="font-size: 28px; color: #2ecc71; font-weight: bold;">56</div>
+    <div style="color: #666; font-size: 11px;">vs 26 in 3×3×3</div>
+  </div>
+  <div style="padding: 16px; background: #1a1a2e; border-radius: 8px; text-align: center;">
+    <div style="color: #888; font-size: 11px;">MOVES PER PLAYER</div>
+    <div style="font-size: 28px; color: #3498db; font-weight: bold;">28</div>
+    <div style="color: #666; font-size: 11px;">vs 13 in 3×3×3</div>
+  </div>
+  <div style="padding: 16px; background: #1a1a2e; border-radius: 8px; text-align: center;">
+    <div style="color: #888; font-size: 11px;">BITMASK BITS</div>
+    <div style="font-size: 28px; color: #e67e22; font-weight: bold;">56</div>
+    <div style="color: #666; font-size: 11px;">still needs BigInt ⚠️</div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top: 24px;">You said "4 center cells" — in 3D the center of a 4×4×4 is a 2×2×2 block = <strong>8 cells</strong>. Did you mean 8, or did you have a different set of 4 in mind?</p>

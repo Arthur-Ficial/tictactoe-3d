@@ -1,0 +1,115 @@
+<h2>4×4×4 Gameplay: What the Numbers Say</h2>
+<p class="subtitle">With 8 center cells blocked (2×2×2 core), same design as 3×3×3</p>
+
+<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; max-width: 800px; margin: 0 auto 32px;">
+  <div style="padding: 16px; background: #1a1a2e; border-radius: 8px; text-align: center;">
+    <div style="color: #888; font-size: 10px; text-transform: uppercase;">Playable Cells</div>
+    <div style="font-size: 32px; color: #2ecc71; font-weight: bold;">56</div>
+    <div style="color: #555; font-size: 11px;">was 26</div>
+  </div>
+  <div style="padding: 16px; background: #1a1a2e; border-radius: 8px; text-align: center;">
+    <div style="color: #888; font-size: 10px; text-transform: uppercase;">Valid Win Lines</div>
+    <div style="font-size: 32px; color: #3498db; font-weight: bold;">48</div>
+    <div style="color: #555; font-size: 11px;">was 36</div>
+  </div>
+  <div style="padding: 16px; background: #1a1a2e; border-radius: 8px; text-align: center;">
+    <div style="color: #888; font-size: 10px; text-transform: uppercase;">Lines Blocked</div>
+    <div style="font-size: 32px; color: #e74c3c; font-weight: bold;">28</div>
+    <div style="color: #555; font-size: 11px;">of 76 raw</div>
+  </div>
+  <div style="padding: 16px; background: #1a1a2e; border-radius: 8px; text-align: center;">
+    <div style="color: #888; font-size: 10px; text-transform: uppercase;">Moves Per Player</div>
+    <div style="font-size: 32px; color: #f39c12; font-weight: bold;">28</div>
+    <div style="color: #555; font-size: 11px;">was 13</div>
+  </div>
+</div>
+
+<h3>Line Breakdown: Where do the 48 lines come from?</h3>
+<div style="max-width: 700px; margin: 0 auto 32px;">
+  <div style="display: grid; grid-template-columns: auto 1fr auto auto; gap: 8px 16px; align-items: center; font-family: monospace; font-size: 14px;">
+    <div style="color: #888;">Type</div><div style="color: #888;">Description</div><div style="color: #888; text-align:right;">Raw</div><div style="color: #888; text-align:right;">Valid</div>
+
+    <div style="color: #3498db;">Axis</div><div>Straight lines along X, Y, Z</div><div style="text-align:right;">48</div><div style="text-align:right; color: #2ecc71; font-weight: bold;">36</div>
+    <div style="color: #9b59b6;">Face Diag</div><div>Diagonals within each 2D plane</div><div style="text-align:right;">24</div><div style="text-align:right; color: #2ecc71; font-weight: bold;">12</div>
+    <div style="color: #e74c3c;">Space Diag</div><div>Corner-to-corner through cube</div><div style="text-align:right;">4</div><div style="text-align:right; color: #e74c3c; font-weight: bold;">0</div>
+    <div style="border-top: 1px solid #333; grid-column: span 4; height: 1px;"></div>
+    <div></div><div style="font-weight: bold;">Total</div><div style="text-align:right; font-weight: bold;">76</div><div style="text-align:right; color: #2ecc71; font-weight: bold;">48</div>
+  </div>
+  <p style="color: #e74c3c; margin-top: 12px; font-size: 13px;">All 4 space diagonals are eliminated — they all pass through the blocked center core.</p>
+</div>
+
+<h3>Cell Value Map: Not All Cells Are Equal</h3>
+<p class="subtitle">Corners are exactly 2× more valuable than any other cell</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">3×3×3 Cell Values</div>
+    <div class="mockup-body" style="padding: 16px;">
+      <div style="display: grid; grid-template-columns: auto 1fr auto auto; gap: 6px 16px; font-family: monospace; font-size: 13px; align-items: center;">
+        <div style="width: 14px; height: 14px; background: #f39c12; border-radius: 3px;"></div><div>Corner</div><div style="text-align: right;">8 cells</div><div style="text-align: right; font-weight: bold; color: #f39c12;">6 lines each</div>
+        <div style="width: 14px; height: 14px; background: #9b59b6; border-radius: 3px;"></div><div>Face-center</div><div style="text-align: right;">6 cells</div><div style="text-align: right; font-weight: bold; color: #9b59b6;">4 lines each</div>
+        <div style="width: 14px; height: 14px; background: #3498db; border-radius: 3px;"></div><div>Edge</div><div style="text-align: right;">12 cells</div><div style="text-align: right; font-weight: bold; color: #3498db;">3 lines each</div>
+        <div style="width: 14px; height: 14px; background: #e74c3c; border-radius: 3px;"></div><div>Center</div><div style="text-align: right;">1 cell</div><div style="text-align: right; color: #e74c3c;">BLOCKED</div>
+      </div>
+      <div style="margin-top: 16px; padding: 12px; background: #111; border-radius: 6px; text-align: center;">
+        <div style="color: #888; font-size: 11px;">Average lines per cell</div>
+        <div style="font-size: 24px; font-weight: bold; color: #fff;">1.38</div>
+      </div>
+    </div>
+  </div>
+  <div class="mockup">
+    <div class="mockup-header">4×4×4 Cell Values</div>
+    <div class="mockup-body" style="padding: 16px;">
+      <div style="display: grid; grid-template-columns: auto 1fr auto auto; gap: 6px 16px; font-family: monospace; font-size: 13px; align-items: center;">
+        <div style="width: 14px; height: 14px; background: #f39c12; border-radius: 3px;"></div><div>Corner</div><div style="text-align: right;">8 cells</div><div style="text-align: right; font-weight: bold; color: #f39c12;">6 lines each</div>
+        <div style="width: 14px; height: 14px; background: #9b59b6; border-radius: 3px;"></div><div>Face</div><div style="text-align: right;">24 cells</div><div style="text-align: right; font-weight: bold; color: #9b59b6;">3 lines each</div>
+        <div style="width: 14px; height: 14px; background: #3498db; border-radius: 3px;"></div><div>Edge</div><div style="text-align: right;">24 cells</div><div style="text-align: right; font-weight: bold; color: #3498db;">3 lines each</div>
+        <div style="width: 14px; height: 14px; background: #e74c3c; border-radius: 3px;"></div><div>Center core</div><div style="text-align: right;">8 cells</div><div style="text-align: right; color: #e74c3c;">BLOCKED</div>
+      </div>
+      <div style="margin-top: 16px; padding: 12px; background: #111; border-radius: 6px; text-align: center;">
+        <div style="color: #888; font-size: 11px;">Average lines per cell</div>
+        <div style="font-size: 24px; font-weight: bold; color: #fff;">0.86</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h3 style="margin-top: 32px;">What This Means for Strategy</h3>
+
+<div class="options">
+  <div class="option" data-choice="corners" onclick="toggleSelect(this)">
+    <div class="letter" style="background: #f39c12;">1</div>
+    <div class="content">
+      <h3>Corners are KING</h3>
+      <p>6 lines vs 3 for everything else — exactly 2× more valuable. The opening battle for corners defines the game. In 3×3×3 there was a middle tier (face-centers at 4 lines); in 4×4×4 it's binary: corners (6) vs everything else (3).</p>
+    </div>
+  </div>
+  <div class="option" data-choice="no-space-diag" onclick="toggleSelect(this)">
+    <div class="letter" style="background: #e74c3c;">2</div>
+    <div class="content">
+      <h3>No Space Diagonals = Simpler Threat Model</h3>
+      <p>All 4 space diagonals are eliminated by the center block. Strategy becomes purely <strong>planar</strong> — axis-aligned rows and 2D face diagonals only. No "through the whole cube" threats to track. This actually makes the game <em>more learnable</em> despite the bigger board.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="harder-scoring" onclick="toggleSelect(this)">
+    <div class="letter" style="background: #3498db;">3</div>
+    <div class="content">
+      <h3>Scoring is Harder: Lines of 4 vs Lines of 3</h3>
+      <p>Completing 4-in-a-row with an opponent blocking is significantly harder than 3-in-a-row. Expect <strong>lower scoring games</strong> with more defensive play. Each completed line feels like a real achievement. Score might be like 3-2 instead of 8-6.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="game-length" onclick="toggleSelect(this)">
+    <div class="letter" style="background: #2ecc71;">4</div>
+    <div class="content">
+      <h3>Games Are 2× Longer but Feel Different</h3>
+      <p>28 moves per player vs 13. But with 0.86 lines/cell (vs 1.38), many moves are "positioning" rather than direct threats. The game shifts from <strong>tactical</strong> (every move matters in 3×3×3) to <strong>positional</strong> (build advantages over many moves). More chess-like.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="ai" onclick="toggleSelect(this)">
+    <div class="letter" style="background: #9b59b6;">5</div>
+    <div class="content">
+      <h3>AI Needs a New Brain</h3>
+      <p>56 playable cells makes minimax infeasible (even with alpha-beta). The Normal heuristic CPU could adapt (just update wins/board), but Super Hard needs a new approach: <strong>Monte Carlo Tree Search (MCTS)</strong> or deep heuristic evaluation. Still beatable, but no longer "perfect."</p>
+    </div>
+  </div>
+</div>
