@@ -201,8 +201,10 @@
 <button id="share-btn" onclick="shareGame()">SHARE</button>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="js/cpu-normal.js?v=7dc2336"></script>
-<script src="js/cpu-super-hard.js?v=7dc2336"></script>
+<script src="js/game-modes.js?v=e203e17"></script>
+<script src="js/shot-clock.js?v=e203e17"></script>
+<script src="js/cpu-normal.js?v=e203e17"></script>
+<script src="js/cpu-super-hard.js?v=e203e17"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════════
 // COLOR PALETTE — Single Source of Truth for all JS colors
@@ -289,23 +291,27 @@ const CPU_DIFFICULTY = {
   NORMAL: 'normal',
   SUPER_HARD: 'super-hard',
 };
+const GAME_MODE = window.TTT3DGameModes.GAME_MODE;
 
 let cpuDifficulty = CPU_DIFFICULTY.NORMAL;
 let cpuRequestId = 0;
-let cpuVsCpu = false; // CPU vs CPU spectator mode
-let firstMoveCpu = false; // true = CPU goes first
-let thinkingTimeSec = 0; // 0 = off (natural delay), 5/10/15 = timer seconds
-let countdownInterval = null; // timer interval for countdown display
-let countdownStart = 0; // timestamp when countdown started
+let gameMode = GAME_MODE.PLAYER_VS_CPU;
+let firstMoveSide = PLAYER;
+let currentTurn = PLAYER;
+let activeTurnId = 0;
+let thinkingTimeSec = 0; // 0 = off, 5/10/15 = per-turn shot clock seconds
 
 // ── Cinematic camera for CPU vs CPU ──
 let cineCam = null; // {targetTheta, targetPhi, startTheta, startPhi, startTime, duration, onDone}
-const superHardCpu = window.TTT3DCPU.createSuperHardSolver({
-  wins: WINS,
-  center: CENTER,
-  player: PLAYER,
-  cpu: CPU,
-});
+function createSuperHardSolver() {
+  return window.TTT3DCPU.createSuperHardSolver({
+    wins: WINS,
+    center: CENTER,
+    player: PLAYER,
+    cpu: CPU,
+  });
+}
+let superHardCpu = createSuperHardSolver();
 
 // ═══════════════════════════════════════════════════════════════════
 // GAME STATE — single source of truth
@@ -318,6 +324,26 @@ let introActive = false;
 let introStart = 0;
 let moveCount = 0;  // total moves placed this game (player + CPU)
 let cpuTimerId = null;
+const turnClock = window.TTT3DShotClock.createShotClock({
+  onTick({ side, remainingSec }) {
+    const sep = document.getElementById('sc-sep');
+    if (!sep) return;
+    sep.classList.add('timer-active');
+    sep.style.color = side === PLAYER ? 'var(--c-player)' : 'var(--c-cpu)';
+    sep.textContent = remainingSec.toFixed(1);
+  },
+  onExpire({ side, turnId }) {
+    handleTurnTimeout(side, turnId);
+  },
+  onReset() {
+    const sep = document.getElementById('sc-sep');
+    if (sep) {
+      sep.textContent = '|';
+      sep.classList.remove('timer-active');
+      sep.style.color = '';
+    }
+  },
+});
 
 // ─── board helpers ────────────────────────────────────────────────
 function isPlayable(b, i) {
@@ -340,6 +366,39 @@ function newLinesAt(b, i, who) {
 // Count total completed lines for 'who' on board b
 function countCompleted(b, who) {
   return WINS.filter(line => line.every(j => b[j] === who)).length;
+}
+
+function otherSide(who) {
+  return who === PLAYER ? CPU : PLAYER;
+}
+
+function isCpuControlled(side) {
+  return window.TTT3DGameModes.isCpuControlled(gameMode, side);
+}
+
+function isHumanControlled(side) {
+  return window.TTT3DGameModes.isHumanControlled(gameMode, side);
+}
+
+function isSpectatorMode() {
+  return window.TTT3DGameModes.isSpectatorMode(gameMode);
+}
+
+function usesDifficulty() {
+  return window.TTT3DGameModes.usesDifficulty(gameMode);
+}
+
+function getThinkingLabel(who) {
+  return window.TTT3DGameModes.getThinkingLabel(gameMode, who, cpuDifficulty);
+}
+
+function getWinnerText(who) {
+  return window.TTT3DGameModes.getWinnerText(gameMode, who, cpuDifficulty);
+}
+
+function resetSuperHardSolver() {
+  superHardCpu.terminate();
+  superHardCpu = createSuperHardSolver();
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -552,18 +611,33 @@ function checkEnd() {
   if(!isFull(board)) return false;
   gameOver = true;
   stopCountdown();
+  if (cpuTimerId) { clearTimeout(cpuTimerId); cpuTimerId = null; }
+  thinking = false;
+  cancelCineCam();
   ptW.intensity = 0;
+  ptAI.intensity = 0;
   const x = scores[PLAYER], o = scores[CPU];
-  if(cpuVsCpu) {
-    if(x > o)      { setStatus(`<span class="x-col">X WINS  ${x} - ${o}</span>`); ptW.intensity=6; }
-    else if(o > x) { setStatus(`<span class="o-col">O WINS  ${o} - ${x}</span>`); }
-    else           setStatus(`<span style="color:#fff">DRAW  ${x} - ${o}</span>`);
-    // Auto-restart after delay in CPU vs CPU mode
-    setTimeout(() => { if(cpuVsCpu) newGame(); }, 4000);
+  if(x > o || o > x) {
+    const winner = x > o ? PLAYER : CPU;
+    const winnerText = `${getWinnerText(winner)}  ${Math.max(x, o)} - ${Math.min(x, o)}`;
+    const winnerClass = (gameMode === GAME_MODE.PLAYER_VS_CPU && winner === PLAYER)
+      ? 'w-col'
+      : (winner === PLAYER ? 'x-col' : 'o-col');
+    setStatus(`<span class="${winnerClass}">${winnerText}</span>`);
+
+    if(winner === PLAYER) ptW.intensity = 6;
+    if(gameMode === GAME_MODE.PLAYER_VS_CPU) {
+      if(winner === PLAYER && navigator.vibrate) navigator.vibrate([50,30,50,30,100]);
+      if(winner === CPU && navigator.vibrate) navigator.vibrate([100,50,100]);
+    }
   } else {
-    if(x > o)      { setStatus(`<span class="w-col">YOU WIN  ${x} - ${o}</span>`); ptW.intensity=6; if(navigator.vibrate) navigator.vibrate([50,30,50,30,100]); }
-    else if(o > x) { setStatus(`<span class="o-col">CPU WINS  ${o} - ${x}</span>`); if(navigator.vibrate) navigator.vibrate([100,50,100]); }
-    else           setStatus(`<span style="color:#fff">DRAW  ${x} - ${o}</span>`);
+    setStatus(`<span style="color:#fff">DRAW  ${x} - ${o}</span>`);
+  }
+
+  if(isSpectatorMode()) {
+    setTimeout(() => {
+      if(isSpectatorMode()) newGame();
+    }, 4000);
   }
   updateButtonState();
   return true;
@@ -571,37 +645,20 @@ function checkEnd() {
 
 function playerTurn(i) {
   if(gameOver || thinking || introActive) return;
-  if(cpuVsCpu) return; // no player input in CPU vs CPU mode
+  if(!isHumanControlled(currentTurn)) return;
   if(!isPlayable(board, i)) return;
 
-  placeMarker(i, PLAYER);
-  updateUI();
-  if(checkEnd()) return;
-
-  scheduleCpuMove(CPU);
+  stopCountdown();
+  placeMarker(i, currentTurn);
+  completeTurn(currentTurn);
 }
 
-function startCountdown(delaySec, who) {
-  stopCountdown();
-  const sep = document.getElementById('sc-sep');
-  if(!sep || delaySec <= 0) return;
-  countdownStart = Date.now();
-  const totalMs = delaySec * 1000;
-  const col = (cpuVsCpu && who === PLAYER) ? 'var(--c-player)' : 'var(--c-cpu)';
-  sep.classList.add('timer-active');
-  sep.style.color = col;
-  countdownInterval = setInterval(() => {
-    const elapsed = Date.now() - countdownStart;
-    const remaining = Math.max(0, (totalMs - elapsed) / 1000);
-    sep.textContent = remaining.toFixed(1);
-    if(remaining <= 0) stopCountdown();
-  }, 50);
+function startCountdown(delaySec, who, turnId) {
+  turnClock.start(delaySec, who, turnId);
 }
 
 function stopCountdown() {
-  if(countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
-  const sep = document.getElementById('sc-sep');
-  if(sep) { sep.textContent = '|'; sep.classList.remove('timer-active'); sep.style.color = ''; }
+  turnClock.clear();
 }
 
 // ── Cinematic camera: smoothly orbit to face a cell before placement ──
@@ -653,26 +710,32 @@ function updateCineCam() {
 function cancelCineCam() { cineCam = null; }
 
 function setThinkingStatus(who) {
-  const col = (cpuVsCpu && who === PLAYER) ? 'var(--c-player)' : 'var(--c-cpu)';
-  setStatus(`<span style="color:${col};text-shadow:0 0 15px ${col}">CPU THINKING</span>`);
+  const col = who === PLAYER ? 'var(--c-player)' : 'var(--c-cpu)';
+  const label = getThinkingLabel(who);
+  setStatus(`<span style="color:${col};text-shadow:0 0 15px ${col}">${label} THINKING</span>`);
 }
 
 function scheduleCpuMove(who) {
-  if(gameOver) return;
+  if(gameOver || currentTurn !== who || !isCpuControlled(who)) return;
 
-  // In CPU vs CPU, each player's first move is random for variety
-  if(cpuVsCpu && moveCount < 2) {
+  const requestId = ++cpuRequestId;
+  const difficulty = cpuDifficulty;
+  const snapshot = [...board];
+  const cinematic = isSpectatorMode();
+  const useShotClock = thinkingTimeSec > 0;
+
+  // In spectator mode, each side's first move is random for variety.
+  if(isSpectatorMode() && moveCount < 2) {
     thinking = true;
     ptAI.intensity = 3;
     setThinkingStatus(who);
     const empties = getEmpties(board);
     const randomMove = empties[Math.floor(Math.random() * empties.length)];
-    const requestId = ++cpuRequestId;
     const delay = 600 + Math.random() * 400;
     cpuTimerId = setTimeout(() => {
       cpuTimerId = null;
       if(requestId !== cpuRequestId) return;
-      finishCpuMove(requestId, who, randomMove);
+      finishAutomatedMove(requestId, who, randomMove, cinematic);
     }, delay);
     return;
   }
@@ -681,33 +744,16 @@ function scheduleCpuMove(who) {
   ptAI.intensity = 3;
   setThinkingStatus(who);
 
-  const useTimer = thinkingTimeSec > 0;
-  const requestId = ++cpuRequestId;
-  const difficulty = cpuDifficulty;
-  const snapshot = [...board];
-
-  if(useTimer) {
-    // Timer mode: countdown is a max — CPU can finish faster
-    startCountdown(thinkingTimeSec, who);
-    const movePromise = getCpuMove(difficulty, snapshot, who);
-    const timerPromise = new Promise(r => { cpuTimerId = setTimeout(r, thinkingTimeSec * 1000); });
-
-    movePromise.then(move => {
+  if(useShotClock) {
+    getCpuMove(difficulty, snapshot, who).then(move => {
       if(requestId !== cpuRequestId) return;
-      // Wait for timer OR place immediately — CPU can be faster
-      stopCountdown();
-      if(cpuTimerId) { clearTimeout(cpuTimerId); cpuTimerId = null; }
-      finishCpuMove(requestId, who, move);
+      finishAutomatedMove(requestId, who, move, cinematic);
     }).catch(err => {
-      console.error('CPU move failed:', err);
       if(requestId !== cpuRequestId) return;
-      stopCountdown();
-      if(cpuTimerId) { clearTimeout(cpuTimerId); cpuTimerId = null; }
-      const fb = cpuFallback(snapshot, who);
-      finishCpuMove(requestId, who, fb);
+      console.error('CPU move failed:', err);
+      finishAutomatedMove(requestId, who, cpuFallback(snapshot, who), cinematic);
     });
   } else {
-    // Natural delay mode (original behavior)
     const filled = board.filter((v,i) => i !== CENTER && v !== null).length;
     const base = 600 + filled * 40;
     const jitter = (Math.random() - 0.3) * 500;
@@ -718,11 +764,11 @@ function scheduleCpuMove(who) {
       try {
         const move = await getCpuMove(difficulty, snapshot, who);
         if(requestId !== cpuRequestId) return;
-        finishCpuMove(requestId, who, move);
+        finishAutomatedMove(requestId, who, move, cinematic);
       } catch(err) {
-        console.error('CPU move failed:', err);
         if(requestId !== cpuRequestId) return;
-        finishCpuMove(requestId, who, cpuFallback(snapshot, who));
+        console.error('CPU move failed:', err);
+        finishAutomatedMove(requestId, who, cpuFallback(snapshot, who), cinematic);
       }
     }, delay);
   }
@@ -736,41 +782,96 @@ function cpuFallback(snapshot, who) {
   });
 }
 
-function finishCpuMove(requestId, who, move) {
+function finishAutomatedMove(requestId, who, move, cinematic) {
   if(requestId !== cpuRequestId) return;
-  if(move === -1) { completeCpuTurn(requestId, who); return; }
+  if(move === -1) { completeAutomatedTurn(requestId, who); return; }
 
-  if(cpuVsCpu) {
-    // Cinematic: animate camera to the cell, then place marker
+  const finalize = () => {
+    if(requestId !== cpuRequestId) return;
+    placeMarker(move, who);
+    completeAutomatedTurn(requestId, who);
+  };
+
+  if(cinematic) {
     startCineMove(move, 800, () => {
-      if(requestId !== cpuRequestId) return;
-      placeMarker(move, who);
-      completeCpuTurn(requestId, who);
+      finalize();
     });
   } else {
-    placeMarker(move, who);
-    completeCpuTurn(requestId, who);
+    finalize();
   }
 }
 
-function completeCpuTurn(requestId, who) {
+function completeAutomatedTurn(requestId, who) {
   if(requestId !== cpuRequestId) return;
+  if(cpuTimerId) { clearTimeout(cpuTimerId); cpuTimerId = null; }
   ptAI.intensity = 0;
   thinking = false;
+  completeTurn(who);
+}
+
+function completeTurn(who) {
+  stopCountdown();
   updateUI();
-  if(!checkEnd()) {
+  if(checkEnd()) return;
+  updateButtonState();
+  setStatus('');
+  startTurn(otherSide(who));
+}
+
+function cancelPendingAutomatedTurn() {
+  cpuRequestId++;
+  if (cpuTimerId) {
+    clearTimeout(cpuTimerId);
+    cpuTimerId = null;
+  }
+  if (thinking && cpuDifficulty === CPU_DIFFICULTY.SUPER_HARD) {
+    resetSuperHardSolver();
+  }
+  cancelCineCam();
+  thinking = false;
+  ptAI.intensity = 0;
+}
+
+function getRandomAutoMove(snapshot) {
+  const empties = getEmpties(snapshot);
+  if (!empties.length) return -1;
+  return empties[Math.floor(Math.random() * empties.length)];
+}
+
+function handleTurnTimeout(who, turnId) {
+  if(gameOver || introActive) return;
+  if(turnId !== activeTurnId || who !== currentTurn) return;
+
+  cancelPendingAutomatedTurn();
+
+  const requestId = ++cpuRequestId;
+  const move = getRandomAutoMove(board);
+  const cinematic = true;
+  thinking = true;
+  ptAI.intensity = 3;
+  finishAutomatedMove(requestId, who, move, cinematic);
+}
+
+function startTurn(who) {
+  if(gameOver || introActive) return;
+  currentTurn = who;
+  activeTurnId++;
+  thinking = false;
+  ptAI.intensity = 0;
+  updateButtonState();
+  if(thinkingTimeSec > 0) startCountdown(thinkingTimeSec, who, activeTurnId);
+  else stopCountdown();
+
+  if(isCpuControlled(who)) {
+    scheduleCpuMove(who);
+  } else {
     setStatus('');
-    if(cpuVsCpu && !gameOver) {
-      scheduleCpuMove(who === PLAYER ? CPU : PLAYER);
-    }
   }
 }
 
 function newGame() {
-  cpuRequestId++;
-  if (cpuTimerId) { clearTimeout(cpuTimerId); cpuTimerId = null; }
+  cancelPendingAutomatedTurn();
   stopCountdown();
-  cancelCineCam();
   lpActive = false; lpLocked = false; lpRestoring = false;
   lpSavedMap = null; lpRestoreSnaps = null; lpStage = 0;
   if (lpInterval) { clearInterval(lpInterval); lpInterval = null; }
@@ -792,6 +893,8 @@ function newGame() {
   lastClickTime = 0; lastClickIdx = -1;
   lastTap = 0; lastTapIdx = -1; kbHoverIdx = -1;
   moveCount = 0;
+  currentTurn = firstMoveSide;
+  activeTurnId = 0;
   buildBoard();
   updateUI();
   updateHeaderLabels();
@@ -808,22 +911,19 @@ function newGame() {
   updateButtonState();
   updateHint();
 
-  // Schedule first CPU move after intro animation completes (~2s)
+  // Start the opening turn after the intro animation completes (~2s)
   const introDelay = 2200;
-  if(cpuVsCpu) {
-    setTimeout(() => { if(!gameOver) scheduleCpuMove(PLAYER); }, introDelay);
-  } else if(firstMoveCpu) {
-    setTimeout(() => { if(!gameOver) scheduleCpuMove(CPU); }, introDelay);
-  }
+  setTimeout(() => {
+    if(!gameOver) startTurn(firstMoveSide);
+  }, introDelay);
 }
 
 async function getCpuMove(difficulty, snapshot, who) {
-  // who = which side is making this move (PLAYER or CPU)
   const meAs = who || CPU;
   const oppAs = meAs === CPU ? PLAYER : CPU;
 
   if(difficulty === CPU_DIFFICULTY.SUPER_HARD) {
-    const result = await superHardCpu.getBestMove(snapshot);
+    const result = await superHardCpu.getBestMove(snapshot, meAs);
     return result.move;
   }
 
@@ -841,23 +941,34 @@ function normalizeDifficulty(mode) {
 }
 
 function updateCpuLabel() {
-  const label = document.getElementById('cpu-label');
-  if(!label) return;
-  label.textContent = cpuDifficulty === CPU_DIFFICULTY.SUPER_HARD ? 'CPU+' : 'CPU';
+  updateHeaderLabels();
 }
 
 function updateHeaderLabels() {
-  const youLabel = document.querySelector('.sc-you');
-  if(!youLabel) return;
-  const scoreVal = scores[PLAYER];
-  const isHard = cpuDifficulty === CPU_DIFFICULTY.SUPER_HARD;
-  youLabel.textContent = '';
-  youLabel.append(cpuVsCpu ? (isHard ? 'CPU+ ' : 'CPU ') : 'YOU ');
-  const span = document.createElement('span');
-  span.id = 'sX';
-  span.textContent = scoreVal;
-  youLabel.appendChild(span);
-  updateCpuLabel();
+  const left = document.querySelector('.sc-you');
+  const right = document.querySelector('.sc-cpu');
+  if(!left || !right) return;
+
+  const leftLabel = window.TTT3DGameModes.getScoreLabel(gameMode, PLAYER, cpuDifficulty);
+  const rightLabel = window.TTT3DGameModes.getScoreLabel(gameMode, CPU, cpuDifficulty);
+
+  left.textContent = '';
+  left.append(`${leftLabel} `);
+  const leftScore = document.createElement('span');
+  leftScore.id = 'sX';
+  leftScore.textContent = scores ? scores[PLAYER] : 0;
+  left.appendChild(leftScore);
+
+  right.textContent = '';
+  const rightScore = document.createElement('span');
+  rightScore.id = 'sO';
+  rightScore.textContent = scores ? scores[CPU] : 0;
+  right.appendChild(rightScore);
+  right.append(' ');
+  const rightText = document.createElement('span');
+  rightText.id = 'cpu-label';
+  rightText.textContent = rightLabel;
+  right.appendChild(rightText);
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -906,7 +1017,7 @@ function getHit(cx, cy) {
 }
 
 function tryPlace(cx, cy) {
-  if(introActive || cpuVsCpu) return;
+  if(introActive || !isHumanControlled(currentTurn)) return;
   const hit = getHit(cx, cy);
   if(!hit || hit.userData.taken || gameOver || thinking) return;
   const i = hit.userData.index;
@@ -958,7 +1069,7 @@ window.addEventListener('mousemove', e => {
       hoveredMesh.material.emissive?.setHex(C.HOVER_RESET); hoveredMesh.scale.setScalar(1);
     }
     hoveredMesh = null;
-    if(hit && !hit.userData.taken && !gameOver && !thinking) {
+    if(hit && !hit.userData.taken && !gameOver && !thinking && isHumanControlled(currentTurn)) {
       hit.material.emissive?.setHex(C.HOVER); hit.scale.setScalar(1.08); hoveredMesh=hit;
     }
   }
@@ -1063,7 +1174,7 @@ canvas.addEventListener('touchend', e => {
     // Tap detection (only if finger didn't move much)
     if(!touchMoved || Math.hypot(lastTouchDragDelta.x,lastTouchDragDelta.y)<8) {
       const hit=getHit(endedTouch.clientX,endedTouch.clientY);
-      if(hit && !hit.userData.taken && !gameOver && !thinking) {
+      if(hit && !hit.userData.taken && !gameOver && !thinking && isHumanControlled(currentTurn)) {
         const i=hit.userData.index, now=Date.now();
         if((now-lastTap<420) && lastTapIdx===i) {
           playerTurn(i); lastTap=0; lastTapIdx=-1;
@@ -1088,7 +1199,7 @@ function showKbHints() {
 }
 
 function cycleHover(reverse) {
-  if (gameOver || thinking || cpuVsCpu) return;
+  if (gameOver || thinking || !isHumanControlled(currentTurn)) return;
   const empties = getEmpties(board);
   if (!empties.length) return;
   const cur = kbHoverIdx;
@@ -1366,9 +1477,27 @@ function shareGame() {
   ctx.drawImage(canvas, 0, 0);
   const x = scores[PLAYER], o = scores[CPU];
   let resultText, resultColor, shareText;
-  if(x > o)      { resultText = `YOU WIN ${x} - ${o}`; resultColor = h(C.WIN); shareText = `I just won ${x} to ${o}!`; }
-  else if(o > x) { resultText = `CPU WINS ${o} - ${x}`; resultColor = h(C.CPU); shareText = `I just lost ${o} to ${x}!`; }
-  else           { resultText = `DRAW ${x} - ${o}`; resultColor = h(C.WHITE); shareText = `I just drew ${x} to ${o}!`; }
+  if(x > o) {
+    resultText = `${getWinnerText(PLAYER)} ${x} - ${o}`;
+    resultColor = gameMode === GAME_MODE.PLAYER_VS_CPU ? h(C.WIN) : h(C.PLAYER);
+    shareText = gameMode === GAME_MODE.PLAYER_VS_CPU
+      ? `I just won ${x} to ${o}!`
+      : (gameMode === GAME_MODE.PLAYER_VS_PLAYER
+        ? `Player 1 won ${x} to ${o}!`
+        : `X won ${x} to ${o}!`);
+  } else if(o > x) {
+    resultText = `${getWinnerText(CPU)} ${o} - ${x}`;
+    resultColor = h(C.CPU);
+    shareText = gameMode === GAME_MODE.PLAYER_VS_CPU
+      ? `I just lost ${o} to ${x}!`
+      : (gameMode === GAME_MODE.PLAYER_VS_PLAYER
+        ? `Player 2 won ${o} to ${x}!`
+        : `O won ${o} to ${x}!`);
+  } else {
+    resultText = `DRAW ${x} - ${o}`;
+    resultColor = h(C.WHITE);
+    shareText = `I just drew ${x} to ${o}!`;
+  }
   shareText += ' 3D Tic-Tac-Toe — More Challenging Than You Think';
   const fontSize = Math.round(w * 0.04);
   ctx.textAlign = 'center';
@@ -1417,7 +1546,7 @@ function showButton(show) {
 }
 function updateButtonState(){
   btn.classList.toggle('game-over', gameOver);
-  if(cpuVsCpu) { showButton(false); showShareButton(false); return; }
+  if(isSpectatorMode()) { showButton(false); showShareButton(false); return; }
   if(gameOver) { showButton(true); showShareButton(true); }
   else { showButton(false); showShareButton(false); }
 }
@@ -1543,17 +1672,17 @@ function animate() {
   // Cinematic camera animation (CPU vs CPU)
   const cineActive = updateCineCam();
 
-  // Auto-rotate: gentle drift in CPU vs CPU (when not animating), otherwise after 3s idle
+  // Auto-rotate: gentle drift in spectator mode (when not animating), otherwise after 3s idle
   if(!isDragging && !introActive && !cineActive) {
-    const shouldRotate = cpuVsCpu || (!gameOver && !thinking && (Date.now()-lastInteract>3000));
+    const shouldRotate = isSpectatorMode() || (!gameOver && !thinking && (Date.now()-lastInteract>3000));
     if(shouldRotate) {
-      sph.theta += cpuVsCpu ? 0.003 : 0.006; // slower drift in spectator mode
+      sph.theta += isSpectatorMode() ? 0.003 : 0.006; // slower drift in spectator mode
       updateCamera();
     }
   }
 
-  // Show NEW GAME button after 7s idle if board has marks and game not over (not in CPU vs CPU)
-  if(!cpuVsCpu && !gameOver && !introActive && (Date.now()-lastInteract>7000) && boardHasMarks()) {
+  // Show NEW GAME button after 7s idle if board has marks and game not over (not in spectator mode)
+  if(!isSpectatorMode() && !gameOver && !introActive && (Date.now()-lastInteract>7000) && boardHasMarks()) {
     showButton(true);
   }
 
@@ -1585,18 +1714,27 @@ window._game = {
   getDifficulty() { return cpuDifficulty; },
   setDifficulty(mode) {
     cpuDifficulty = normalizeDifficulty(mode);
-    updateCpuLabel();
-  },
-  getCpuVsCpu() { return cpuVsCpu; },
-  setCpuVsCpu(on) {
-    cpuVsCpu = !!on;
     updateHeaderLabels();
-    updateCpuLabel();
+  },
+  getGameMode() { return gameMode; },
+  setGameMode(mode) {
+    gameMode = window.TTT3DGameModes.normalizeGameMode(mode);
+    updateHeaderLabels();
     newGame();
   },
-  getFirstMoveCpu() { return firstMoveCpu; },
+  getCpuVsCpu() { return isSpectatorMode(); },
+  setCpuVsCpu(on) {
+    gameMode = on ? GAME_MODE.CPU_VS_CPU : GAME_MODE.PLAYER_VS_CPU;
+    updateHeaderLabels();
+    newGame();
+  },
+  getFirstMoveSide() { return firstMoveSide; },
+  setFirstMoveSide(side) {
+    firstMoveSide = side === CPU ? CPU : PLAYER;
+  },
+  getFirstMoveCpu() { return firstMoveSide === CPU; },
   setFirstMoveCpu(on) {
-    firstMoveCpu = !!on;
+    firstMoveSide = on ? CPU : PLAYER;
   },
   getThinkingTime() { return thinkingTimeSec; },
   setThinkingTime(sec) {
@@ -1619,9 +1757,9 @@ window._game = {
     rebuildPartialTubes();
   }
 };
-updateCpuLabel();
+updateHeaderLabels();
 window.addEventListener('beforeunload', () => superHardCpu.terminate());
 </script>
-<script type="module">import('./js/main.js?v=7dc2336');</script>
+<script type="module">import('./js/main.js?v=e203e17');</script>
 </body>
 </html>

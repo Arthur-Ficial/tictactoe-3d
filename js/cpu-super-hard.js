@@ -50,7 +50,7 @@
     }
 
     return {
-      getBestMove(board) {
+      getBestMove(board, side) {
         if (terminated) {
           return Promise.reject(new Error('Super Hard solver has been terminated.'));
         }
@@ -59,7 +59,7 @@
         const requestId = nextRequestId++;
         return new Promise((resolve, reject) => {
           pending.set(requestId, { resolve, reject });
-          worker.postMessage({ type: 'solve', requestId, board });
+          worker.postMessage({ type: 'solve', requestId, board, side });
         });
       },
 

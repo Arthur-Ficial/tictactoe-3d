@@ -4,16 +4,23 @@
 
 import { THEMES } from './themes.js';
 
+const FALLBACK_GAME_MODE = {
+  PLAYER_VS_CPU: 'player-vs-cpu',
+  PLAYER_VS_PLAYER: 'player-vs-player',
+  CPU_VS_CPU: 'cpu-vs-cpu',
+};
+
 let overlay = null;
 let activeId = 'default';
 let activeDifficulty = 'normal';
-let activeCpuVsCpu = false;
-let activeFirstMove = 'player';
+let activeGameMode = FALLBACK_GAME_MODE.PLAYER_VS_CPU;
+let activeFirstMove = 'X';
 let activeThinkingTime = 0;
 let cards = {};
 let initialized = false;
+let gameModeBtn = null;
+let difficultySection = null;
 let difficultyBtn = null;
-let cpuVsCpuBtn = null;
 let firstMoveBtn = null;
 let thinkingTimeBtn = null;
 
@@ -22,9 +29,9 @@ export function init(config) {
   initialized = true;
   activeId = config.themeId;
   activeDifficulty = normalizeDifficulty(config.difficulty);
-  activeCpuVsCpu = config.cpuVsCpu || false;
-  activeFirstMove = config.firstMove || 'player';
-  activeThinkingTime = config.thinkingTime ?? 0;
+  activeGameMode = normalizeGameMode(config.gameMode);
+  activeFirstMove = normalizeSide(config.firstMove);
+  activeThinkingTime = normalizeThinkingTime(config.thinkingTime);
   injectCSS();
   buildGear();
   buildOverlay(config);
@@ -32,7 +39,35 @@ export function init(config) {
 }
 
 function close() { if (overlay) overlay.classList.remove('open'); }
-function open()  { if (overlay) overlay.classList.add('open'); }
+function open() { if (overlay) overlay.classList.add('open'); }
+
+function modesApi() {
+  return window.TTT3DGameModes || {
+    GAME_MODE: FALLBACK_GAME_MODE,
+    normalizeGameMode,
+    usesDifficulty(mode) {
+      return normalizeGameMode(mode) !== FALLBACK_GAME_MODE.PLAYER_VS_PLAYER;
+    },
+    getModeButtonText(mode) {
+      const normalized = normalizeGameMode(mode);
+      if (normalized === FALLBACK_GAME_MODE.PLAYER_VS_PLAYER) return 'Mode: Player vs Player';
+      if (normalized === FALLBACK_GAME_MODE.CPU_VS_CPU) return 'Mode: CPU vs CPU';
+      return 'Mode: Player vs CPU';
+    },
+    getFirstMoveLabel(mode, side, difficulty) {
+      const normalizedMode = normalizeGameMode(mode);
+      const normalizedSide = normalizeSide(side);
+      const cpuLabel = difficulty === 'super-hard' ? 'CPU+' : 'CPU';
+      if (normalizedMode === FALLBACK_GAME_MODE.PLAYER_VS_PLAYER) {
+        return `First Move: ${normalizedSide} (${normalizedSide === 'X' ? 'Player 1' : 'Player 2'})`;
+      }
+      if (normalizedMode === FALLBACK_GAME_MODE.CPU_VS_CPU) {
+        return `First Move: ${normalizedSide} (${cpuLabel})`;
+      }
+      return `First Move: ${normalizedSide} (${normalizedSide === 'X' ? 'Player' : cpuLabel})`;
+    },
+  };
+}
 
 function createGearSVG() {
   const NS = 'http://www.w3.org/2000/svg';
@@ -135,28 +170,22 @@ function injectCSS() {
     .settings-toggle:hover{
       border-color:rgba(255,255,255,0.18);color:#fff;
     }
-    #difficulty-toggle{
-      width:100%;min-height:48px;
-      border:1px solid rgba(255,255,255,0.08);border-radius:10px;
-      background:rgba(255,255,255,0.03);color:#bbb;
-      font-size:0.62rem;font-weight:800;letter-spacing:1.4px;
-      padding:12px;cursor:pointer;transition:all 0.15s;
-      touch-action:manipulation;text-align:left;
-    }
-    #difficulty-toggle:hover{
-      border-color:rgba(255,255,255,0.18);color:#fff;
-    }
     #difficulty-toggle[data-difficulty="super-hard"]{
       border-color:rgba(255,102,0,0.3);
       box-shadow:0 0 18px rgba(255,102,0,0.12);
       color:#ffb677;
     }
-    #cpu-vs-cpu-toggle[data-active="true"]{
+    #game-mode-toggle[data-mode="player-vs-player"]{
+      border-color:rgba(0,255,170,0.28);
+      box-shadow:0 0 18px rgba(0,255,170,0.12);
+      color:#8affd5;
+    }
+    #game-mode-toggle[data-mode="cpu-vs-cpu"]{
       border-color:rgba(0,200,255,0.3);
       box-shadow:0 0 18px rgba(0,200,255,0.12);
       color:#77ddff;
     }
-    #first-move-toggle[data-active="cpu"]{
+    #first-move-toggle[data-active="O"]{
       border-color:rgba(255,200,0,0.3);
       box-shadow:0 0 18px rgba(255,200,0,0.12);
       color:#ffdd77;
@@ -224,7 +253,6 @@ function buildOverlay(config) {
   const grid = document.createElement('div');
   grid.id = 'theme-grid';
 
-  // ── Theme cards ──
   for (const theme of THEMES) {
     const card = document.createElement('div');
     card.className = 'theme-card' + (theme.id === activeId ? ' active' : '');
@@ -258,46 +286,52 @@ function buildOverlay(config) {
   spacer.className = 'settings-spacer';
   grid.appendChild(spacer);
 
-  // ── CPU vs CPU (above Difficulty) ──
-  const cpuVsCpuLabel = document.createElement('div');
-  cpuVsCpuLabel.className = 'settings-section';
-  cpuVsCpuLabel.textContent = 'Game Mode';
-  grid.appendChild(cpuVsCpuLabel);
+  const gameModeLabel = document.createElement('div');
+  gameModeLabel.className = 'settings-section';
+  gameModeLabel.textContent = 'Game Mode';
+  grid.appendChild(gameModeLabel);
 
-  cpuVsCpuBtn = document.createElement('button');
-  cpuVsCpuBtn.id = 'cpu-vs-cpu-toggle';
-  cpuVsCpuBtn.className = 'settings-toggle';
-  cpuVsCpuBtn.type = 'button';
-  cpuVsCpuBtn.addEventListener('click', () => {
-    activeCpuVsCpu = !activeCpuVsCpu;
-    updateCpuVsCpuButton();
-    updateFirstMoveVisibility();
-    config.onCpuVsCpuChange(activeCpuVsCpu);
+  gameModeBtn = document.createElement('button');
+  gameModeBtn.id = 'game-mode-toggle';
+  gameModeBtn.className = 'settings-toggle';
+  gameModeBtn.type = 'button';
+  gameModeBtn.addEventListener('click', () => {
+    const modes = [
+      modesApi().GAME_MODE.PLAYER_VS_CPU,
+      modesApi().GAME_MODE.PLAYER_VS_PLAYER,
+      modesApi().GAME_MODE.CPU_VS_CPU,
+    ];
+    const idx = modes.indexOf(activeGameMode);
+    activeGameMode = modes[(idx + 1) % modes.length];
+    updateGameModeButton();
+    updateDifficultyVisibility();
+    updateFirstMoveButton();
+    config.onGameModeChange(activeGameMode);
   });
-  updateCpuVsCpuButton();
-  grid.appendChild(cpuVsCpuBtn);
+  updateGameModeButton();
+  grid.appendChild(gameModeBtn);
 
-  // ── Difficulty ──
-  const difficultyLabel = document.createElement('div');
-  difficultyLabel.className = 'settings-section';
-  difficultyLabel.textContent = 'Difficulty';
-  grid.appendChild(difficultyLabel);
+  difficultySection = document.createElement('div');
+  difficultySection.className = 'settings-section';
+  difficultySection.id = 'difficulty-section';
+  difficultySection.textContent = 'Difficulty';
+  grid.appendChild(difficultySection);
 
   difficultyBtn = document.createElement('button');
   difficultyBtn.id = 'difficulty-toggle';
+  difficultyBtn.className = 'settings-toggle';
   difficultyBtn.type = 'button';
   difficultyBtn.addEventListener('click', () => {
     activeDifficulty = activeDifficulty === 'normal' ? 'super-hard' : 'normal';
     updateDifficultyButton();
+    updateFirstMoveButton();
     config.onDifficultyChange(activeDifficulty);
   });
   updateDifficultyButton();
   grid.appendChild(difficultyBtn);
 
-  // ── First Move (below Difficulty) ──
   const firstMoveLabel = document.createElement('div');
   firstMoveLabel.className = 'settings-section';
-  firstMoveLabel.id = 'first-move-section';
   firstMoveLabel.textContent = 'First Move';
   grid.appendChild(firstMoveLabel);
 
@@ -306,14 +340,13 @@ function buildOverlay(config) {
   firstMoveBtn.className = 'settings-toggle';
   firstMoveBtn.type = 'button';
   firstMoveBtn.addEventListener('click', () => {
-    activeFirstMove = activeFirstMove === 'player' ? 'cpu' : 'player';
+    activeFirstMove = activeFirstMove === 'X' ? 'O' : 'X';
     updateFirstMoveButton();
     config.onFirstMoveChange(activeFirstMove);
   });
   updateFirstMoveButton();
   grid.appendChild(firstMoveBtn);
 
-  // ── Timer (below First Move) ──
   const timerLabel = document.createElement('div');
   timerLabel.className = 'settings-section';
   timerLabel.textContent = 'Timer';
@@ -324,7 +357,7 @@ function buildOverlay(config) {
   thinkingTimeBtn.className = 'settings-toggle';
   thinkingTimeBtn.type = 'button';
   thinkingTimeBtn.addEventListener('click', () => {
-    const times = [0, 5, 10, 15];
+    const times = [15, 10, 5, 0];
     const idx = times.indexOf(activeThinkingTime);
     activeThinkingTime = times[(idx + 1) % times.length];
     updateThinkingTimeButton();
@@ -333,8 +366,7 @@ function buildOverlay(config) {
   updateThinkingTimeButton();
   grid.appendChild(thinkingTimeBtn);
 
-  // Hide first-move when CPU vs CPU is on
-  updateFirstMoveVisibility();
+  updateDifficultyVisibility();
 
   const saveBtn = document.createElement('button');
   saveBtn.id = 'settings-save';
@@ -350,15 +382,15 @@ function buildOverlay(config) {
   resetBtn.addEventListener('click', () => {
     activeId = 'default';
     activeDifficulty = 'normal';
-    activeCpuVsCpu = false;
-    activeFirstMove = 'player';
+    activeGameMode = FALLBACK_GAME_MODE.PLAYER_VS_CPU;
+    activeFirstMove = 'X';
     activeThinkingTime = 0;
     for (const id in cards) cards[id].classList.toggle('active', id === 'default');
+    updateGameModeButton();
     updateDifficultyButton();
-    updateCpuVsCpuButton();
+    updateDifficultyVisibility();
     updateFirstMoveButton();
     updateThinkingTimeButton();
-    updateFirstMoveVisibility();
     config.onReset();
     close();
   });
@@ -375,7 +407,11 @@ function buildOverlay(config) {
   document.body.appendChild(overlay);
 }
 
-// ── Button update helpers ──
+function updateGameModeButton() {
+  if (!gameModeBtn) return;
+  gameModeBtn.dataset.mode = activeGameMode;
+  gameModeBtn.textContent = modesApi().getModeButtonText(activeGameMode);
+}
 
 function updateDifficultyButton() {
   if (!difficultyBtn) return;
@@ -385,20 +421,10 @@ function updateDifficultyButton() {
     : 'Difficulty: Normal';
 }
 
-function updateCpuVsCpuButton() {
-  if (!cpuVsCpuBtn) return;
-  cpuVsCpuBtn.dataset.active = activeCpuVsCpu;
-  cpuVsCpuBtn.textContent = activeCpuVsCpu
-    ? 'Mode: CPU vs CPU'
-    : 'Mode: Player vs CPU';
-}
-
 function updateFirstMoveButton() {
   if (!firstMoveBtn) return;
   firstMoveBtn.dataset.active = activeFirstMove;
-  firstMoveBtn.textContent = activeFirstMove === 'cpu'
-    ? 'First Move: CPU'
-    : 'First Move: Player';
+  firstMoveBtn.textContent = modesApi().getFirstMoveLabel(activeGameMode, activeFirstMove, activeDifficulty);
 }
 
 function updateThinkingTimeButton() {
@@ -407,25 +433,45 @@ function updateThinkingTimeButton() {
   const text = document.createElement('div');
   text.textContent = activeThinkingTime === 0
     ? 'Timer: Off'
-    : `Timer: ${activeThinkingTime}s`;
+    : `Timer: ${activeThinkingTime}s / turn`;
   thinkingTimeBtn.appendChild(text);
 
   const dots = document.createElement('div');
   dots.className = 'time-dots';
   for (const t of [5, 10, 15]) {
     const dot = document.createElement('div');
-    dot.className = 'time-dot' + (activeThinkingTime > 0 && t <= activeThinkingTime ? ' active' : '');
+    dot.className = 'time-dot' + (activeThinkingTime >= t ? ' active' : '');
     dots.appendChild(dot);
   }
   thinkingTimeBtn.appendChild(dots);
 }
 
-function updateFirstMoveVisibility() {
-  const section = document.getElementById('first-move-section');
-  if (section) section.style.display = activeCpuVsCpu ? 'none' : '';
-  if (firstMoveBtn) firstMoveBtn.style.display = activeCpuVsCpu ? 'none' : '';
+function updateDifficultyVisibility() {
+  const show = modesApi().usesDifficulty(activeGameMode);
+  if (difficultySection) difficultySection.style.display = show ? '' : 'none';
+  if (difficultyBtn) difficultyBtn.style.display = show ? '' : 'none';
 }
 
 function normalizeDifficulty(mode) {
   return mode === 'super-hard' ? 'super-hard' : 'normal';
+}
+
+function normalizeGameMode(mode) {
+  switch (mode) {
+    case FALLBACK_GAME_MODE.PLAYER_VS_PLAYER:
+      return FALLBACK_GAME_MODE.PLAYER_VS_PLAYER;
+    case FALLBACK_GAME_MODE.CPU_VS_CPU:
+      return FALLBACK_GAME_MODE.CPU_VS_CPU;
+    default:
+      return FALLBACK_GAME_MODE.PLAYER_VS_CPU;
+  }
+}
+
+function normalizeSide(side) {
+  return side === 'O' || side === 'cpu' ? 'O' : 'X';
+}
+
+function normalizeThinkingTime(val) {
+  const n = Number(val);
+  return [0, 5, 10, 15].includes(n) ? n : 0;
 }

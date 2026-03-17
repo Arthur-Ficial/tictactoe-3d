@@ -51,7 +51,7 @@ self.onmessage = event => {
   }
 
   try {
-    const result = solveBoard(message.board);
+    const result = solveBoard(message.board, message.side);
     self.postMessage({
       type: 'result',
       requestId: message.requestId,
@@ -115,8 +115,8 @@ function initSolver(config) {
 // ITERATIVE DEEPENING SOLVER
 // ═══════════════════════════════════════════════════════════════════
 
-function solveBoard(board) {
-  const { cpuMask, playerMask } = boardToMasks(board);
+function solveBoard(board, side) {
+  const { cpuMask, playerMask } = boardToMasks(board, side);
   const occupiedMask = (cpuMask | playerMask) >>> 0;
   if (occupiedMask === fullMask) {
     return { move: -1, scoreDiff: 0 };
@@ -335,19 +335,21 @@ function blockedThreats(cpuMask, playerMask, bitIdx, cpuTurn) {
 // BITBOARD UTILITIES
 // ═══════════════════════════════════════════════════════════════════
 
-function boardToMasks(board) {
+function boardToMasks(board, side) {
   if (!Array.isArray(board) || board.length !== 27) {
     throw new Error('Super Hard solver expected a 27-cell board.');
   }
 
+  const solvingSide = side === player ? player : cpu;
+  const opponentSide = solvingSide === cpu ? player : cpu;
   let cpuMask = 0;
   let playerMask = 0;
 
   for (let bitIdx = 0; bitIdx < bitToBoard.length; bitIdx += 1) {
     const boardIdx = bitToBoard[bitIdx];
     const value = board[boardIdx];
-    if (value === cpu) cpuMask |= bitMasks[bitIdx];
-    else if (value === player) playerMask |= bitMasks[bitIdx];
+    if (value === solvingSide) cpuMask |= bitMasks[bitIdx];
+    else if (value === opponentSide) playerMask |= bitMasks[bitIdx];
   }
 
   return {

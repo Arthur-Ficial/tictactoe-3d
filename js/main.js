@@ -11,30 +11,34 @@ const DIFFICULTY_KEY = 'ttt3d-difficulty';
 const FIRST_MOVE_KEY = 'ttt3d-first-move';
 const THINKING_TIME_KEY = 'ttt3d-thinking-time';
 
+const GAME_MODE = {
+  PLAYER_VS_CPU: 'player-vs-cpu',
+};
+
 const DEFAULT_THEME = 'default';
 const DEFAULT_DIFFICULTY = 'normal';
-const DEFAULT_FIRST_MOVE = 'player';
+const DEFAULT_GAME_MODE = GAME_MODE.PLAYER_VS_CPU;
+const DEFAULT_FIRST_MOVE = 'X';
 const DEFAULT_THINKING_TIME = 0;
 
 const savedThemeId = localStorage.getItem(THEME_KEY) || DEFAULT_THEME;
 const savedDifficulty = normalizeDifficulty(localStorage.getItem(DIFFICULTY_KEY));
-const savedFirstMove = localStorage.getItem(FIRST_MOVE_KEY) === 'cpu' ? 'cpu' : DEFAULT_FIRST_MOVE;
+const savedFirstMove = normalizeFirstMove(localStorage.getItem(FIRST_MOVE_KEY));
 const savedThinkingTime = normalizeThinkingTime(localStorage.getItem(THINKING_TIME_KEY));
 
 applyTheme(getThemeById(savedThemeId));
 window._game?.setDifficulty(savedDifficulty);
 window._game?.setThinkingTime(savedThinkingTime);
-window._game?.setFirstMoveCpu(savedFirstMove === 'cpu');
+window._game?.setFirstMoveSide(savedFirstMove);
 
-// If CPU goes first, restart game so the setting takes effect
-if (savedFirstMove === 'cpu') {
+if (savedFirstMove !== DEFAULT_FIRST_MOVE) {
   window._game?.newGame();
 }
 
 initUI({
   themeId: savedThemeId,
   difficulty: savedDifficulty,
-  cpuVsCpu: false, // never persisted — always starts as Player vs CPU
+  gameMode: DEFAULT_GAME_MODE,
   firstMove: savedFirstMove,
   thinkingTime: savedThinkingTime,
 
@@ -49,19 +53,20 @@ initUI({
     window._game?.setDifficulty(normalized);
   },
 
-  onCpuVsCpuChange(enabled) {
-    // Not persisted — CPU vs CPU is session-only
-    window._game?.setCpuVsCpu(enabled);
+  onGameModeChange(mode) {
+    window._game?.setGameMode(normalizeGameMode(mode));
   },
 
-  onFirstMoveChange(who) {
-    localStorage.setItem(FIRST_MOVE_KEY, who);
-    window._game?.setFirstMoveCpu(who === 'cpu');
+  onFirstMoveChange(side) {
+    const normalized = normalizeFirstMove(side);
+    localStorage.setItem(FIRST_MOVE_KEY, normalized);
+    window._game?.setFirstMoveSide(normalized);
   },
 
   onThinkingTimeChange(seconds) {
-    localStorage.setItem(THINKING_TIME_KEY, seconds);
-    window._game?.setThinkingTime(seconds);
+    const normalized = normalizeThinkingTime(seconds);
+    localStorage.setItem(THINKING_TIME_KEY, normalized);
+    window._game?.setThinkingTime(normalized);
   },
 
   onReset() {
@@ -69,13 +74,24 @@ initUI({
     applyTheme(getThemeById(DEFAULT_THEME));
     window._game?.setDifficulty(DEFAULT_DIFFICULTY);
     window._game?.setThinkingTime(DEFAULT_THINKING_TIME);
-    window._game?.setFirstMoveCpu(false);
-    window._game?.setCpuVsCpu(false);
+    window._game?.setFirstMoveSide(DEFAULT_FIRST_MOVE);
+    window._game?.setGameMode(DEFAULT_GAME_MODE);
   },
 });
 
 function normalizeDifficulty(mode) {
   return mode === 'super-hard' ? 'super-hard' : DEFAULT_DIFFICULTY;
+}
+
+function normalizeGameMode(mode) {
+  return mode === 'player-vs-player' || mode === 'cpu-vs-cpu'
+    ? mode
+    : DEFAULT_GAME_MODE;
+}
+
+function normalizeFirstMove(value) {
+  if (value === 'O' || value === 'cpu') return 'O';
+  return 'X';
 }
 
 function normalizeThinkingTime(val) {
