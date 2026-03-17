@@ -201,8 +201,8 @@
 <button id="share-btn" onclick="shareGame()">SHARE</button>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="js/cpu-normal.js?v=705f10f"></script>
-<script src="js/cpu-super-hard.js?v=705f10f"></script>
+<script src="js/cpu-normal.js?v=b63c152"></script>
+<script src="js/cpu-super-hard.js?v=b63c152"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════════
 // COLOR PALETTE — Single Source of Truth for all JS colors
@@ -605,8 +605,8 @@ function stopCountdown() {
 // ── Cinematic camera: smoothly orbit to face a cell before placement ──
 function cineAngleForCell(cellIdx) {
   const pos = cellPos(cellIdx);
-  // Camera goes opposite the cell so it's front-and-center in view
-  const theta = Math.atan2(-pos.x, -pos.z);
+  // Camera goes to same side as the cell so it's in the foreground
+  const theta = Math.atan2(pos.x, pos.z);
   // Slight elevation bias toward cell's y position
   const dist = Math.sqrt(pos.x * pos.x + pos.z * pos.z) || 0.001;
   const phi = Math.PI / 2 - Math.atan2(pos.y * 0.5, dist);
@@ -1596,6 +1596,6 @@ window._game = {
 updateCpuLabel();
 window.addEventListener('beforeunload', () => superHardCpu.terminate());
 </script>
-<script type="module">import('./js/main.js?v=705f10f');</script>
+<script type="module">import('./js/main.js?v=b63c152');</script>
 </body>
 </html>
