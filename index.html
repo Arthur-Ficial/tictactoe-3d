@@ -201,10 +201,10 @@
 <button id="share-btn" onclick="shareGame()">SHARE</button>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="js/game-modes.js?v=e203e17"></script>
-<script src="js/shot-clock.js?v=e203e17"></script>
-<script src="js/cpu-normal.js?v=e203e17"></script>
-<script src="js/cpu-super-hard.js?v=e203e17"></script>
+<script src="js/game-modes.js?v=5eb8dc5"></script>
+<script src="js/shot-clock.js?v=5eb8dc5"></script>
+<script src="js/cpu-normal.js?v=5eb8dc5"></script>
+<script src="js/cpu-super-hard.js?v=5eb8dc5"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════════
 // COLOR PALETTE — Single Source of Truth for all JS colors
@@ -324,6 +324,7 @@ let introActive = false;
 let introStart = 0;
 let moveCount = 0;  // total moves placed this game (player + CPU)
 let cpuTimerId = null;
+let pendingTimedCpuTurn = null;
 const turnClock = window.TTT3DShotClock.createShotClock({
   onTick({ side, remainingSec }) {
     const sep = document.getElementById('sc-sep');
@@ -722,13 +723,33 @@ function scheduleCpuMove(who) {
   const difficulty = cpuDifficulty;
   const snapshot = [...board];
   const cinematic = isSpectatorMode();
-  const useShotClock = thinkingTimeSec > 0;
+
+  thinking = true;
+  ptAI.intensity = 3;
+  setThinkingStatus(who);
+
+  if(thinkingTimeSec > 0) {
+    const pending = { requestId, who, snapshot, move: null };
+    pendingTimedCpuTurn = pending;
+
+    if(isSpectatorMode() && moveCount < 2) {
+      pending.move = getRandomAutoMove(snapshot);
+      return;
+    }
+
+    getCpuMove(difficulty, snapshot, who).then(move => {
+      if(requestId !== cpuRequestId || pendingTimedCpuTurn !== pending) return;
+      pending.move = move;
+    }).catch(err => {
+      if(requestId !== cpuRequestId || pendingTimedCpuTurn !== pending) return;
+      console.error('CPU move failed:', err);
+      pending.move = cpuFallback(snapshot, who);
+    });
+    return;
+  }
 
   // In spectator mode, each side's first move is random for variety.
   if(isSpectatorMode() && moveCount < 2) {
-    thinking = true;
-    ptAI.intensity = 3;
-    setThinkingStatus(who);
     const empties = getEmpties(board);
     const randomMove = empties[Math.floor(Math.random() * empties.length)];
     const delay = 600 + Math.random() * 400;
@@ -740,38 +761,23 @@ function scheduleCpuMove(who) {
     return;
   }
 
-  thinking = true;
-  ptAI.intensity = 3;
-  setThinkingStatus(who);
+  const filled = board.filter((v,i) => i !== CENTER && v !== null).length;
+  const base = 600 + filled * 40;
+  const jitter = (Math.random() - 0.3) * 500;
+  const delay = Math.max(400, Math.min(2200, base + jitter));
 
-  if(useShotClock) {
-    getCpuMove(difficulty, snapshot, who).then(move => {
+  cpuTimerId = setTimeout(async () => {
+    cpuTimerId = null;
+    try {
+      const move = await getCpuMove(difficulty, snapshot, who);
       if(requestId !== cpuRequestId) return;
       finishAutomatedMove(requestId, who, move, cinematic);
-    }).catch(err => {
+    } catch(err) {
       if(requestId !== cpuRequestId) return;
       console.error('CPU move failed:', err);
       finishAutomatedMove(requestId, who, cpuFallback(snapshot, who), cinematic);
-    });
-  } else {
-    const filled = board.filter((v,i) => i !== CENTER && v !== null).length;
-    const base = 600 + filled * 40;
-    const jitter = (Math.random() - 0.3) * 500;
-    const delay = Math.max(400, Math.min(2200, base + jitter));
-
-    cpuTimerId = setTimeout(async () => {
-      cpuTimerId = null;
-      try {
-        const move = await getCpuMove(difficulty, snapshot, who);
-        if(requestId !== cpuRequestId) return;
-        finishAutomatedMove(requestId, who, move, cinematic);
-      } catch(err) {
-        if(requestId !== cpuRequestId) return;
-        console.error('CPU move failed:', err);
-        finishAutomatedMove(requestId, who, cpuFallback(snapshot, who), cinematic);
-      }
-    }, delay);
-  }
+    }
+  }, delay);
 }
 
 function cpuFallback(snapshot, who) {
@@ -819,12 +825,14 @@ function completeTurn(who) {
 }
 
 function cancelPendingAutomatedTurn() {
+  const pending = pendingTimedCpuTurn;
+  pendingTimedCpuTurn = null;
   cpuRequestId++;
   if (cpuTimerId) {
     clearTimeout(cpuTimerId);
     cpuTimerId = null;
   }
-  if (thinking && cpuDifficulty === CPU_DIFFICULTY.SUPER_HARD) {
+  if ((thinking || pending) && cpuDifficulty === CPU_DIFFICULTY.SUPER_HARD) {
     resetSuperHardSolver();
   }
   cancelCineCam();
@@ -841,6 +849,19 @@ function getRandomAutoMove(snapshot) {
 function handleTurnTimeout(who, turnId) {
   if(gameOver || introActive) return;
   if(turnId !== activeTurnId || who !== currentTurn) return;
+
+  if(isCpuControlled(who) && pendingTimedCpuTurn && pendingTimedCpuTurn.who === who) {
+    const pending = pendingTimedCpuTurn;
+    pendingTimedCpuTurn = null;
+
+    if(pending.move == null) {
+      if(cpuDifficulty === CPU_DIFFICULTY.SUPER_HARD) resetSuperHardSolver();
+      pending.move = cpuFallback(pending.snapshot, who);
+    }
+
+    finishAutomatedMove(pending.requestId, who, pending.move, isSpectatorMode());
+    return;
+  }
 
   cancelPendingAutomatedTurn();
 
@@ -1483,7 +1504,7 @@ function shareGame() {
     shareText = gameMode === GAME_MODE.PLAYER_VS_CPU
       ? `I just won ${x} to ${o}!`
       : (gameMode === GAME_MODE.PLAYER_VS_PLAYER
-        ? `Player 1 won ${x} to ${o}!`
+        ? `Me won ${x} to ${o}!`
         : `X won ${x} to ${o}!`);
   } else if(o > x) {
     resultText = `${getWinnerText(CPU)} ${o} - ${x}`;
@@ -1491,7 +1512,7 @@ function shareGame() {
     shareText = gameMode === GAME_MODE.PLAYER_VS_CPU
       ? `I just lost ${o} to ${x}!`
       : (gameMode === GAME_MODE.PLAYER_VS_PLAYER
-        ? `Player 2 won ${o} to ${x}!`
+        ? `You won ${o} to ${x}!`
         : `O won ${o} to ${x}!`);
   } else {
     resultText = `DRAW ${x} - ${o}`;
@@ -1760,6 +1781,6 @@ window._game = {
 updateHeaderLabels();
 window.addEventListener('beforeunload', () => superHardCpu.terminate());
 </script>
-<script type="module">import('./js/main.js?v=e203e17');</script>
+<script type="module">import('./js/main.js?v=5eb8dc5');</script>
 </body>
 </html>

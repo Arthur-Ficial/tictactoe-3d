@@ -60,7 +60,7 @@
     const normalizedSide = normalizeSide(side);
 
     if (normalizedMode === GAME_MODE.PLAYER_VS_PLAYER) {
-      return normalizedSide === PLAYER ? 'PLAYER 1' : 'PLAYER 2';
+      return normalizedSide === PLAYER ? 'ME' : 'YOU';
     }
     if (normalizedMode === GAME_MODE.CPU_VS_CPU) {
       return getCpuLabel(difficulty);
@@ -73,7 +73,7 @@
     const normalizedSide = normalizeSide(side);
 
     if (normalizedMode === GAME_MODE.PLAYER_VS_PLAYER) {
-      return normalizedSide === PLAYER ? 'PLAYER 1' : 'PLAYER 2';
+      return normalizedSide === PLAYER ? 'ME' : 'YOU';
     }
     return getScoreLabel(normalizedMode, normalizedSide, difficulty);
   }
@@ -84,7 +84,7 @@
     let actor = '';
 
     if (normalizedMode === GAME_MODE.PLAYER_VS_PLAYER) {
-      actor = normalizedSide === PLAYER ? 'Player 1' : 'Player 2';
+      actor = normalizedSide === PLAYER ? 'Me' : 'You';
     } else if (normalizedMode === GAME_MODE.CPU_VS_CPU) {
       actor = getCpuLabel(difficulty);
     } else {
@@ -99,7 +99,7 @@
     const normalizedSide = normalizeSide(side);
 
     if (normalizedMode === GAME_MODE.PLAYER_VS_PLAYER) {
-      return normalizedSide === PLAYER ? 'PLAYER 1 WINS' : 'PLAYER 2 WINS';
+      return normalizedSide === PLAYER ? 'ME WINS' : 'YOU WIN';
     }
     if (normalizedMode === GAME_MODE.CPU_VS_CPU) {
       return normalizedSide === PLAYER ? 'X WINS' : 'O WINS';

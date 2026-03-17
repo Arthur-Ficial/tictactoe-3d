@@ -59,7 +59,7 @@ function modesApi() {
       const normalizedSide = normalizeSide(side);
       const cpuLabel = difficulty === 'super-hard' ? 'CPU+' : 'CPU';
       if (normalizedMode === FALLBACK_GAME_MODE.PLAYER_VS_PLAYER) {
-        return `First Move: ${normalizedSide} (${normalizedSide === 'X' ? 'Player 1' : 'Player 2'})`;
+        return `First Move: ${normalizedSide} (${normalizedSide === 'X' ? 'Me' : 'You'})`;
       }
       if (normalizedMode === FALLBACK_GAME_MODE.CPU_VS_CPU) {
         return `First Move: ${normalizedSide} (${cpuLabel})`;
