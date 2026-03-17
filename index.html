@@ -201,8 +201,8 @@
 <button id="share-btn" onclick="shareGame()">SHARE</button>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="js/cpu-normal.js?v=b6d8a09"></script>
-<script src="js/cpu-super-hard.js?v=b6d8a09"></script>
+<script src="js/cpu-normal.js?v=7dc2336"></script>
+<script src="js/cpu-super-hard.js?v=7dc2336"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════════
 // COLOR PALETTE — Single Source of Truth for all JS colors
@@ -581,13 +581,15 @@ function playerTurn(i) {
   scheduleCpuMove(CPU);
 }
 
-function startCountdown(delaySec) {
+function startCountdown(delaySec, who) {
   stopCountdown();
   const sep = document.getElementById('sc-sep');
   if(!sep || delaySec <= 0) return;
   countdownStart = Date.now();
   const totalMs = delaySec * 1000;
+  const col = (cpuVsCpu && who === PLAYER) ? 'var(--c-player)' : 'var(--c-cpu)';
   sep.classList.add('timer-active');
+  sep.style.color = col;
   countdownInterval = setInterval(() => {
     const elapsed = Date.now() - countdownStart;
     const remaining = Math.max(0, (totalMs - elapsed) / 1000);
@@ -599,7 +601,7 @@ function startCountdown(delaySec) {
 function stopCountdown() {
   if(countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
   const sep = document.getElementById('sc-sep');
-  if(sep) { sep.textContent = '|'; sep.classList.remove('timer-active'); }
+  if(sep) { sep.textContent = '|'; sep.classList.remove('timer-active'); sep.style.color = ''; }
 }
 
 // ── Cinematic camera: smoothly orbit to face a cell before placement ──
@@ -650,6 +652,11 @@ function updateCineCam() {
 
 function cancelCineCam() { cineCam = null; }
 
+function setThinkingStatus(who) {
+  const col = (cpuVsCpu && who === PLAYER) ? 'var(--c-player)' : 'var(--c-cpu)';
+  setStatus(`<span style="color:${col};text-shadow:0 0 15px ${col}">CPU THINKING</span>`);
+}
+
 function scheduleCpuMove(who) {
   if(gameOver) return;
 
@@ -657,7 +664,7 @@ function scheduleCpuMove(who) {
   if(cpuVsCpu && moveCount < 2) {
     thinking = true;
     ptAI.intensity = 3;
-    setStatus(`<span style="color:var(--c-cpu);text-shadow:0 0 15px var(--c-cpu)">CPU THINKING</span>`);
+    setThinkingStatus(who);
     const empties = getEmpties(board);
     const randomMove = empties[Math.floor(Math.random() * empties.length)];
     const requestId = ++cpuRequestId;
@@ -672,7 +679,7 @@ function scheduleCpuMove(who) {
 
   thinking = true;
   ptAI.intensity = 3;
-  setStatus(`<span style="color:var(--c-cpu);text-shadow:0 0 15px var(--c-cpu)">CPU THINKING</span>`);
+  setThinkingStatus(who);
 
   const useTimer = thinkingTimeSec > 0;
   const requestId = ++cpuRequestId;
@@ -681,7 +688,7 @@ function scheduleCpuMove(who) {
 
   if(useTimer) {
     // Timer mode: countdown is a max — CPU can finish faster
-    startCountdown(thinkingTimeSec);
+    startCountdown(thinkingTimeSec, who);
     const movePromise = getCpuMove(difficulty, snapshot, who);
     const timerPromise = new Promise(r => { cpuTimerId = setTimeout(r, thinkingTimeSec * 1000); });
 
@@ -1615,6 +1622,6 @@ window._game = {
 updateCpuLabel();
 window.addEventListener('beforeunload', () => superHardCpu.terminate());
 </script>
-<script type="module">import('./js/main.js?v=b6d8a09');</script>
+<script type="module">import('./js/main.js?v=7dc2336');</script>
 </body>
 </html>
