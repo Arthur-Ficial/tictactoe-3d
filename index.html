@@ -1376,6 +1376,7 @@ window._game = {
   get board(){return board;},
   getDifficulty() { return cpuDifficulty; },
   setDifficulty(mode) { cpuDifficulty = normalizeDifficulty(mode); },
+  newGame() { newGame(); },
   rebuildTubes() {
     // Clear existing tubes
     lineTubes.forEach(o => { pivot.remove(o); disposeObject(o); });

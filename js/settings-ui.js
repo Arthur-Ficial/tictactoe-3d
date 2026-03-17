@@ -131,6 +131,13 @@ function injectCSS() {
 	      box-shadow:0 0 18px rgba(255,102,0,0.12);
 	      color:#ffb677;
 	    }
+	    #settings-save{
+	      margin-top:16px;padding:10px;width:100%;
+	      background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:6px;
+	      color:#aaa;font-size:0.55rem;font-weight:800;letter-spacing:2px;
+	      cursor:pointer;transition:all 0.15s;touch-action:manipulation;
+	    }
+	    #settings-save:hover{color:#fff;border-color:rgba(255,255,255,0.3);background:rgba(255,255,255,0.1);}
 	    #theme-reset{
 	      margin-top:12px;padding:8px;width:100%;
 	      background:none;border:1px solid rgba(255,255,255,0.06);border-radius:6px;
@@ -221,6 +228,12 @@ function buildOverlay(config) {
   });
   updateDifficultyButton();
   grid.appendChild(difficultyBtn);
+
+  const saveBtn = document.createElement('button');
+  saveBtn.id = 'settings-save';
+  saveBtn.textContent = 'SAVE';
+  saveBtn.addEventListener('click', close);
+  grid.appendChild(saveBtn);
 
   panel.appendChild(grid);
 

@@ -33,10 +33,10 @@ initUI({
   },
 
   onReset() {
-    localStorage.removeItem(THEME_KEY);
-    localStorage.removeItem(DIFFICULTY_KEY);
+    localStorage.clear();
     applyTheme(getThemeById(DEFAULT_THEME));
     window._game?.setDifficulty(DEFAULT_DIFFICULTY);
+    window._game?.newGame?.();
   },
 });
 
