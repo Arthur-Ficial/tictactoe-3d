@@ -24,7 +24,7 @@ export function init(config) {
   activeDifficulty = normalizeDifficulty(config.difficulty);
   activeCpuVsCpu = config.cpuVsCpu || false;
   activeFirstMove = config.firstMove || 'player';
-  activeThinkingTime = config.thinkingTime || 5;
+  activeThinkingTime = config.thinkingTime ?? 0;
   injectCSS();
   buildGear();
   buildOverlay(config);
