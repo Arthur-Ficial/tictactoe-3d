@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════
-// themes.js — 12 color themes designed with color theory principles
+// themes.js — 13 color themes designed with color theory principles
 // Complementary player/CPU pairs, triadic win, mood-tinted glows
 // ═══════════════════════════════════════════════════════════════════
 
@@ -75,6 +75,32 @@ export const THEMES = [
       'c-white':'#ffeeee','c-sep':'#3a1515','c-muted':'#885555','c-dim':'#774444',
       'c-panel':'#150808','c-subtle':'#bb8888',
       'c-player-dim':'rgba(255,34,34,0.6)','c-cpu-dim':'rgba(34,255,68,0.6)',
+      'c-glow-03':'rgba(255,200,200,0.03)','c-glow-05':'rgba(255,200,200,0.05)',
+      'c-glow-08':'rgba(255,200,200,0.08)','c-glow-15':'rgba(255,200,200,0.15)',
+      'c-glow-20':'rgba(255,200,200,0.2)','c-glow-30':'rgba(255,200,200,0.3)',
+      'c-glow-50':'rgba(255,200,200,0.5)',
+      'c-hint':'rgba(255,220,220,0.85)','c-hint-shadow':'rgba(255,200,200,0.15)',
+      'c-transparent':'rgba(255,200,200,0)',
+    },
+  },
+
+  // ── GREEN vs RED ── Swapped classic rivalry
+  {
+    id: 'greenred', name: 'GREEN vs RED',
+    js: {
+      PLAYER:0x22ff44, PLAYER_EM:0x118822, PLAYER_MK_EM:0x0a6618,
+      CPU:0xff2222, CPU_EM:0x881111, CPU_MK_EM:0x660808, CPU_SPEC:0xffaa88, CPU_LINE:0xff2222,
+      WIN:0xffdd00,
+      CELL:0x0a0a18, CELL_SPEC:0x333355, CELL_EDGE:0x444466,
+      HOVER:0x1a1133, HOVER_SPEC:0x8866bb, HOVER_EM:0x0d0822, HOVER_RESET:0x050010,
+      WHITE:0xffeeee, BG:0x080000,
+      LP_EDGE_HI:0xaa5555, LP_EDGE_WF:0x884444,
+    },
+    css: {
+      'c-player':'#22ff44','c-cpu':'#ff2222','c-win':'#ffdd00','c-bg':'#080000',
+      'c-white':'#ffeeee','c-sep':'#3a1515','c-muted':'#885555','c-dim':'#774444',
+      'c-panel':'#150808','c-subtle':'#bb8888',
+      'c-player-dim':'rgba(34,255,68,0.6)','c-cpu-dim':'rgba(255,34,34,0.6)',
       'c-glow-03':'rgba(255,200,200,0.03)','c-glow-05':'rgba(255,200,200,0.05)',
       'c-glow-08':'rgba(255,200,200,0.08)','c-glow-15':'rgba(255,200,200,0.15)',
       'c-glow-20':'rgba(255,200,200,0.2)','c-glow-30':'rgba(255,200,200,0.3)',
