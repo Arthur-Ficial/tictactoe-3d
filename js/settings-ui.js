@@ -6,16 +6,19 @@ import { THEMES } from './themes.js';
 
 let overlay = null;
 let activeId = 'default';
+let activeDifficulty = 'normal';
 let cards = {};
 let initialized = false;
+let difficultyBtn = null;
 
-export function init(currentId, onChange) {
+export function init(config) {
   if (initialized) return;
   initialized = true;
-  activeId = currentId;
+  activeId = config.themeId;
+  activeDifficulty = normalizeDifficulty(config.difficulty);
   injectCSS();
   buildGear();
-  buildOverlay(onChange);
+  buildOverlay(config);
   document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
 }
 
@@ -99,13 +102,38 @@ function injectCSS() {
       display:flex;gap:2px;width:60px;height:16px;border-radius:4px;overflow:hidden;flex-shrink:0;
     }
     .theme-swatch span{flex:1;display:block;}
-    .theme-name{
-      font-size:0.65rem;font-weight:700;letter-spacing:1.5px;color:#999;
-      line-height:1;white-space:nowrap;
-    }
-    #theme-reset{
-      margin-top:12px;padding:8px;width:100%;
-      background:none;border:1px solid rgba(255,255,255,0.06);border-radius:6px;
+	    .theme-name{
+	      font-size:0.65rem;font-weight:700;letter-spacing:1.5px;color:#999;
+	      line-height:1;white-space:nowrap;
+	    }
+	    .settings-spacer{
+	      min-height:140px;flex-shrink:0;
+	    }
+	    .settings-section{
+	      font-size:0.5rem;font-weight:900;letter-spacing:2.5px;
+	      color:#666;text-transform:uppercase;
+	      margin-top:6px;padding-top:12px;
+	      border-top:1px solid rgba(255,255,255,0.08);
+	    }
+	    #difficulty-toggle{
+	      width:100%;min-height:48px;
+	      border:1px solid rgba(255,255,255,0.08);border-radius:10px;
+	      background:rgba(255,255,255,0.03);color:#bbb;
+	      font-size:0.62rem;font-weight:800;letter-spacing:1.4px;
+	      padding:12px;cursor:pointer;transition:all 0.15s;
+	      touch-action:manipulation;text-align:left;
+	    }
+	    #difficulty-toggle:hover{
+	      border-color:rgba(255,255,255,0.18);color:#fff;
+	    }
+	    #difficulty-toggle[data-difficulty="super-hard"]{
+	      border-color:rgba(255,102,0,0.3);
+	      box-shadow:0 0 18px rgba(255,102,0,0.12);
+	      color:#ffb677;
+	    }
+	    #theme-reset{
+	      margin-top:12px;padding:8px;width:100%;
+	      background:none;border:1px solid rgba(255,255,255,0.06);border-radius:6px;
       color:#555;font-size:0.5rem;font-weight:700;letter-spacing:1.5px;
       cursor:pointer;transition:all 0.15s;touch-action:manipulation;
     }
@@ -130,7 +158,7 @@ function buildGear() {
   document.body.appendChild(btn);
 }
 
-function buildOverlay(onChange) {
+function buildOverlay(config) {
   overlay = document.createElement('div');
   overlay.id = 'theme-overlay';
 
@@ -139,7 +167,7 @@ function buildOverlay(onChange) {
 
   const title = document.createElement('div');
   title.id = 'theme-title';
-  title.textContent = 'Theme';
+  title.textContent = 'Settings';
   panel.appendChild(title);
 
   const grid = document.createElement('div');
@@ -151,7 +179,7 @@ function buildOverlay(onChange) {
     card.addEventListener('click', () => {
       activeId = theme.id;
       for (const id in cards) cards[id].classList.toggle('active', id === activeId);
-      onChange(theme.id);
+      config.onThemeChange(theme.id);
       close();
     });
 
@@ -174,16 +202,37 @@ function buildOverlay(onChange) {
     cards[theme.id] = card;
   }
 
+  const spacer = document.createElement('div');
+  spacer.className = 'settings-spacer';
+  grid.appendChild(spacer);
+
+  const difficultyLabel = document.createElement('div');
+  difficultyLabel.className = 'settings-section';
+  difficultyLabel.textContent = 'Difficulty';
+  grid.appendChild(difficultyLabel);
+
+  difficultyBtn = document.createElement('button');
+  difficultyBtn.id = 'difficulty-toggle';
+  difficultyBtn.type = 'button';
+  difficultyBtn.addEventListener('click', () => {
+    activeDifficulty = activeDifficulty === 'normal' ? 'super-hard' : 'normal';
+    updateDifficultyButton();
+    config.onDifficultyChange(activeDifficulty);
+  });
+  updateDifficultyButton();
+  grid.appendChild(difficultyBtn);
+
   panel.appendChild(grid);
 
   const resetBtn = document.createElement('button');
   resetBtn.id = 'theme-reset';
   resetBtn.textContent = 'RESET ALL';
   resetBtn.addEventListener('click', () => {
-    localStorage.clear();
     activeId = 'default';
+    activeDifficulty = 'normal';
     for (const id in cards) cards[id].classList.toggle('active', id === 'default');
-    onChange('default');
+    updateDifficultyButton();
+    config.onReset();
     close();
   });
   panel.appendChild(resetBtn);
@@ -197,4 +246,16 @@ function buildOverlay(onChange) {
   overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
   overlay.appendChild(panel);
   document.body.appendChild(overlay);
+}
+
+function updateDifficultyButton() {
+  if (!difficultyBtn) return;
+  difficultyBtn.dataset.difficulty = activeDifficulty;
+  difficultyBtn.textContent = activeDifficulty === 'super-hard'
+    ? 'Difficulty: Super Hard'
+    : 'Difficulty: Normal';
+}
+
+function normalizeDifficulty(mode) {
+  return mode === 'super-hard' ? 'super-hard' : 'normal';
 }

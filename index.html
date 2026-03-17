@@ -200,6 +200,8 @@
 <button id="share-btn" onclick="shareGame()">SHARE</button>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="js/cpu-normal.js"></script>
+<script src="js/cpu-super-hard.js"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════════
 // COLOR PALETTE — Single Source of Truth for all JS colors
@@ -282,6 +284,20 @@ const RAW_WINS = (() => {
 const WINS = RAW_WINS.filter(line => !line.includes(CENTER));
 // 36 valid lines
 
+const CPU_DIFFICULTY = {
+  NORMAL: 'normal',
+  SUPER_HARD: 'super-hard',
+};
+
+let cpuDifficulty = CPU_DIFFICULTY.NORMAL;
+let cpuRequestId = 0;
+const superHardCpu = window.TTT3DCPU.createSuperHardSolver({
+  wins: WINS,
+  center: CENTER,
+  player: PLAYER,
+  cpu: CPU,
+});
+
 // ═══════════════════════════════════════════════════════════════════
 // GAME STATE — single source of truth
 // ═══════════════════════════════════════════════════════════════════
@@ -315,90 +331,6 @@ function newLinesAt(b, i, who) {
 // Count total completed lines for 'who' on board b
 function countCompleted(b, who) {
   return WINS.filter(line => line.every(j => b[j] === who)).length;
-}
-
-// Threats: lines with exactly N of 'who' and rest empty
-function countThreats(b, who, n) {
-  const opp = who === PLAYER ? CPU : PLAYER;
-  return WINS.filter(line => {
-    const mine  = line.filter(j => b[j] === who).length;
-    const theirs= line.filter(j => b[j] === opp).length;
-    return mine === n && theirs === 0;
-  }).length;
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// AI — proper minimax-style eval, no mutation bugs
-// ═══════════════════════════════════════════════════════════════════
-function evalBoard(b) {
-  // Eval from CPU's perspective (positive = good for CPU)
-  const cpuLines = countCompleted(b, CPU);
-  const plrLines = countCompleted(b, PLAYER);
-
-  let pos = 0;
-  for(const line of WINS) {
-    const c = line.filter(j => b[j] === CPU).length;
-    const p = line.filter(j => b[j] === PLAYER).length;
-    // Lines with only CPU pieces — building value
-    if(p === 0) {
-      if(c === 2) pos += 10;
-      else if(c === 1) pos += 1;
-    }
-    // Lines with only PLAYER pieces — threat level
-    if(c === 0) {
-      if(p === 2) pos -= 15;
-      else if(p === 1) pos -= 1;
-    }
-  }
-
-  // Bonus for having many simultaneous threats (fork power)
-  pos += countThreats(b, CPU, 2) * 8;
-  pos -= countThreats(b, PLAYER, 2) * 12;
-
-  return (cpuLines - plrLines) * 100 + pos;
-}
-
-// Score a candidate move for CPU using 2-ply lookahead
-function scoreMoveForCPU(b, idx) {
-  // 1. Make the move
-  b[idx] = CPU;
-
-  // 2. Count immediately scored lines (guaranteed value)
-  const immediate = WINS.filter(line => line.includes(idx) && line.every(j => b[j] === CPU)).length;
-
-  // 3. Simulate player's best response
-  const replies = getEmpties(b);
-  let worstForCPU = Infinity;
-
-  if(replies.length === 0) {
-    worstForCPU = evalBoard(b);
-  } else {
-    for(const j of replies) {
-      b[j] = PLAYER;
-      const s = evalBoard(b);
-      b[j] = null; // ← restore immediately after eval
-      if(s < worstForCPU) worstForCPU = s;
-    }
-  }
-
-  b[idx] = null; // ← restore CPU move
-
-  return immediate * 160 + worstForCPU;
-}
-
-function aiMove(b) {
-  const avail = getEmpties(b);
-  if(!avail.length) return -1;
-
-  // Work on a COPY so we never corrupt the real board
-  const copy = [...b];
-
-  let best = -Infinity, bestIdx = avail[0];
-  for(const i of avail) {
-    const s = scoreMoveForCPU(copy, i);
-    if(s > best) { best = s; bestIdx = i; }
-  }
-  return bestIdx;
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -636,22 +568,42 @@ function playerTurn(i) {
   const base = 600 + filled * 40;
   const jitter = (Math.random() - 0.3) * 500;
   const delay = Math.max(400, Math.min(2200, base + jitter));
+  const requestId = ++cpuRequestId;
+  const difficulty = cpuDifficulty;
 
-  cpuTimerId = setTimeout(() => {
+  cpuTimerId = setTimeout(async () => {
     cpuTimerId = null;
-    // Pass a COPY of the board to AI so it can't corrupt state
-    const move = aiMove([...board]);
-    if(move !== -1) placeMarker(move, CPU);
-    ptAI.intensity = 0;
-    thinking = false;
-    updateUI();
-    if(!checkEnd()) {
-      setStatus('');
+    const snapshot = [...board];
+
+    try {
+      const move = await getCpuMove(difficulty, snapshot);
+      if(requestId !== cpuRequestId) return;
+      if(move !== -1) placeMarker(move, CPU);
+    } catch (err) {
+      console.error('CPU move failed:', err);
+      if(requestId !== cpuRequestId) return;
+      const fallback = window.TTT3DCPU.getNormalCpuMove({
+        board: snapshot,
+        wins: WINS,
+        center: CENTER,
+        player: PLAYER,
+        cpu: CPU
+      });
+      if(fallback !== -1) placeMarker(fallback, CPU);
+    } finally {
+      if(requestId !== cpuRequestId) return;
+      ptAI.intensity = 0;
+      thinking = false;
+      updateUI();
+      if(!checkEnd()) {
+        setStatus('');
+      }
     }
   }, delay);
 }
 
 function newGame() {
+  cpuRequestId++;
   if (cpuTimerId) { clearTimeout(cpuTimerId); cpuTimerId = null; }
   lpActive = false; lpLocked = false; lpRestoring = false;
   lpSavedMap = null; lpRestoreSnaps = null; lpStage = 0;
@@ -688,6 +640,25 @@ function newGame() {
   lastInteract = Date.now();
   updateButtonState();
   updateHint();
+}
+
+async function getCpuMove(difficulty, snapshot) {
+  if(difficulty === CPU_DIFFICULTY.SUPER_HARD) {
+    const result = await superHardCpu.getBestMove(snapshot);
+    return result.move;
+  }
+
+  return window.TTT3DCPU.getNormalCpuMove({
+    board: snapshot,
+    wins: WINS,
+    center: CENTER,
+    player: PLAYER,
+    cpu: CPU
+  });
+}
+
+function normalizeDifficulty(mode) {
+  return mode === CPU_DIFFICULTY.SUPER_HARD ? CPU_DIFFICULTY.SUPER_HARD : CPU_DIFFICULTY.NORMAL;
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1403,6 +1374,8 @@ window._game = {
   ptX, ptO, ptW, ptAI,
   get cellMeshes(){return cellMeshes;},
   get board(){return board;},
+  getDifficulty() { return cpuDifficulty; },
+  setDifficulty(mode) { cpuDifficulty = normalizeDifficulty(mode); },
   rebuildTubes() {
     // Clear existing tubes
     lineTubes.forEach(o => { pivot.remove(o); disposeObject(o); });
@@ -1418,6 +1391,7 @@ window._game = {
     rebuildPartialTubes();
   }
 };
+window.addEventListener('beforeunload', () => superHardCpu.terminate());
 </script>
 <script type="module" src="js/main.js"></script>
 </body>
