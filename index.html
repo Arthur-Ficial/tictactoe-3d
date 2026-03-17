@@ -66,7 +66,8 @@
     flex:1;text-align:right;
     color:var(--c-cpu);text-shadow:0 0 20px var(--c-cpu);
   }
-  .sc-sep{color:var(--c-sep);font-size:1rem;text-align:center;flex:0 0 30px;}
+  .sc-sep{color:var(--c-sep);font-size:1rem;text-align:center;flex:0 0 50px;transition:all 0.3s ease;}
+  .sc-sep.timer-active{font-size:0.7rem;color:var(--c-muted);letter-spacing:1px;}
 
   /* Delta bar */
   #delta-wrap{
@@ -182,7 +183,7 @@
 <div id="ui">
   <div id="score-bar">
     <span class="sc-you">YOU <span id="sX">0</span></span>
-    <span class="sc-sep">|</span>
+    <span class="sc-sep" id="sc-sep">|</span>
     <span class="sc-cpu"><span id="sO">0</span> <span id="cpu-label">CPU</span></span>
   </div>
   <div id="delta-wrap">
@@ -200,8 +201,8 @@
 <button id="share-btn" onclick="shareGame()">SHARE</button>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="js/cpu-normal.js?v=bcf2c64"></script>
-<script src="js/cpu-super-hard.js?v=bcf2c64"></script>
+<script src="js/cpu-normal.js?v=a522310"></script>
+<script src="js/cpu-super-hard.js?v=a522310"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════════
 // COLOR PALETTE — Single Source of Truth for all JS colors
@@ -293,7 +294,7 @@ let cpuDifficulty = CPU_DIFFICULTY.NORMAL;
 let cpuRequestId = 0;
 let cpuVsCpu = false; // CPU vs CPU spectator mode
 let firstMoveCpu = false; // true = CPU goes first
-let thinkingTimeSec = 5; // seconds per CPU move (5, 10, 15)
+let thinkingTimeSec = 0; // 0 = off (natural delay), 5/10/15 = timer seconds
 let countdownInterval = null; // timer interval for countdown display
 let countdownStart = 0; // timestamp when countdown started
 const superHardCpu = window.TTT3DCPU.createSuperHardSolver({
@@ -551,8 +552,8 @@ function checkEnd() {
   ptW.intensity = 0;
   const x = scores[PLAYER], o = scores[CPU];
   if(cpuVsCpu) {
-    if(x > o)      { setStatus(`<span class="x-col">CPU 1 WINS  ${x} - ${o}</span>`); ptW.intensity=6; }
-    else if(o > x) { setStatus(`<span class="o-col">CPU 2 WINS  ${o} - ${x}</span>`); }
+    if(x > o)      { setStatus(`<span class="x-col">X WINS  ${x} - ${o}</span>`); ptW.intensity=6; }
+    else if(o > x) { setStatus(`<span class="o-col">O WINS  ${o} - ${x}</span>`); }
     else           setStatus(`<span style="color:#fff">DRAW  ${x} - ${o}</span>`);
     // Auto-restart after delay in CPU vs CPU mode
     setTimeout(() => { if(cpuVsCpu) newGame(); }, 4000);
@@ -577,71 +578,100 @@ function playerTurn(i) {
   scheduleCpuMove(CPU);
 }
 
-function startCountdown(delaySec, who) {
+function startCountdown(delaySec) {
   stopCountdown();
+  const sep = document.getElementById('sc-sep');
+  if(!sep || delaySec <= 0) return;
   countdownStart = Date.now();
   const totalMs = delaySec * 1000;
-  const color = who === CPU ? 'var(--c-cpu)' : 'var(--c-player)';
-  const label = cpuVsCpu ? (who === CPU ? 'CPU 2' : 'CPU 1') : 'CPU';
+  sep.classList.add('timer-active');
   countdownInterval = setInterval(() => {
     const elapsed = Date.now() - countdownStart;
     const remaining = Math.max(0, (totalMs - elapsed) / 1000);
-    setStatus(`<span style="color:${color};text-shadow:0 0 15px ${color}">${label} THINKING &nbsp;${remaining.toFixed(1)}s</span>`);
+    sep.textContent = remaining.toFixed(1);
+    if(remaining <= 0) stopCountdown();
   }, 50);
 }
 
 function stopCountdown() {
   if(countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
+  const sep = document.getElementById('sc-sep');
+  if(sep) { sep.textContent = '|'; sep.classList.remove('timer-active'); }
 }
 
 function scheduleCpuMove(who) {
   if(gameOver) return;
   thinking = true;
   ptAI.intensity = 3;
+  setStatus(`<span style="color:var(--c-cpu);text-shadow:0 0 15px var(--c-cpu)">CPU THINKING</span>`);
 
-  const delay = thinkingTimeSec * 1000;
-  startCountdown(thinkingTimeSec, who);
-
+  const useTimer = thinkingTimeSec > 0;
   const requestId = ++cpuRequestId;
   const difficulty = cpuDifficulty;
+  const snapshot = [...board];
 
-  cpuTimerId = setTimeout(async () => {
-    cpuTimerId = null;
-    stopCountdown();
-    const snapshot = [...board];
+  if(useTimer) {
+    // Timer mode: countdown is a max — CPU can finish faster
+    startCountdown(thinkingTimeSec);
+    const movePromise = getCpuMove(difficulty, snapshot, who);
+    const timerPromise = new Promise(r => { cpuTimerId = setTimeout(r, thinkingTimeSec * 1000); });
 
-    try {
-      const move = await getCpuMove(difficulty, snapshot, who);
+    movePromise.then(move => {
       if(requestId !== cpuRequestId) return;
-      if(move !== -1) placeMarker(move, who);
-    } catch (err) {
+      // Wait for timer OR place immediately — CPU can be faster
+      stopCountdown();
+      if(cpuTimerId) { clearTimeout(cpuTimerId); cpuTimerId = null; }
+      finishCpuMove(requestId, who, move);
+    }).catch(err => {
       console.error('CPU move failed:', err);
       if(requestId !== cpuRequestId) return;
-      const meAs = who || CPU;
-      const oppAs = meAs === CPU ? PLAYER : CPU;
-      const fallback = window.TTT3DCPU.getNormalCpuMove({
-        board: snapshot,
-        wins: WINS,
-        center: CENTER,
-        player: oppAs,
-        cpu: meAs
-      });
-      if(fallback !== -1) placeMarker(fallback, who);
-    } finally {
-      if(requestId !== cpuRequestId) return;
-      ptAI.intensity = 0;
-      thinking = false;
-      updateUI();
-      if(!checkEnd()) {
-        setStatus('');
-        // In CPU vs CPU mode, schedule next move
-        if(cpuVsCpu && !gameOver) {
-          const nextWho = who === PLAYER ? CPU : PLAYER;
-          scheduleCpuMove(nextWho);
-        }
+      stopCountdown();
+      if(cpuTimerId) { clearTimeout(cpuTimerId); cpuTimerId = null; }
+      const fb = cpuFallback(snapshot, who);
+      finishCpuMove(requestId, who, fb);
+    });
+  } else {
+    // Natural delay mode (original behavior)
+    const filled = board.filter((v,i) => i !== CENTER && v !== null).length;
+    const base = 600 + filled * 40;
+    const jitter = (Math.random() - 0.3) * 500;
+    const delay = Math.max(400, Math.min(2200, base + jitter));
+
+    cpuTimerId = setTimeout(async () => {
+      cpuTimerId = null;
+      try {
+        const move = await getCpuMove(difficulty, snapshot, who);
+        if(requestId !== cpuRequestId) return;
+        finishCpuMove(requestId, who, move);
+      } catch(err) {
+        console.error('CPU move failed:', err);
+        if(requestId !== cpuRequestId) return;
+        finishCpuMove(requestId, who, cpuFallback(snapshot, who));
       }
+    }, delay);
+  }
+}
+
+function cpuFallback(snapshot, who) {
+  const meAs = who || CPU;
+  const oppAs = meAs === CPU ? PLAYER : CPU;
+  return window.TTT3DCPU.getNormalCpuMove({
+    board: snapshot, wins: WINS, center: CENTER, player: oppAs, cpu: meAs
+  });
+}
+
+function finishCpuMove(requestId, who, move) {
+  if(requestId !== cpuRequestId) return;
+  if(move !== -1) placeMarker(move, who);
+  ptAI.intensity = 0;
+  thinking = false;
+  updateUI();
+  if(!checkEnd()) {
+    setStatus('');
+    if(cpuVsCpu && !gameOver) {
+      scheduleCpuMove(who === PLAYER ? CPU : PLAYER);
     }
-  }, delay);
+  }
 }
 
 function newGame() {
@@ -720,20 +750,15 @@ function normalizeDifficulty(mode) {
 function updateCpuLabel() {
   const label = document.getElementById('cpu-label');
   if(!label) return;
-  if(cpuVsCpu) {
-    label.textContent = cpuDifficulty === CPU_DIFFICULTY.SUPER_HARD ? 'CPU 2+' : 'CPU 2';
-  } else {
-    label.textContent = cpuDifficulty === CPU_DIFFICULTY.SUPER_HARD ? 'CPU+' : 'CPU';
-  }
+  label.textContent = cpuDifficulty === CPU_DIFFICULTY.SUPER_HARD ? 'CPU+' : 'CPU';
 }
 
 function updateHeaderLabels() {
-  // Safe: only uses hardcoded labels + numeric scores, no user input
   const youLabel = document.querySelector('.sc-you');
   if(!youLabel) return;
   const scoreVal = scores[PLAYER];
   youLabel.textContent = '';
-  youLabel.append(cpuVsCpu ? 'CPU 1 ' : 'YOU ');
+  youLabel.append(cpuVsCpu ? 'CPU ' : 'YOU ');
   const span = document.createElement('span');
   span.id = 'sX';
   span.textContent = scoreVal;
@@ -1298,6 +1323,7 @@ function showButton(show) {
 }
 function updateButtonState(){
   btn.classList.toggle('game-over', gameOver);
+  if(cpuVsCpu) { showButton(false); showShareButton(false); return; }
   if(gameOver) { showButton(true); showShareButton(true); }
   else { showButton(false); showShareButton(false); }
 }
@@ -1420,13 +1446,14 @@ function animate() {
     if(needsUpdate) updateCamera();
   }
 
-  // Auto-rotate after 3s idle
-  if(!isDragging && !gameOver && !thinking && !introActive && (Date.now()-lastInteract>3000)) {
-    sph.theta += 0.006; updateCamera();
+  // Auto-rotate: always in CPU vs CPU mode, otherwise after 3s idle
+  if(!isDragging && !introActive) {
+    const shouldRotate = cpuVsCpu || (!gameOver && !thinking && (Date.now()-lastInteract>3000));
+    if(shouldRotate) { sph.theta += 0.006; updateCamera(); }
   }
 
-  // Show NEW GAME button after 7s idle if board has marks and game not over
-  if(!gameOver && !introActive && (Date.now()-lastInteract>7000) && boardHasMarks()) {
+  // Show NEW GAME button after 7s idle if board has marks and game not over (not in CPU vs CPU)
+  if(!cpuVsCpu && !gameOver && !introActive && (Date.now()-lastInteract>7000) && boardHasMarks()) {
     showButton(true);
   }
 
@@ -1473,7 +1500,8 @@ window._game = {
   },
   getThinkingTime() { return thinkingTimeSec; },
   setThinkingTime(sec) {
-    thinkingTimeSec = Math.max(1, Math.min(15, Number(sec) || 5));
+    const n = Number(sec);
+    thinkingTimeSec = (n === 0 || [5, 10, 15].includes(n)) ? n : 0;
   },
   newGame() { newGame(); },
   rebuildTubes() {
@@ -1494,6 +1522,6 @@ window._game = {
 updateCpuLabel();
 window.addEventListener('beforeunload', () => superHardCpu.terminate());
 </script>
-<script type="module">import('./js/main.js?v=bcf2c64');</script>
+<script type="module">import('./js/main.js?v=a522310');</script>
 </body>
 </html>

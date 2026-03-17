@@ -9,7 +9,7 @@ let activeId = 'default';
 let activeDifficulty = 'normal';
 let activeCpuVsCpu = false;
 let activeFirstMove = 'player';
-let activeThinkingTime = 5;
+let activeThinkingTime = 0;
 let cards = {};
 let initialized = false;
 let difficultyBtn = null;
@@ -313,18 +313,18 @@ function buildOverlay(config) {
   updateFirstMoveButton();
   grid.appendChild(firstMoveBtn);
 
-  // ── Thinking Time (below First Move) ──
-  const thinkingLabel = document.createElement('div');
-  thinkingLabel.className = 'settings-section';
-  thinkingLabel.textContent = 'Thinking Time';
-  grid.appendChild(thinkingLabel);
+  // ── Timer (below First Move) ──
+  const timerLabel = document.createElement('div');
+  timerLabel.className = 'settings-section';
+  timerLabel.textContent = 'Timer';
+  grid.appendChild(timerLabel);
 
   thinkingTimeBtn = document.createElement('button');
   thinkingTimeBtn.id = 'thinking-time-toggle';
   thinkingTimeBtn.className = 'settings-toggle';
   thinkingTimeBtn.type = 'button';
   thinkingTimeBtn.addEventListener('click', () => {
-    const times = [5, 10, 15];
+    const times = [0, 5, 10, 15];
     const idx = times.indexOf(activeThinkingTime);
     activeThinkingTime = times[(idx + 1) % times.length];
     updateThinkingTimeButton();
@@ -352,7 +352,7 @@ function buildOverlay(config) {
     activeDifficulty = 'normal';
     activeCpuVsCpu = false;
     activeFirstMove = 'player';
-    activeThinkingTime = 5;
+    activeThinkingTime = 0;
     for (const id in cards) cards[id].classList.toggle('active', id === 'default');
     updateDifficultyButton();
     updateCpuVsCpuButton();
@@ -405,14 +405,16 @@ function updateThinkingTimeButton() {
   if (!thinkingTimeBtn) return;
   thinkingTimeBtn.textContent = '';
   const text = document.createElement('div');
-  text.textContent = `Thinking Time: ${activeThinkingTime}s`;
+  text.textContent = activeThinkingTime === 0
+    ? 'Timer: Off'
+    : `Timer: ${activeThinkingTime}s`;
   thinkingTimeBtn.appendChild(text);
 
   const dots = document.createElement('div');
   dots.className = 'time-dots';
   for (const t of [5, 10, 15]) {
     const dot = document.createElement('div');
-    dot.className = 'time-dot' + (t <= activeThinkingTime ? ' active' : '');
+    dot.className = 'time-dot' + (activeThinkingTime > 0 && t <= activeThinkingTime ? ' active' : '');
     dots.appendChild(dot);
   }
   thinkingTimeBtn.appendChild(dots);
