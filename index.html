@@ -201,8 +201,8 @@
 <button id="share-btn" onclick="shareGame()">SHARE</button>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="js/cpu-normal.js?v=b63c152"></script>
-<script src="js/cpu-super-hard.js?v=b63c152"></script>
+<script src="js/cpu-normal.js?v=b3c365b"></script>
+<script src="js/cpu-super-hard.js?v=b3c365b"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════════
 // COLOR PALETTE — Single Source of Truth for all JS colors
@@ -825,8 +825,9 @@ function updateHeaderLabels() {
   const youLabel = document.querySelector('.sc-you');
   if(!youLabel) return;
   const scoreVal = scores[PLAYER];
+  const isHard = cpuDifficulty === CPU_DIFFICULTY.SUPER_HARD;
   youLabel.textContent = '';
-  youLabel.append(cpuVsCpu ? 'CPU ' : 'YOU ');
+  youLabel.append(cpuVsCpu ? (isHard ? 'CPU+ ' : 'CPU ') : 'YOU ');
   const span = document.createElement('span');
   span.id = 'sX';
   span.textContent = scoreVal;
@@ -1596,6 +1597,6 @@ window._game = {
 updateCpuLabel();
 window.addEventListener('beforeunload', () => superHardCpu.terminate());
 </script>
-<script type="module">import('./js/main.js?v=b63c152');</script>
+<script type="module">import('./js/main.js?v=b3c365b');</script>
 </body>
 </html>
