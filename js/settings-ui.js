@@ -7,8 +7,11 @@ import { THEMES } from './themes.js';
 let overlay = null;
 let activeId = 'default';
 let cards = {};
+let initialized = false;
 
 export function init(currentId, onChange) {
+  if (initialized) return;
+  initialized = true;
   activeId = currentId;
   injectCSS();
   buildGear();

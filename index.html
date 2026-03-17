@@ -864,12 +864,12 @@ canvas.addEventListener('touchmove', e => {
     }
     tDragStart={x:cx,y:cy}; updateCamera();
   } else if(tArr.length===1 && tDragStart) {
-    const t=tArr[0];
-    const dx=t.clientX-tDragStart.x, dy=t.clientY-tDragStart.y;
+    const tc=tArr[0];
+    const dx=tc.clientX-tDragStart.x, dy=tc.clientY-tDragStart.y;
     sph.theta-=dx*0.006;
     sph.phi=Math.max(PHI_MIN-0.1, Math.min(PHI_MAX+0.1, sph.phi+dy*0.006));
     lastTouchDragDelta={x:dx,y:dy}; lastTouchDragTime=Date.now();
-    tDragStart={x:t.clientX,y:t.clientY}; updateCamera();
+    tDragStart={x:tc.clientX,y:tc.clientY}; updateCamera();
   }
 },{passive:false});
 canvas.addEventListener('touchend', e => {
@@ -1189,9 +1189,9 @@ function showShareButton(show) {
 }
 function shareGame() {
   renderer.render(scene, camera);
-  const w = canvas.width, h = canvas.height;
+  const w = canvas.width, cH = canvas.height;
   const comp = document.createElement('canvas');
-  comp.width = w; comp.height = h;
+  comp.width = w; comp.height = cH;
   const ctx = comp.getContext('2d');
   ctx.drawImage(canvas, 0, 0);
   const x = scores[PLAYER], o = scores[CPU];
@@ -1205,14 +1205,14 @@ function shareGame() {
   ctx.shadowColor = resultColor;
   ctx.shadowBlur = 25;
   ctx.fillStyle = resultColor;
-  ctx.fillText(resultText, w / 2, h * 0.07);
+  ctx.fillText(resultText, w / 2, cH * 0.07);
   ctx.shadowBlur = 15;
-  ctx.fillText(resultText, w / 2, h * 0.07);
+  ctx.fillText(resultText, w / 2, cH * 0.07);
   ctx.shadowBlur = 0;
   const subSize = Math.round(w * 0.02);
   ctx.font = `bold ${subSize}px 'Segoe UI', sans-serif`;
   ctx.fillStyle = '#555';
-  ctx.fillText('3D TIC-TAC-TOE', w / 2, h * 0.96);
+  ctx.fillText('3D TIC-TAC-TOE', w / 2, cH * 0.96);
   comp.toBlob(async (blob) => {
     const file = new File([blob], 'tictactoe3d.png', { type: 'image/png' });
     if(navigator.canShare && navigator.canShare({ files: [file] })) {
