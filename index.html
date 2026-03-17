@@ -183,7 +183,7 @@
   <div id="score-bar">
     <span class="sc-you">YOU <span id="sX">0</span></span>
     <span class="sc-sep">|</span>
-    <span class="sc-cpu"><span id="sO">0</span> CPU</span>
+    <span class="sc-cpu"><span id="sO">0</span> <span id="cpu-label">CPU</span></span>
   </div>
   <div id="delta-wrap">
     <div id="delta-you" style="width:50%"></div>
@@ -659,6 +659,12 @@ async function getCpuMove(difficulty, snapshot) {
 
 function normalizeDifficulty(mode) {
   return mode === CPU_DIFFICULTY.SUPER_HARD ? CPU_DIFFICULTY.SUPER_HARD : CPU_DIFFICULTY.NORMAL;
+}
+
+function updateCpuLabel() {
+  const label = document.getElementById('cpu-label');
+  if(!label) return;
+  label.textContent = cpuDifficulty === CPU_DIFFICULTY.SUPER_HARD ? 'CPU+' : 'CPU';
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1376,7 +1382,10 @@ window._game = {
   get cellMeshes(){return cellMeshes;},
   get board(){return board;},
   getDifficulty() { return cpuDifficulty; },
-  setDifficulty(mode) { cpuDifficulty = normalizeDifficulty(mode); },
+  setDifficulty(mode) {
+    cpuDifficulty = normalizeDifficulty(mode);
+    updateCpuLabel();
+  },
   newGame() { newGame(); },
   rebuildTubes() {
     // Clear existing tubes
@@ -1393,6 +1402,7 @@ window._game = {
     rebuildPartialTubes();
   }
 };
+updateCpuLabel();
 window.addEventListener('beforeunload', () => superHardCpu.terminate());
 </script>
 <script type="module">import('./js/main.js?v=9c6b857');</script>

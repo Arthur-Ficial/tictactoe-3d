@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════
-// themes.js — 13 color themes designed with color theory principles
+// themes.js — 18 color themes designed with color theory principles
 // Complementary player/CPU pairs, triadic win, mood-tinted glows
 // ═══════════════════════════════════════════════════════════════════
 
@@ -341,6 +341,136 @@ export const THEMES = [
       'c-glow-50':'rgba(200,220,255,0.5)',
       'c-hint':'rgba(200,220,255,0.85)','c-hint-shadow':'rgba(200,220,255,0.15)',
       'c-transparent':'rgba(200,220,255,0)',
+    },
+  },
+
+  // ── 13. ROYAL OPERA ── Ultramarine and antique gold on midnight blue
+  {
+    id: 'royalopera', name: 'ROYAL OPERA',
+    js: {
+      PLAYER:0x4b6bff, PLAYER_EM:0x243580, PLAYER_MK_EM:0x1b2860,
+      CPU:0xd7a52f, CPU_EM:0x6b5116, CPU_MK_EM:0x503d10, CPU_SPEC:0xffe0a0, CPU_LINE:0xf4c95d,
+      WIN:0xff5a7a,
+      CELL:0x141b38, CELL_SPEC:0x425388, CELL_EDGE:0x5d72b4,
+      HOVER:0x231b44, HOVER_SPEC:0x8d6bcf, HOVER_EM:0x140d28, HOVER_RESET:0x090612,
+      WHITE:0xf8efd9, BG:0x070b1a,
+      LP_EDGE_HI:0x7a87c8, LP_EDGE_WF:0x6876b2,
+    },
+    css: {
+      'c-player':'#4b6bff','c-cpu':'#f4c95d','c-win':'#ff5a7a','c-bg':'#070b1a',
+      'c-white':'#f8efd9','c-sep':'#26304e','c-muted':'#7f86aa','c-dim':'#606987',
+      'c-panel':'#10162b','c-subtle':'#c5b480',
+      'c-player-dim':'rgba(75,107,255,0.55)','c-cpu-dim':'rgba(244,201,93,0.58)',
+      'c-glow-03':'rgba(248,239,217,0.03)','c-glow-05':'rgba(248,239,217,0.05)',
+      'c-glow-08':'rgba(248,239,217,0.08)','c-glow-15':'rgba(248,239,217,0.15)',
+      'c-glow-20':'rgba(248,239,217,0.2)','c-glow-30':'rgba(248,239,217,0.3)',
+      'c-glow-50':'rgba(248,239,217,0.5)',
+      'c-hint':'rgba(248,239,217,0.88)','c-hint-shadow':'rgba(248,239,217,0.16)',
+      'c-transparent':'rgba(248,239,217,0)',
+    },
+  },
+
+  // ── 14. MOROCCO ── Peacock teal and saffron with rose accents
+  {
+    id: 'morocco', name: 'MOROCCO',
+    js: {
+      PLAYER:0x18c6b4, PLAYER_EM:0x0b655c, PLAYER_MK_EM:0x084b45,
+      CPU:0xffb12f, CPU_EM:0x8a5c12, CPU_MK_EM:0x6b460d, CPU_SPEC:0xffd48a, CPU_LINE:0xffc95b,
+      WIN:0xff5978,
+      CELL:0x122130, CELL_SPEC:0x2a4b63, CELL_EDGE:0x2f6c7e,
+      HOVER:0x1a2940, HOVER_SPEC:0x5a84b7, HOVER_EM:0x0c1626, HOVER_RESET:0x060b12,
+      WHITE:0xfff0d9, BG:0x08131c,
+      LP_EDGE_HI:0x4e8b93, LP_EDGE_WF:0x3c7278,
+    },
+    css: {
+      'c-player':'#18c6b4','c-cpu':'#ffc95b','c-win':'#ff5978','c-bg':'#08131c',
+      'c-white':'#fff0d9','c-sep':'#213241','c-muted':'#67848b','c-dim':'#4f6770',
+      'c-panel':'#0f1b26','c-subtle':'#d4b07c',
+      'c-player-dim':'rgba(24,198,180,0.58)','c-cpu-dim':'rgba(255,201,91,0.6)',
+      'c-glow-03':'rgba(255,240,217,0.03)','c-glow-05':'rgba(255,240,217,0.05)',
+      'c-glow-08':'rgba(255,240,217,0.08)','c-glow-15':'rgba(255,240,217,0.15)',
+      'c-glow-20':'rgba(255,240,217,0.2)','c-glow-30':'rgba(255,240,217,0.3)',
+      'c-glow-50':'rgba(255,240,217,0.5)',
+      'c-hint':'rgba(255,240,217,0.86)','c-hint-shadow':'rgba(255,240,217,0.14)',
+      'c-transparent':'rgba(255,240,217,0)',
+    },
+  },
+
+  // ── 15. WINE & SAGE ── A softened split-complementary evening palette
+  {
+    id: 'wineandsage', name: 'WINE & SAGE',
+    js: {
+      PLAYER:0xd86d8b, PLAYER_EM:0x723748, PLAYER_MK_EM:0x552834,
+      CPU:0x8cbf8c, CPU_EM:0x486448, CPU_MK_EM:0x364b36, CPU_SPEC:0xcde7bf, CPU_LINE:0xa8d8a2,
+      WIN:0xffd36b,
+      CELL:0x2a1f2d, CELL_SPEC:0x5a4660, CELL_EDGE:0x73587a,
+      HOVER:0x34233a, HOVER_SPEC:0x9464a2, HOVER_EM:0x1d1220, HOVER_RESET:0x10090f,
+      WHITE:0xfff3ee, BG:0x120b14,
+      LP_EDGE_HI:0xa86b7e, LP_EDGE_WF:0x885a66,
+    },
+    css: {
+      'c-player':'#d86d8b','c-cpu':'#a8d8a2','c-win':'#ffd36b','c-bg':'#120b14',
+      'c-white':'#fff3ee','c-sep':'#362236','c-muted':'#8d6f7d','c-dim':'#725560',
+      'c-panel':'#1c101d','c-subtle':'#c8aeb8',
+      'c-player-dim':'rgba(216,109,139,0.58)','c-cpu-dim':'rgba(168,216,162,0.55)',
+      'c-glow-03':'rgba(255,243,238,0.03)','c-glow-05':'rgba(255,243,238,0.05)',
+      'c-glow-08':'rgba(255,243,238,0.08)','c-glow-15':'rgba(255,243,238,0.15)',
+      'c-glow-20':'rgba(255,243,238,0.2)','c-glow-30':'rgba(255,243,238,0.3)',
+      'c-glow-50':'rgba(255,243,238,0.5)',
+      'c-hint':'rgba(255,243,238,0.87)','c-hint-shadow':'rgba(255,243,238,0.15)',
+      'c-transparent':'rgba(255,243,238,0)',
+    },
+  },
+
+  // ── 16. AMALFI ── Mediterranean blue and lemon on warm limestone
+  {
+    id: 'amalfi', name: 'AMALFI',
+    js: {
+      PLAYER:0x227fe0, PLAYER_EM:0x114070, PLAYER_MK_EM:0x0d3054,
+      CPU:0xe0b42b, CPU_EM:0x746016, CPU_MK_EM:0x594911, CPU_SPEC:0xffe58f, CPU_LINE:0xf4cb52,
+      WIN:0xff6b5f,
+      CELL:0xc7d4e4, CELL_SPEC:0x94a8bf, CELL_EDGE:0x6f8aae,
+      HOVER:0xd5d6ea, HOVER_SPEC:0x9278c7, HOVER_EM:0xf2eefb, HOVER_RESET:0xeae7dc,
+      WHITE:0x1c2733, BG:0xf4efe6,
+      LP_EDGE_HI:0x6f8aae, LP_EDGE_WF:0x5f7b9c,
+    },
+    css: {
+      'c-player':'#227fe0','c-cpu':'#f4cb52','c-win':'#ff6b5f','c-bg':'#f4efe6',
+      'c-white':'#1c2733','c-sep':'#c9bfaf','c-muted':'#7f7a74','c-dim':'#91877b',
+      'c-panel':'#e4ddd0','c-subtle':'#4d5a68',
+      'c-player-dim':'rgba(34,127,224,0.5)','c-cpu-dim':'rgba(244,203,82,0.6)',
+      'c-glow-03':'rgba(0,0,0,0.03)','c-glow-05':'rgba(0,0,0,0.05)',
+      'c-glow-08':'rgba(0,0,0,0.08)','c-glow-15':'rgba(0,0,0,0.12)',
+      'c-glow-20':'rgba(0,0,0,0.15)','c-glow-30':'rgba(0,0,0,0.2)',
+      'c-glow-50':'rgba(0,0,0,0.3)',
+      'c-hint':'rgba(0,0,0,0.66)','c-hint-shadow':'rgba(0,0,0,0.08)',
+      'c-transparent':'rgba(0,0,0,0)',
+    },
+  },
+
+  // ── 17. FOUNDRY ── Oxidized mint against burnished copper
+  {
+    id: 'foundry', name: 'FOUNDRY',
+    js: {
+      PLAYER:0x58d0bb, PLAYER_EM:0x2b6a60, PLAYER_MK_EM:0x204f47,
+      CPU:0xd97a4a, CPU_EM:0x6d3d25, CPU_MK_EM:0x522d1b, CPU_SPEC:0xf2b68f, CPU_LINE:0xf29b62,
+      WIN:0xffd84d,
+      CELL:0x1b1818, CELL_SPEC:0x4d423c, CELL_EDGE:0x6a5a52,
+      HOVER:0x2a2220, HOVER_SPEC:0xa37762, HOVER_EM:0x15100e, HOVER_RESET:0x0c0807,
+      WHITE:0xf5eadf, BG:0x090706,
+      LP_EDGE_HI:0x8e7768, LP_EDGE_WF:0x775f51,
+    },
+    css: {
+      'c-player':'#58d0bb','c-cpu':'#f29b62','c-win':'#ffd84d','c-bg':'#090706',
+      'c-white':'#f5eadf','c-sep':'#2d2521','c-muted':'#8e7768','c-dim':'#745f54',
+      'c-panel':'#140f0d','c-subtle':'#c7a28f',
+      'c-player-dim':'rgba(88,208,187,0.56)','c-cpu-dim':'rgba(242,155,98,0.58)',
+      'c-glow-03':'rgba(245,234,223,0.03)','c-glow-05':'rgba(245,234,223,0.05)',
+      'c-glow-08':'rgba(245,234,223,0.08)','c-glow-15':'rgba(245,234,223,0.15)',
+      'c-glow-20':'rgba(245,234,223,0.2)','c-glow-30':'rgba(245,234,223,0.3)',
+      'c-glow-50':'rgba(245,234,223,0.5)',
+      'c-hint':'rgba(245,234,223,0.86)','c-hint-shadow':'rgba(245,234,223,0.14)',
+      'c-transparent':'rgba(245,234,223,0)',
     },
   },
 
