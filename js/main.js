@@ -1,4 +1,4 @@
-import { applyTheme } from './apply-theme.js?v=31f1d46-dirty-mobz0m1r';
+import { applyTheme } from './apply-theme.js?v=88f37d4';
 import {
   DEFAULT_SETTINGS,
   clearStoredSettings,
@@ -14,12 +14,12 @@ import {
   setStoredGameMode,
   setStoredThinkingTime,
   setStoredThemeId,
-} from './app-settings.js?v=31f1d46-dirty-mobz0m1r';
+} from './app-settings.js?v=88f37d4';
 import {
   init as initSettingsUi,
   sync as syncSettingsUi,
-} from './settings-ui.js?v=31f1d46-dirty-mobz0m1r';
-import { getThemeById } from './themes.js?v=31f1d46-dirty-mobz0m1r';
+} from './settings-ui.js?v=88f37d4';
+import { getThemeById } from './themes.js?v=88f37d4';
 
 const initialSettings = {
   ...getStoredSettings(),

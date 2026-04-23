@@ -9,8 +9,8 @@ import {
   normalizeGameMode,
   normalizeThinkingTime,
   normalizeThemeId,
-} from './app-settings.js?v=31f1d46-dirty-mobz0m1r';
-import { THEMES } from './themes.js?v=31f1d46-dirty-mobz0m1r';
+} from './app-settings.js?v=88f37d4';
+import { THEMES } from './themes.js?v=88f37d4';
 
 const SETTINGS_STYLE_ID = 'ttt3d-settings-ui-style';
 const SETTINGS_CSS = `
