@@ -1,245 +1,275 @@
-// ═══════════════════════════════════════════════════════════════════
-// settings-ui.js — Gear icon + theme selector overlay
-// ═══════════════════════════════════════════════════════════════════
+import {
+  DEFAULT_SETTINGS,
+  DIFFICULTY,
+  GAME_MODE_CYCLE,
+  SIDE,
+  THINKING_TIME_CYCLE,
+  normalizeDifficulty,
+  normalizeFirstMove,
+  normalizeGameMode,
+  normalizeThinkingTime,
+  normalizeThemeId,
+} from './app-settings.js?v=31f1d46-dirty-mobz0m1r';
+import { THEMES } from './themes.js?v=31f1d46-dirty-mobz0m1r';
 
-import { THEMES } from './themes.js';
+const SETTINGS_STYLE_ID = 'ttt3d-settings-ui-style';
+const SETTINGS_CSS = `
+  #theme-gear{
+    position:fixed!important;bottom:2px!important;right:2px!important;z-index:999!important;
+    background:none;border:none;cursor:pointer;
+    padding:8px;border-radius:6px;
+    opacity:0.4!important;pointer-events:all!important;
+    visibility:visible!important;display:block!important;
+  }
+  #theme-gear:hover{opacity:0.7!important;}
+  #theme-overlay{
+    position:fixed;inset:0;z-index:100;
+    background:rgba(0,0,0,0.88);
+    display:flex;align-items:center;justify-content:center;
+    opacity:0;pointer-events:none;transition:opacity 0.25s ease;
+  }
+  #theme-overlay.open{opacity:1;pointer-events:all;}
+  #theme-panel{
+    position:relative;
+    background:rgba(18,18,24,0.95);
+    border:1px solid rgba(255,255,255,0.08);border-radius:14px;
+    padding:28px 20px 16px;
+    width:min(280px,calc(100vw - 32px));
+    max-height:min(480px,calc(100vh - 60px));
+    backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+    box-shadow:0 20px 60px rgba(0,0,0,0.6);
+    transform:scale(0.95) translateY(10px);transition:transform 0.25s ease;
+    display:flex;flex-direction:column;
+  }
+  #theme-overlay.open #theme-panel{transform:scale(1) translateY(0);}
+  #theme-title{
+    font-size:0.6rem;font-weight:900;letter-spacing:5px;
+    color:#666;text-align:center;margin-bottom:12px;text-transform:uppercase;
+    flex-shrink:0;
+  }
+  #theme-grid{
+    display:flex;flex-direction:column;gap:6px;
+    overflow-y:auto;overflow-x:hidden;
+    -webkit-overflow-scrolling:touch;
+    padding-right:4px;
+  }
+  .theme-card{
+    cursor:pointer;border:2px solid rgba(255,255,255,0.08);
+    border-radius:8px;padding:8px 12px;
+    background:rgba(255,255,255,0.02);transition:all 0.15s;
+    display:flex;align-items:center;gap:12px;
+    min-height:44px;touch-action:manipulation;flex-shrink:0;
+  }
+  .theme-card:hover{border-color:rgba(255,255,255,0.2);}
+  .theme-card.active{border-color:var(--c-player);box-shadow:0 0 12px rgba(255,255,255,0.1);}
+  .theme-swatch{
+    display:flex;gap:2px;width:60px;height:16px;border-radius:4px;overflow:hidden;flex-shrink:0;
+  }
+  .theme-swatch span{flex:1;display:block;}
+  .theme-name{
+    font-size:0.65rem;font-weight:700;letter-spacing:1.5px;color:#999;
+    line-height:1;white-space:nowrap;
+  }
+  .settings-spacer{
+    min-height:140px;flex-shrink:0;
+  }
+  .settings-section{
+    font-size:0.5rem;font-weight:900;letter-spacing:2.5px;
+    color:#666;text-transform:uppercase;
+    margin-top:6px;padding-top:12px;
+    border-top:1px solid rgba(255,255,255,0.08);
+  }
+  .settings-toggle{
+    width:100%;min-height:48px;
+    border:1px solid rgba(255,255,255,0.08);border-radius:10px;
+    background:rgba(255,255,255,0.03);color:#bbb;
+    font-size:0.62rem;font-weight:800;letter-spacing:1.4px;
+    padding:12px;cursor:pointer;transition:all 0.15s;
+    touch-action:manipulation;text-align:left;
+  }
+  .settings-toggle:hover{
+    border-color:rgba(255,255,255,0.18);color:#fff;
+  }
+  #difficulty-toggle[data-difficulty="super-hard"]{
+    border-color:rgba(255,102,0,0.3);
+    box-shadow:0 0 18px rgba(255,102,0,0.12);
+    color:#ffb677;
+  }
+  #game-mode-toggle[data-mode="player-vs-player"]{
+    border-color:rgba(0,255,170,0.28);
+    box-shadow:0 0 18px rgba(0,255,170,0.12);
+    color:#8affd5;
+  }
+  #game-mode-toggle[data-mode="cpu-vs-cpu"]{
+    border-color:rgba(0,200,255,0.3);
+    box-shadow:0 0 18px rgba(0,200,255,0.12);
+    color:#77ddff;
+  }
+  #first-move-toggle[data-active="O"]{
+    border-color:rgba(255,200,0,0.3);
+    box-shadow:0 0 18px rgba(255,200,0,0.12);
+    color:#ffdd77;
+  }
+  #thinking-time-toggle{
+    position:relative;
+  }
+  #thinking-time-toggle .time-dots{
+    display:flex;gap:4px;margin-top:6px;
+  }
+  #thinking-time-toggle .time-dot{
+    width:6px;height:6px;border-radius:50%;
+    background:rgba(255,255,255,0.15);transition:all 0.15s;
+  }
+  #thinking-time-toggle .time-dot.active{
+    background:rgba(255,255,255,0.6);
+    box-shadow:0 0 6px rgba(255,255,255,0.3);
+  }
+  #settings-save{
+    margin-top:16px;padding:10px;width:100%;
+    background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:6px;
+    color:#aaa;font-size:0.55rem;font-weight:800;letter-spacing:2px;
+    cursor:pointer;transition:all 0.15s;touch-action:manipulation;
+  }
+  #settings-save:hover{color:#fff;border-color:rgba(255,255,255,0.3);background:rgba(255,255,255,0.1);}
+  #theme-reset{
+    margin-top:12px;padding:8px;width:100%;
+    background:none;border:1px solid rgba(255,255,255,0.06);border-radius:6px;
+    color:#555;font-size:0.5rem;font-weight:700;letter-spacing:1.5px;
+    cursor:pointer;transition:all 0.15s;touch-action:manipulation;
+  }
+  #theme-reset:hover{color:#ff4444;border-color:rgba(255,70,70,0.3);}
+  #theme-close{
+    position:absolute;top:8px;right:10px;
+    background:none;border:none;color:#444;font-size:1rem;
+    cursor:pointer;padding:4px 8px;line-height:1;transition:color 0.15s;
+  }
+  #theme-close:hover{color:#aaa;}
+`;
 
-const FALLBACK_GAME_MODE = {
-  PLAYER_VS_CPU: 'player-vs-cpu',
-  PLAYER_VS_PLAYER: 'player-vs-player',
-  CPU_VS_CPU: 'cpu-vs-cpu',
+const state = {
+  initialized: false,
+  overlay: null,
+  themeCards: new Map(),
+  settings: { ...DEFAULT_SETTINGS },
+  elements: {
+    gameModeButton: null,
+    difficultySection: null,
+    difficultyButton: null,
+    firstMoveButton: null,
+    thinkingTimeButton: null,
+  },
 };
 
-let overlay = null;
-let activeId = 'default';
-let activeDifficulty = 'normal';
-let activeGameMode = FALLBACK_GAME_MODE.PLAYER_VS_CPU;
-let activeFirstMove = 'X';
-let activeThinkingTime = 0;
-let cards = {};
-let initialized = false;
-let gameModeBtn = null;
-let difficultySection = null;
-let difficultyBtn = null;
-let firstMoveBtn = null;
-let thinkingTimeBtn = null;
+export function init(config = {}) {
+  if (state.initialized) return;
 
-export function init(config) {
-  if (initialized) return;
-  initialized = true;
-  activeId = config.themeId;
-  activeDifficulty = normalizeDifficulty(config.difficulty);
-  activeGameMode = normalizeGameMode(config.gameMode);
-  activeFirstMove = normalizeSide(config.firstMove);
-  activeThinkingTime = normalizeThinkingTime(config.thinkingTime);
-  injectCSS();
+  const handlers = normalizeConfig(config);
+  state.initialized = true;
+  state.settings = {
+    themeId: normalizeThemeId(handlers.themeId),
+    difficulty: normalizeDifficulty(handlers.difficulty),
+    gameMode: normalizeGameMode(handlers.gameMode),
+    firstMove: normalizeFirstMove(handlers.firstMove),
+    thinkingTime: normalizeThinkingTime(handlers.thinkingTime),
+  };
+
+  injectCss();
   buildGear();
-  buildOverlay(config);
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+  buildOverlay(handlers);
+  document.addEventListener('keydown', handleDocumentKeydown);
 }
 
-function close() { if (overlay) overlay.classList.remove('open'); }
-function open() { if (overlay) overlay.classList.add('open'); }
+export function sync(settings = {}) {
+  if (!state.initialized) return;
 
-function modesApi() {
-  return window.TTT3DGameModes || {
-    GAME_MODE: FALLBACK_GAME_MODE,
-    normalizeGameMode,
-    usesDifficulty(mode) {
-      return normalizeGameMode(mode) !== FALLBACK_GAME_MODE.PLAYER_VS_PLAYER;
-    },
-    getModeButtonText(mode) {
-      const normalized = normalizeGameMode(mode);
-      if (normalized === FALLBACK_GAME_MODE.PLAYER_VS_PLAYER) return 'Mode: Player vs Player';
-      if (normalized === FALLBACK_GAME_MODE.CPU_VS_CPU) return 'Mode: CPU vs CPU';
-      return 'Mode: Player vs CPU';
-    },
-    getFirstMoveLabel(mode, side, difficulty) {
-      const normalizedMode = normalizeGameMode(mode);
-      const normalizedSide = normalizeSide(side);
-      const cpuLabel = difficulty === 'super-hard' ? 'CPU+' : 'CPU';
-      if (normalizedMode === FALLBACK_GAME_MODE.PLAYER_VS_PLAYER) {
-        return `First Move: ${normalizedSide} (${normalizedSide === 'X' ? 'Me' : 'You'})`;
-      }
-      if (normalizedMode === FALLBACK_GAME_MODE.CPU_VS_CPU) {
-        return `First Move: ${normalizedSide} (${cpuLabel})`;
-      }
-      return `First Move: ${normalizedSide} (${normalizedSide === 'X' ? 'Player' : cpuLabel})`;
-    },
+  if (settings.themeId !== undefined) {
+    state.settings.themeId = normalizeThemeId(settings.themeId);
+    updateThemeSelection();
+  }
+
+  if (settings.difficulty !== undefined) {
+    state.settings.difficulty = normalizeDifficulty(settings.difficulty);
+    updateDifficultyButton();
+  }
+
+  if (settings.gameMode !== undefined) {
+    state.settings.gameMode = normalizeGameMode(settings.gameMode);
+    updateGameModeButton();
+    updateDifficultyVisibility();
+  }
+
+  if (settings.firstMove !== undefined) {
+    state.settings.firstMove = normalizeFirstMove(settings.firstMove);
+  }
+
+  if (settings.thinkingTime !== undefined) {
+    state.settings.thinkingTime = normalizeThinkingTime(settings.thinkingTime);
+    updateThinkingTimeButton();
+  }
+
+  updateFirstMoveButton();
+}
+
+function normalizeConfig(config) {
+  return {
+    ...config,
+    onThemeChange: toHandler(config.onThemeChange),
+    onDifficultyChange: toHandler(config.onDifficultyChange),
+    onGameModeChange: toHandler(config.onGameModeChange),
+    onFirstMoveChange: toHandler(config.onFirstMoveChange),
+    onThinkingTimeChange: toHandler(config.onThinkingTimeChange),
+    onReset: toHandler(config.onReset),
   };
 }
 
-function createGearSVG() {
-  const NS = 'http://www.w3.org/2000/svg';
-  const svg = document.createElementNS(NS, 'svg');
-  svg.setAttribute('width', '16');
-  svg.setAttribute('height', '16');
-  svg.setAttribute('viewBox', '0 0 16 16');
-  svg.setAttribute('fill', 'none');
-  const path = document.createElementNS(NS, 'path');
-  path.setAttribute('d', 'M6.5.5h3l.4 2 .8.3 1.6-1.2 2.1 2.1-1.2 1.6.3.8 2 .4v3l-2 .4-.3.8 1.2 1.6-2.1 2.1-1.6-1.2-.8.3-.4 2h-3l-.4-2-.8-.3-1.6 1.2L1.6 12.4l1.2-1.6-.3-.8-2-.4v-3l2-.4.3-.8L1.6 3.7 3.7 1.6l1.6 1.2.8-.3L6.5.5z');
-  path.setAttribute('stroke', '#555');
-  path.setAttribute('stroke-width', '1');
-  svg.appendChild(path);
-  const circle = document.createElementNS(NS, 'circle');
-  circle.setAttribute('cx', '8');
-  circle.setAttribute('cy', '8');
-  circle.setAttribute('r', '2');
-  circle.setAttribute('stroke', '#555');
-  circle.setAttribute('stroke-width', '1');
-  svg.appendChild(circle);
-  return svg;
+function toHandler(value) {
+  return typeof value === 'function' ? value : () => {};
 }
 
-function injectCSS() {
-  const s = document.createElement('style');
-  s.textContent = `
-    #theme-gear{
-      position:fixed!important;bottom:2px!important;right:2px!important;z-index:999!important;
-      background:none;border:none;cursor:pointer;
-      padding:8px;border-radius:6px;
-      opacity:0.4!important;pointer-events:all!important;
-      visibility:visible!important;display:block!important;
-    }
-    #theme-gear:hover{opacity:0.7!important;}
-    #theme-overlay{
-      position:fixed;inset:0;z-index:100;
-      background:rgba(0,0,0,0.88);
-      display:flex;align-items:center;justify-content:center;
-      opacity:0;pointer-events:none;transition:opacity 0.25s ease;
-    }
-    #theme-overlay.open{opacity:1;pointer-events:all;}
-    #theme-panel{
-      position:relative;
-      background:rgba(18,18,24,0.95);
-      border:1px solid rgba(255,255,255,0.08);border-radius:14px;
-      padding:28px 20px 16px;
-      width:min(280px,calc(100vw - 32px));
-      max-height:min(480px,calc(100vh - 60px));
-      backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
-      box-shadow:0 20px 60px rgba(0,0,0,0.6);
-      transform:scale(0.95) translateY(10px);transition:transform 0.25s ease;
-      display:flex;flex-direction:column;
-    }
-    #theme-overlay.open #theme-panel{transform:scale(1) translateY(0);}
-    #theme-title{
-      font-size:0.6rem;font-weight:900;letter-spacing:5px;
-      color:#666;text-align:center;margin-bottom:12px;text-transform:uppercase;
-      flex-shrink:0;
-    }
-    #theme-grid{
-      display:flex;flex-direction:column;gap:6px;
-      overflow-y:auto;overflow-x:hidden;
-      -webkit-overflow-scrolling:touch;
-      padding-right:4px;
-    }
-    .theme-card{
-      cursor:pointer;border:2px solid rgba(255,255,255,0.08);
-      border-radius:8px;padding:8px 12px;
-      background:rgba(255,255,255,0.02);transition:all 0.15s;
-      display:flex;align-items:center;gap:12px;
-      min-height:44px;touch-action:manipulation;flex-shrink:0;
-    }
-    .theme-card:hover{border-color:rgba(255,255,255,0.2);}
-    .theme-card.active{border-color:var(--c-player);box-shadow:0 0 12px rgba(255,255,255,0.1);}
-    .theme-swatch{
-      display:flex;gap:2px;width:60px;height:16px;border-radius:4px;overflow:hidden;flex-shrink:0;
-    }
-    .theme-swatch span{flex:1;display:block;}
-    .theme-name{
-      font-size:0.65rem;font-weight:700;letter-spacing:1.5px;color:#999;
-      line-height:1;white-space:nowrap;
-    }
-    .settings-spacer{
-      min-height:140px;flex-shrink:0;
-    }
-    .settings-section{
-      font-size:0.5rem;font-weight:900;letter-spacing:2.5px;
-      color:#666;text-transform:uppercase;
-      margin-top:6px;padding-top:12px;
-      border-top:1px solid rgba(255,255,255,0.08);
-    }
-    .settings-toggle{
-      width:100%;min-height:48px;
-      border:1px solid rgba(255,255,255,0.08);border-radius:10px;
-      background:rgba(255,255,255,0.03);color:#bbb;
-      font-size:0.62rem;font-weight:800;letter-spacing:1.4px;
-      padding:12px;cursor:pointer;transition:all 0.15s;
-      touch-action:manipulation;text-align:left;
-    }
-    .settings-toggle:hover{
-      border-color:rgba(255,255,255,0.18);color:#fff;
-    }
-    #difficulty-toggle[data-difficulty="super-hard"]{
-      border-color:rgba(255,102,0,0.3);
-      box-shadow:0 0 18px rgba(255,102,0,0.12);
-      color:#ffb677;
-    }
-    #game-mode-toggle[data-mode="player-vs-player"]{
-      border-color:rgba(0,255,170,0.28);
-      box-shadow:0 0 18px rgba(0,255,170,0.12);
-      color:#8affd5;
-    }
-    #game-mode-toggle[data-mode="cpu-vs-cpu"]{
-      border-color:rgba(0,200,255,0.3);
-      box-shadow:0 0 18px rgba(0,200,255,0.12);
-      color:#77ddff;
-    }
-    #first-move-toggle[data-active="O"]{
-      border-color:rgba(255,200,0,0.3);
-      box-shadow:0 0 18px rgba(255,200,0,0.12);
-      color:#ffdd77;
-    }
-    #thinking-time-toggle{
-      position:relative;
-    }
-    #thinking-time-toggle .time-dots{
-      display:flex;gap:4px;margin-top:6px;
-    }
-    #thinking-time-toggle .time-dot{
-      width:6px;height:6px;border-radius:50%;
-      background:rgba(255,255,255,0.15);transition:all 0.15s;
-    }
-    #thinking-time-toggle .time-dot.active{
-      background:rgba(255,255,255,0.6);
-      box-shadow:0 0 6px rgba(255,255,255,0.3);
-    }
-    #settings-save{
-      margin-top:16px;padding:10px;width:100%;
-      background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:6px;
-      color:#aaa;font-size:0.55rem;font-weight:800;letter-spacing:2px;
-      cursor:pointer;transition:all 0.15s;touch-action:manipulation;
-    }
-    #settings-save:hover{color:#fff;border-color:rgba(255,255,255,0.3);background:rgba(255,255,255,0.1);}
-    #theme-reset{
-      margin-top:12px;padding:8px;width:100%;
-      background:none;border:1px solid rgba(255,255,255,0.06);border-radius:6px;
-      color:#555;font-size:0.5rem;font-weight:700;letter-spacing:1.5px;
-      cursor:pointer;transition:all 0.15s;touch-action:manipulation;
-    }
-    #theme-reset:hover{color:#ff4444;border-color:rgba(255,70,70,0.3);}
-    #theme-close{
-      position:absolute;top:8px;right:10px;
-      background:none;border:none;color:#444;font-size:1rem;
-      cursor:pointer;padding:4px 8px;line-height:1;transition:color 0.15s;
-    }
-    #theme-close:hover{color:#aaa;}
-  `;
-  document.head.appendChild(s);
+function getGameModesApi() {
+  const api = window.TTT3DGameModes;
+  if (!api) {
+    throw new Error('TTT3DGameModes must be loaded before settings-ui.js.');
+  }
+  return api;
+}
+
+function handleDocumentKeydown(event) {
+  if (event.key === 'Escape') {
+    close();
+  }
+}
+
+function close() {
+  state.overlay?.classList.remove('open');
+}
+
+function open() {
+  state.overlay?.classList.add('open');
+}
+
+function injectCss() {
+  if (document.getElementById(SETTINGS_STYLE_ID)) return;
+
+  const style = document.createElement('style');
+  style.id = SETTINGS_STYLE_ID;
+  style.textContent = SETTINGS_CSS;
+  document.head.appendChild(style);
 }
 
 function buildGear() {
-  const btn = document.createElement('button');
-  btn.id = 'theme-gear';
-  btn.appendChild(createGearSVG());
-  btn.addEventListener('click', open);
-  btn.addEventListener('mousedown', e => e.stopPropagation());
-  btn.addEventListener('touchstart', e => e.stopPropagation());
-  document.body.appendChild(btn);
+  const button = document.createElement('button');
+  button.id = 'theme-gear';
+  button.type = 'button';
+  button.appendChild(createGearSvg());
+  button.addEventListener('click', open);
+  button.addEventListener('mousedown', stopPropagation);
+  button.addEventListener('touchstart', stopPropagation);
+  document.body.appendChild(button);
 }
 
-function buildOverlay(config) {
-  overlay = document.createElement('div');
+function buildOverlay(handlers) {
+  const overlay = document.createElement('div');
   overlay.id = 'theme-overlay';
 
   const panel = document.createElement('div');
@@ -248,230 +278,314 @@ function buildOverlay(config) {
   const title = document.createElement('div');
   title.id = 'theme-title';
   title.textContent = 'Settings';
-  panel.appendChild(title);
 
+  panel.appendChild(title);
+  panel.appendChild(buildSettingsGrid(handlers));
+  panel.appendChild(buildResetButton(handlers));
+  panel.appendChild(buildCloseButton());
+
+  overlay.addEventListener('click', event => {
+    if (event.target === overlay) {
+      close();
+    }
+  });
+  overlay.appendChild(panel);
+  document.body.appendChild(overlay);
+
+  state.overlay = overlay;
+}
+
+function buildSettingsGrid(handlers) {
   const grid = document.createElement('div');
   grid.id = 'theme-grid';
 
+  appendThemeCards(grid, handlers);
+  grid.appendChild(createSpacer());
+
+  state.elements.gameModeButton = buildGameModeButton(handlers);
+  appendLabeledControl(grid, 'Game Mode', state.elements.gameModeButton);
+
+  state.elements.difficultyButton = buildDifficultyButton(handlers);
+  state.elements.difficultySection = appendLabeledControl(
+    grid,
+    'Difficulty',
+    state.elements.difficultyButton
+  );
+
+  state.elements.firstMoveButton = buildFirstMoveButton(handlers);
+  appendLabeledControl(grid, 'First Move', state.elements.firstMoveButton);
+
+  state.elements.thinkingTimeButton = buildThinkingTimeButton(handlers);
+  appendLabeledControl(grid, 'Timer', state.elements.thinkingTimeButton);
+
+  updateThemeSelection();
+  updateGameModeButton();
+  updateDifficultyButton();
+  updateFirstMoveButton();
+  updateThinkingTimeButton();
+  updateDifficultyVisibility();
+
+  const saveButton = document.createElement('button');
+  saveButton.id = 'settings-save';
+  saveButton.type = 'button';
+  saveButton.textContent = 'SAVE';
+  saveButton.addEventListener('click', close);
+  grid.appendChild(saveButton);
+
+  return grid;
+}
+
+function appendThemeCards(parent, handlers) {
+  state.themeCards.clear();
+
   for (const theme of THEMES) {
     const card = document.createElement('div');
-    card.className = 'theme-card' + (theme.id === activeId ? ' active' : '');
+    card.className = 'theme-card';
     card.addEventListener('click', () => {
-      activeId = theme.id;
-      for (const id in cards) cards[id].classList.toggle('active', id === activeId);
-      config.onThemeChange(theme.id);
+      state.settings.themeId = theme.id;
+      updateThemeSelection();
+      handlers.onThemeChange(theme.id);
       close();
     });
 
-    const swatch = document.createElement('div');
-    swatch.className = 'theme-swatch';
-    const swatchColors = [theme.css['c-bg'], theme.css['c-player'], theme.css['c-cpu'], theme.css['c-win']];
-    for (const c of swatchColors) {
-      const sp = document.createElement('span');
-      sp.style.background = c;
-      swatch.appendChild(sp);
-    }
+    card.appendChild(createThemeSwatch(theme));
 
     const name = document.createElement('div');
     name.className = 'theme-name';
     name.textContent = theme.name;
-
-    card.appendChild(swatch);
     card.appendChild(name);
-    grid.appendChild(card);
-    cards[theme.id] = card;
-  }
 
+    parent.appendChild(card);
+    state.themeCards.set(theme.id, card);
+  }
+}
+
+function createSpacer() {
   const spacer = document.createElement('div');
   spacer.className = 'settings-spacer';
-  grid.appendChild(spacer);
+  return spacer;
+}
 
-  const gameModeLabel = document.createElement('div');
-  gameModeLabel.className = 'settings-section';
-  gameModeLabel.textContent = 'Game Mode';
-  grid.appendChild(gameModeLabel);
+function appendLabeledControl(parent, labelText, control) {
+  const label = document.createElement('div');
+  label.className = 'settings-section';
+  label.textContent = labelText;
+  parent.appendChild(label);
+  parent.appendChild(control);
+  return label;
+}
 
-  gameModeBtn = document.createElement('button');
-  gameModeBtn.id = 'game-mode-toggle';
-  gameModeBtn.className = 'settings-toggle';
-  gameModeBtn.type = 'button';
-  gameModeBtn.addEventListener('click', () => {
-    const modes = [
-      modesApi().GAME_MODE.PLAYER_VS_CPU,
-      modesApi().GAME_MODE.PLAYER_VS_PLAYER,
-      modesApi().GAME_MODE.CPU_VS_CPU,
-    ];
-    const idx = modes.indexOf(activeGameMode);
-    activeGameMode = modes[(idx + 1) % modes.length];
+function buildGameModeButton(handlers) {
+  const button = createToggleButton('game-mode-toggle', () => {
+    state.settings.gameMode = getNextValue(GAME_MODE_CYCLE, state.settings.gameMode);
     updateGameModeButton();
     updateDifficultyVisibility();
     updateFirstMoveButton();
-    config.onGameModeChange(activeGameMode);
+    handlers.onGameModeChange(state.settings.gameMode);
   });
-  updateGameModeButton();
-  grid.appendChild(gameModeBtn);
 
-  difficultySection = document.createElement('div');
-  difficultySection.className = 'settings-section';
-  difficultySection.id = 'difficulty-section';
-  difficultySection.textContent = 'Difficulty';
-  grid.appendChild(difficultySection);
+  return button;
+}
 
-  difficultyBtn = document.createElement('button');
-  difficultyBtn.id = 'difficulty-toggle';
-  difficultyBtn.className = 'settings-toggle';
-  difficultyBtn.type = 'button';
-  difficultyBtn.addEventListener('click', () => {
-    activeDifficulty = activeDifficulty === 'normal' ? 'super-hard' : 'normal';
+function buildDifficultyButton(handlers) {
+  const button = createToggleButton('difficulty-toggle', () => {
+    state.settings.difficulty = state.settings.difficulty === DIFFICULTY.NORMAL
+      ? DIFFICULTY.SUPER_HARD
+      : DIFFICULTY.NORMAL;
     updateDifficultyButton();
     updateFirstMoveButton();
-    config.onDifficultyChange(activeDifficulty);
+    handlers.onDifficultyChange(state.settings.difficulty);
   });
-  updateDifficultyButton();
-  grid.appendChild(difficultyBtn);
 
-  const firstMoveLabel = document.createElement('div');
-  firstMoveLabel.className = 'settings-section';
-  firstMoveLabel.textContent = 'First Move';
-  grid.appendChild(firstMoveLabel);
+  return button;
+}
 
-  firstMoveBtn = document.createElement('button');
-  firstMoveBtn.id = 'first-move-toggle';
-  firstMoveBtn.className = 'settings-toggle';
-  firstMoveBtn.type = 'button';
-  firstMoveBtn.addEventListener('click', () => {
-    activeFirstMove = activeFirstMove === 'X' ? 'O' : 'X';
+function buildFirstMoveButton(handlers) {
+  const button = createToggleButton('first-move-toggle', () => {
+    state.settings.firstMove = state.settings.firstMove === SIDE.PLAYER
+      ? SIDE.CPU
+      : SIDE.PLAYER;
     updateFirstMoveButton();
-    config.onFirstMoveChange(activeFirstMove);
+    handlers.onFirstMoveChange(state.settings.firstMove);
   });
-  updateFirstMoveButton();
-  grid.appendChild(firstMoveBtn);
 
-  const timerLabel = document.createElement('div');
-  timerLabel.className = 'settings-section';
-  timerLabel.textContent = 'Timer';
-  grid.appendChild(timerLabel);
+  return button;
+}
 
-  thinkingTimeBtn = document.createElement('button');
-  thinkingTimeBtn.id = 'thinking-time-toggle';
-  thinkingTimeBtn.className = 'settings-toggle';
-  thinkingTimeBtn.type = 'button';
-  thinkingTimeBtn.addEventListener('click', () => {
-    const times = [15, 10, 5, 0];
-    const idx = times.indexOf(activeThinkingTime);
-    activeThinkingTime = times[(idx + 1) % times.length];
+function buildThinkingTimeButton(handlers) {
+  const button = createToggleButton('thinking-time-toggle', () => {
+    state.settings.thinkingTime = getNextValue(
+      THINKING_TIME_CYCLE,
+      state.settings.thinkingTime
+    );
     updateThinkingTimeButton();
-    config.onThinkingTimeChange(activeThinkingTime);
+    handlers.onThinkingTimeChange(state.settings.thinkingTime);
   });
-  updateThinkingTimeButton();
-  grid.appendChild(thinkingTimeBtn);
 
-  updateDifficultyVisibility();
+  return button;
+}
 
-  const saveBtn = document.createElement('button');
-  saveBtn.id = 'settings-save';
-  saveBtn.textContent = 'SAVE';
-  saveBtn.addEventListener('click', close);
-  grid.appendChild(saveBtn);
-
-  panel.appendChild(grid);
-
-  const resetBtn = document.createElement('button');
-  resetBtn.id = 'theme-reset';
-  resetBtn.textContent = 'RESET ALL';
-  resetBtn.addEventListener('click', () => {
-    activeId = 'default';
-    activeDifficulty = 'normal';
-    activeGameMode = FALLBACK_GAME_MODE.PLAYER_VS_CPU;
-    activeFirstMove = 'X';
-    activeThinkingTime = 0;
-    for (const id in cards) cards[id].classList.toggle('active', id === 'default');
+function buildResetButton(handlers) {
+  const button = document.createElement('button');
+  button.id = 'theme-reset';
+  button.type = 'button';
+  button.textContent = 'RESET ALL';
+  button.addEventListener('click', () => {
+    state.settings = { ...DEFAULT_SETTINGS };
+    updateThemeSelection();
     updateGameModeButton();
     updateDifficultyButton();
     updateDifficultyVisibility();
     updateFirstMoveButton();
     updateThinkingTimeButton();
-    config.onReset();
+    handlers.onReset();
     close();
   });
-  panel.appendChild(resetBtn);
+  return button;
+}
 
-  const closeBtn = document.createElement('button');
-  closeBtn.id = 'theme-close';
-  closeBtn.textContent = '\u2715';
-  closeBtn.addEventListener('click', close);
-  panel.appendChild(closeBtn);
+function buildCloseButton() {
+  const button = document.createElement('button');
+  button.id = 'theme-close';
+  button.type = 'button';
+  button.textContent = '\u2715';
+  button.addEventListener('click', close);
+  return button;
+}
 
-  overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
-  overlay.appendChild(panel);
-  document.body.appendChild(overlay);
+function createToggleButton(id, onClick) {
+  const button = document.createElement('button');
+  button.id = id;
+  button.className = 'settings-toggle';
+  button.type = 'button';
+  button.addEventListener('click', onClick);
+  return button;
+}
+
+function createThemeSwatch(theme) {
+  const swatch = document.createElement('div');
+  swatch.className = 'theme-swatch';
+
+  for (const color of [
+    theme.css['c-bg'],
+    theme.css['c-player'],
+    theme.css['c-cpu'],
+    theme.css['c-win'],
+  ]) {
+    const segment = document.createElement('span');
+    segment.style.background = color;
+    swatch.appendChild(segment);
+  }
+
+  return swatch;
+}
+
+function createGearSvg() {
+  const namespace = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(namespace, 'svg');
+  svg.setAttribute('width', '16');
+  svg.setAttribute('height', '16');
+  svg.setAttribute('viewBox', '0 0 16 16');
+  svg.setAttribute('fill', 'none');
+
+  const path = document.createElementNS(namespace, 'path');
+  path.setAttribute(
+    'd',
+    'M6.5.5h3l.4 2 .8.3 1.6-1.2 2.1 2.1-1.2 1.6.3.8 2 .4v3l-2 .4-.3.8 1.2 1.6-2.1 2.1-1.6-1.2-.8.3-.4 2h-3l-.4-2-.8-.3-1.6 1.2L1.6 12.4l1.2-1.6-.3-.8-2-.4v-3l2-.4.3-.8L1.6 3.7 3.7 1.6l1.6 1.2.8-.3L6.5.5z'
+  );
+  path.setAttribute('stroke', '#555');
+  path.setAttribute('stroke-width', '1');
+  svg.appendChild(path);
+
+  const circle = document.createElementNS(namespace, 'circle');
+  circle.setAttribute('cx', '8');
+  circle.setAttribute('cy', '8');
+  circle.setAttribute('r', '2');
+  circle.setAttribute('stroke', '#555');
+  circle.setAttribute('stroke-width', '1');
+  svg.appendChild(circle);
+
+  return svg;
+}
+
+function updateThemeSelection() {
+  for (const [themeId, card] of state.themeCards.entries()) {
+    card.classList.toggle('active', themeId === state.settings.themeId);
+  }
 }
 
 function updateGameModeButton() {
-  if (!gameModeBtn) return;
-  gameModeBtn.dataset.mode = activeGameMode;
-  gameModeBtn.textContent = modesApi().getModeButtonText(activeGameMode);
+  const { gameModeButton } = state.elements;
+  if (!gameModeButton) return;
+
+  gameModeButton.dataset.mode = state.settings.gameMode;
+  gameModeButton.textContent = getGameModesApi().getModeButtonText(
+    state.settings.gameMode
+  );
 }
 
 function updateDifficultyButton() {
-  if (!difficultyBtn) return;
-  difficultyBtn.dataset.difficulty = activeDifficulty;
-  difficultyBtn.textContent = activeDifficulty === 'super-hard'
+  const { difficultyButton } = state.elements;
+  if (!difficultyButton) return;
+
+  difficultyButton.dataset.difficulty = state.settings.difficulty;
+  difficultyButton.textContent = state.settings.difficulty === DIFFICULTY.SUPER_HARD
     ? 'Difficulty: Super Hard'
     : 'Difficulty: Normal';
 }
 
 function updateFirstMoveButton() {
-  if (!firstMoveBtn) return;
-  firstMoveBtn.dataset.active = activeFirstMove;
-  firstMoveBtn.textContent = modesApi().getFirstMoveLabel(activeGameMode, activeFirstMove, activeDifficulty);
+  const { firstMoveButton } = state.elements;
+  if (!firstMoveButton) return;
+
+  firstMoveButton.dataset.active = state.settings.firstMove;
+  firstMoveButton.textContent = getGameModesApi().getFirstMoveLabel(
+    state.settings.gameMode,
+    state.settings.firstMove,
+    state.settings.difficulty
+  );
 }
 
 function updateThinkingTimeButton() {
-  if (!thinkingTimeBtn) return;
-  thinkingTimeBtn.textContent = '';
+  const { thinkingTimeButton } = state.elements;
+  if (!thinkingTimeButton) return;
+
+  thinkingTimeButton.textContent = '';
+
   const text = document.createElement('div');
-  text.textContent = activeThinkingTime === 0
+  text.textContent = state.settings.thinkingTime === 0
     ? 'Timer: Off'
-    : `Timer: ${activeThinkingTime}s / turn`;
-  thinkingTimeBtn.appendChild(text);
+    : `Timer: ${state.settings.thinkingTime}s / turn`;
+  thinkingTimeButton.appendChild(text);
 
   const dots = document.createElement('div');
   dots.className = 'time-dots';
-  for (const t of [5, 10, 15]) {
+  for (const time of [5, 10, 15]) {
     const dot = document.createElement('div');
-    dot.className = 'time-dot' + (activeThinkingTime >= t ? ' active' : '');
+    dot.className = 'time-dot' + (state.settings.thinkingTime >= time ? ' active' : '');
     dots.appendChild(dot);
   }
-  thinkingTimeBtn.appendChild(dots);
+  thinkingTimeButton.appendChild(dots);
 }
 
 function updateDifficultyVisibility() {
-  const show = modesApi().usesDifficulty(activeGameMode);
-  if (difficultySection) difficultySection.style.display = show ? '' : 'none';
-  if (difficultyBtn) difficultyBtn.style.display = show ? '' : 'none';
-}
+  const showDifficulty = getGameModesApi().usesDifficulty(state.settings.gameMode);
+  const displayValue = showDifficulty ? '' : 'none';
 
-function normalizeDifficulty(mode) {
-  return mode === 'super-hard' ? 'super-hard' : 'normal';
-}
-
-function normalizeGameMode(mode) {
-  switch (mode) {
-    case FALLBACK_GAME_MODE.PLAYER_VS_PLAYER:
-      return FALLBACK_GAME_MODE.PLAYER_VS_PLAYER;
-    case FALLBACK_GAME_MODE.CPU_VS_CPU:
-      return FALLBACK_GAME_MODE.CPU_VS_CPU;
-    default:
-      return FALLBACK_GAME_MODE.PLAYER_VS_CPU;
+  if (state.elements.difficultySection) {
+    state.elements.difficultySection.style.display = displayValue;
+  }
+  if (state.elements.difficultyButton) {
+    state.elements.difficultyButton.style.display = displayValue;
   }
 }
 
-function normalizeSide(side) {
-  return side === 'O' || side === 'cpu' ? 'O' : 'X';
+function getNextValue(values, currentValue) {
+  const index = values.indexOf(currentValue);
+  const nextIndex = index >= 0 ? (index + 1) % values.length : 0;
+  return values[nextIndex];
 }
 
-function normalizeThinkingTime(val) {
-  const n = Number(val);
-  return [0, 5, 10, 15].includes(n) ? n : 0;
+function stopPropagation(event) {
+  event.stopPropagation();
 }

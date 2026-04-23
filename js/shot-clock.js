@@ -12,15 +12,25 @@
     let activeSide = null;
     let activeTurnId = 0;
 
-    function clearIntervalIfNeeded() {
-      if (intervalId) {
-        clearInterval(intervalId);
-        intervalId = null;
-      }
+    function clearTimer() {
+      if (!intervalId) return;
+      clearInterval(intervalId);
+      intervalId = null;
+    }
+
+    function resetState() {
+      activeSide = null;
+      activeTurnId = 0;
+      durationMs = 0;
+      startedAt = 0;
+    }
+
+    function getRemainingMs() {
+      return Math.max(0, durationMs - (Date.now() - startedAt));
     }
 
     function tick() {
-      const remainingMs = Math.max(0, durationMs - (Date.now() - startedAt));
+      const remainingMs = getRemainingMs();
       onTick({
         side: activeSide,
         turnId: activeTurnId,
@@ -33,23 +43,21 @@
 
       const expiredSide = activeSide;
       const expiredTurnId = activeTurnId;
-      clearIntervalIfNeeded();
-      activeSide = null;
-      activeTurnId = 0;
-      durationMs = 0;
-      startedAt = 0;
+      clearTimer();
+      resetState();
       onExpire({ side: expiredSide, turnId: expiredTurnId });
     }
 
     return {
       start(seconds, side, turnId) {
-        clearIntervalIfNeeded();
+        clearTimer();
         activeSide = side;
         activeTurnId = turnId;
         durationMs = Math.max(0, Number(seconds) || 0) * 1000;
         startedAt = Date.now();
 
         if (durationMs <= 0) {
+          resetState();
           onReset();
           return;
         }
@@ -59,16 +67,13 @@
       },
 
       clear() {
-        clearIntervalIfNeeded();
-        activeSide = null;
-        activeTurnId = 0;
-        durationMs = 0;
-        startedAt = 0;
+        clearTimer();
+        resetState();
         onReset();
       },
 
       isRunning() {
-        return !!intervalId;
+        return Boolean(intervalId);
       },
     };
   }

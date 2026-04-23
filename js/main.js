@@ -1,101 +1,113 @@
-// ═══════════════════════════════════════════════════════════════════
-// main.js — Entry point: load saved settings, apply, init settings UI
-// ═══════════════════════════════════════════════════════════════════
+import { applyTheme } from './apply-theme.js?v=31f1d46-dirty-mobz0m1r';
+import {
+  DEFAULT_SETTINGS,
+  clearStoredSettings,
+  getHashSettings,
+  getStoredSettings,
+  normalizeDifficulty,
+  normalizeFirstMove,
+  normalizeGameMode,
+  normalizeThinkingTime,
+  normalizeThemeId,
+  setStoredDifficulty,
+  setStoredFirstMove,
+  setStoredGameMode,
+  setStoredThinkingTime,
+  setStoredThemeId,
+} from './app-settings.js?v=31f1d46-dirty-mobz0m1r';
+import {
+  init as initSettingsUi,
+  sync as syncSettingsUi,
+} from './settings-ui.js?v=31f1d46-dirty-mobz0m1r';
+import { getThemeById } from './themes.js?v=31f1d46-dirty-mobz0m1r';
 
-import { getThemeById } from './themes.js';
-import { applyTheme } from './apply-theme.js';
-import { init as initUI } from './settings-ui.js';
-
-const THEME_KEY = 'ttt3d-theme';
-const DIFFICULTY_KEY = 'ttt3d-difficulty';
-const FIRST_MOVE_KEY = 'ttt3d-first-move';
-const THINKING_TIME_KEY = 'ttt3d-thinking-time';
-
-const GAME_MODE = {
-  PLAYER_VS_CPU: 'player-vs-cpu',
+const initialSettings = {
+  ...getStoredSettings(),
+  ...getHashSettings(),
 };
 
-const DEFAULT_THEME = 'default';
-const DEFAULT_DIFFICULTY = 'normal';
-const DEFAULT_GAME_MODE = GAME_MODE.PLAYER_VS_CPU;
-const DEFAULT_FIRST_MOVE = 'X';
-const DEFAULT_THINKING_TIME = 0;
+applyInitialSettings(initialSettings);
+initSettingsUi(createSettingsUiConfig(initialSettings));
+applyHashOverrideFromLocation();
+window.addEventListener('hashchange', applyHashOverrideFromLocation);
+window.addEventListener('load', applyHashOverrideFromLocation);
+window.addEventListener('pageshow', applyHashOverrideFromLocation);
 
-const savedThemeId = localStorage.getItem(THEME_KEY) || DEFAULT_THEME;
-const savedDifficulty = normalizeDifficulty(localStorage.getItem(DIFFICULTY_KEY));
-const savedFirstMove = normalizeFirstMove(localStorage.getItem(FIRST_MOVE_KEY));
-const savedThinkingTime = normalizeThinkingTime(localStorage.getItem(THINKING_TIME_KEY));
+function applyInitialSettings(settings) {
+  const game = window._game;
+  applyTheme(getThemeById(settings.themeId));
+  game?.setDifficulty(settings.difficulty);
+  game?.setThinkingTime(settings.thinkingTime);
+  game?.setFirstMoveSide(settings.firstMove);
 
-applyTheme(getThemeById(savedThemeId));
-window._game?.setDifficulty(savedDifficulty);
-window._game?.setThinkingTime(savedThinkingTime);
-window._game?.setFirstMoveSide(savedFirstMove);
+  if (settings.gameMode !== DEFAULT_SETTINGS.gameMode) {
+    game?.setGameMode(settings.gameMode);
+    return;
+  }
 
-if (savedFirstMove !== DEFAULT_FIRST_MOVE) {
-  window._game?.newGame();
+  if (settings.firstMove !== DEFAULT_SETTINGS.firstMove) {
+    game?.newGame();
+  }
 }
 
-initUI({
-  themeId: savedThemeId,
-  difficulty: savedDifficulty,
-  gameMode: DEFAULT_GAME_MODE,
-  firstMove: savedFirstMove,
-  thinkingTime: savedThinkingTime,
+function createSettingsUiConfig(settings) {
+  return {
+    ...settings,
+    onThemeChange(themeId) {
+      const normalizedThemeId = normalizeThemeId(themeId);
+      setStoredThemeId(normalizedThemeId);
+      applyTheme(getThemeById(normalizedThemeId));
+    },
 
-  onThemeChange(themeId) {
-    localStorage.setItem(THEME_KEY, themeId);
-    applyTheme(getThemeById(themeId));
-  },
+    onDifficultyChange(difficulty) {
+      const normalizedDifficulty = normalizeDifficulty(difficulty);
+      setStoredDifficulty(normalizedDifficulty);
+      window._game?.setDifficulty(normalizedDifficulty);
+    },
 
-  onDifficultyChange(difficulty) {
-    const normalized = normalizeDifficulty(difficulty);
-    localStorage.setItem(DIFFICULTY_KEY, normalized);
-    window._game?.setDifficulty(normalized);
-  },
+    onGameModeChange(gameMode) {
+      const normalizedGameMode = normalizeGameMode(gameMode);
+      setStoredGameMode(normalizedGameMode);
+      window._game?.setGameMode(normalizedGameMode);
+    },
 
-  onGameModeChange(mode) {
-    window._game?.setGameMode(normalizeGameMode(mode));
-  },
+    onFirstMoveChange(side) {
+      const normalizedSide = normalizeFirstMove(side);
+      setStoredFirstMove(normalizedSide);
+      window._game?.setFirstMoveSide(normalizedSide);
+    },
 
-  onFirstMoveChange(side) {
-    const normalized = normalizeFirstMove(side);
-    localStorage.setItem(FIRST_MOVE_KEY, normalized);
-    window._game?.setFirstMoveSide(normalized);
-  },
+    onThinkingTimeChange(seconds) {
+      const normalizedThinkingTime = normalizeThinkingTime(seconds);
+      setStoredThinkingTime(normalizedThinkingTime);
+      window._game?.setThinkingTime(normalizedThinkingTime);
+    },
 
-  onThinkingTimeChange(seconds) {
-    const normalized = normalizeThinkingTime(seconds);
-    localStorage.setItem(THINKING_TIME_KEY, normalized);
-    window._game?.setThinkingTime(normalized);
-  },
-
-  onReset() {
-    localStorage.clear();
-    applyTheme(getThemeById(DEFAULT_THEME));
-    window._game?.setDifficulty(DEFAULT_DIFFICULTY);
-    window._game?.setThinkingTime(DEFAULT_THINKING_TIME);
-    window._game?.setFirstMoveSide(DEFAULT_FIRST_MOVE);
-    window._game?.setGameMode(DEFAULT_GAME_MODE);
-  },
-});
-
-function normalizeDifficulty(mode) {
-  return mode === 'super-hard' ? 'super-hard' : DEFAULT_DIFFICULTY;
+    onReset() {
+      const resetGameMode = getHashOverriddenGameMode(DEFAULT_SETTINGS.gameMode);
+      clearStoredSettings();
+      applyTheme(getThemeById(DEFAULT_SETTINGS.themeId));
+      window._game?.setDifficulty(DEFAULT_SETTINGS.difficulty);
+      window._game?.setThinkingTime(DEFAULT_SETTINGS.thinkingTime);
+      window._game?.setFirstMoveSide(DEFAULT_SETTINGS.firstMove);
+      window._game?.setGameMode(resetGameMode);
+      syncSettingsUi({ gameMode: resetGameMode });
+    },
+  };
 }
 
-function normalizeGameMode(mode) {
-  return mode === 'player-vs-player' || mode === 'cpu-vs-cpu'
-    ? mode
-    : DEFAULT_GAME_MODE;
+function applyHashOverrideFromLocation() {
+  const gameMode = getHashOverriddenGameMode();
+  if (!gameMode) return;
+
+  if (window._game?.getGameMode?.() !== gameMode) {
+    window._game?.setGameMode(gameMode);
+  }
+
+  syncSettingsUi({ gameMode });
 }
 
-function normalizeFirstMove(value) {
-  if (value === 'O' || value === 'cpu') return 'O';
-  return 'X';
-}
-
-function normalizeThinkingTime(val) {
-  const n = parseInt(val, 10);
-  if ([0, 5, 10, 15].includes(n)) return n;
-  return DEFAULT_THINKING_TIME;
+function getHashOverriddenGameMode(fallbackGameMode = null) {
+  const { gameMode } = getHashSettings();
+  return gameMode ?? fallbackGameMode;
 }

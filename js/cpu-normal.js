@@ -2,98 +2,143 @@
   'use strict';
 
   const root = window;
-  const cpuNS = root.TTT3DCPU || (root.TTT3DCPU = {});
+  const cpuNamespace = root.TTT3DCPU || (root.TTT3DCPU = {});
 
-  cpuNS.getNormalCpuMove = function getNormalCpuMove(config) {
-    const board = Array.isArray(config?.board) ? config.board.slice() : [];
-    const wins = Array.isArray(config?.wins) ? config.wins : [];
-    const center = Number.isInteger(config?.center) ? config.center : 13;
-    const player = config?.player || 'X';
-    const cpu = config?.cpu || 'O';
+  const SCORE = Object.freeze({
+    completedLine: 100,
+    immediateCompletion: 160,
+    cpuTwoInLine: 10,
+    cpuOneInLine: 1,
+    playerTwoInLine: -15,
+    playerOneInLine: -1,
+    cpuThreat: 8,
+    playerThreat: 12,
+  });
 
-    function isPlayable(b, idx) {
-      return idx !== center && b[idx] === null;
+  cpuNamespace.getNormalCpuMove = function getNormalCpuMove(config) {
+    const context = normalizeConfig(config);
+    const availableMoves = getPlayableMoves(context.board, context.center);
+
+    if (availableMoves.length === 0) {
+      return -1;
     }
 
-    function getEmpties(b) {
-      return b.map((value, idx) => (isPlayable(b, idx) ? idx : -1)).filter(idx => idx >= 0);
-    }
-
-    function countCompleted(b, who) {
-      return wins.filter(line => line.every(idx => b[idx] === who)).length;
-    }
-
-    function countThreats(b, who, count) {
-      const opponent = who === player ? cpu : player;
-      return wins.filter(line => {
-        const mine = line.filter(idx => b[idx] === who).length;
-        const theirs = line.filter(idx => b[idx] === opponent).length;
-        return mine === count && theirs === 0;
-      }).length;
-    }
-
-    function evalBoard(b) {
-      const cpuLines = countCompleted(b, cpu);
-      const playerLines = countCompleted(b, player);
-
-      let positional = 0;
-      for (const line of wins) {
-        const cpuCount = line.filter(idx => b[idx] === cpu).length;
-        const playerCount = line.filter(idx => b[idx] === player).length;
-
-        if (playerCount === 0) {
-          if (cpuCount === 2) positional += 10;
-          else if (cpuCount === 1) positional += 1;
-        }
-
-        if (cpuCount === 0) {
-          if (playerCount === 2) positional -= 15;
-          else if (playerCount === 1) positional -= 1;
-        }
-      }
-
-      positional += countThreats(b, cpu, 2) * 8;
-      positional -= countThreats(b, player, 2) * 12;
-
-      return (cpuLines - playerLines) * 100 + positional;
-    }
-
-    function scoreMoveForCpu(b, idx) {
-      b[idx] = cpu;
-
-      const immediate = wins.filter(line => line.includes(idx) && line.every(cell => b[cell] === cpu)).length;
-      const replies = getEmpties(b);
-      let worstForCpu = Infinity;
-
-      if (!replies.length) {
-        worstForCpu = evalBoard(b);
-      } else {
-        for (const reply of replies) {
-          b[reply] = player;
-          const score = evalBoard(b);
-          b[reply] = null;
-          if (score < worstForCpu) worstForCpu = score;
-        }
-      }
-
-      b[idx] = null;
-      return immediate * 160 + worstForCpu;
-    }
-
-    const available = getEmpties(board);
-    if (!available.length) return -1;
-
+    let bestMove = availableMoves[0];
     let bestScore = -Infinity;
-    let bestIdx = available[0];
 
-    for (const idx of available) {
-      const score = scoreMoveForCpu(board, idx);
+    for (const moveIndex of availableMoves) {
+      const score = scoreCpuMove(context, moveIndex);
       if (score > bestScore) {
         bestScore = score;
-        bestIdx = idx;
+        bestMove = moveIndex;
       }
     }
 
-    return bestIdx;
+    return bestMove;
   };
+
+  function normalizeConfig(config) {
+    return {
+      board: Array.isArray(config?.board) ? config.board.slice() : [],
+      wins: Array.isArray(config?.wins) ? config.wins : [],
+      center: Number.isInteger(config?.center) ? config.center : 13,
+      player: config?.player || 'X',
+      cpu: config?.cpu || 'O',
+    };
+  }
+
+  function scoreCpuMove(context, moveIndex) {
+    const { board, wins, cpu, player, center } = context;
+    board[moveIndex] = cpu;
+
+    const immediateCompletions = wins.filter(line => {
+      return line.includes(moveIndex) && line.every(cellIndex => board[cellIndex] === cpu);
+    }).length;
+
+    const replyMoves = getPlayableMoves(board, center);
+    let worstCaseScore = Infinity;
+
+    if (replyMoves.length === 0) {
+      worstCaseScore = evaluateBoard(context);
+    } else {
+      for (const replyIndex of replyMoves) {
+        board[replyIndex] = player;
+        const replyScore = evaluateBoard(context);
+        board[replyIndex] = null;
+        if (replyScore < worstCaseScore) {
+          worstCaseScore = replyScore;
+        }
+      }
+    }
+
+    board[moveIndex] = null;
+    return immediateCompletions * SCORE.immediateCompletion + worstCaseScore;
+  }
+
+  function evaluateBoard(context) {
+    const { board, wins, cpu, player } = context;
+    const cpuCompletedLines = countCompletedLines(board, wins, cpu);
+    const playerCompletedLines = countCompletedLines(board, wins, player);
+    let positionalScore = 0;
+
+    for (const line of wins) {
+      const cpuCount = countLineMarks(board, line, cpu);
+      const playerCount = countLineMarks(board, line, player);
+
+      if (playerCount === 0) {
+        if (cpuCount === 2) positionalScore += SCORE.cpuTwoInLine;
+        else if (cpuCount === 1) positionalScore += SCORE.cpuOneInLine;
+      }
+
+      if (cpuCount === 0) {
+        if (playerCount === 2) positionalScore += SCORE.playerTwoInLine;
+        else if (playerCount === 1) positionalScore += SCORE.playerOneInLine;
+      }
+    }
+
+    positionalScore += countThreats(context, cpu, 2) * SCORE.cpuThreat;
+    positionalScore -= countThreats(context, player, 2) * SCORE.playerThreat;
+
+    return (
+      (cpuCompletedLines - playerCompletedLines) * SCORE.completedLine +
+      positionalScore
+    );
+  }
+
+  function countCompletedLines(board, wins, side) {
+    return wins.filter(line => line.every(cellIndex => board[cellIndex] === side)).length;
+  }
+
+  function countThreats(context, side, targetCount) {
+    const { board, wins, player, cpu } = context;
+    const opponent = side === player ? cpu : player;
+
+    return wins.filter(line => {
+      const sideCount = countLineMarks(board, line, side);
+      const opponentCount = countLineMarks(board, line, opponent);
+      return sideCount === targetCount && opponentCount === 0;
+    }).length;
+  }
+
+  function countLineMarks(board, line, side) {
+    let count = 0;
+    for (const cellIndex of line) {
+      if (board[cellIndex] === side) {
+        count += 1;
+      }
+    }
+    return count;
+  }
+
+  function getPlayableMoves(board, center) {
+    const playableMoves = [];
+
+    for (let cellIndex = 0; cellIndex < board.length; cellIndex += 1) {
+      if (cellIndex !== center && board[cellIndex] === null) {
+        playableMoves.push(cellIndex);
+      }
+    }
+
+    return playableMoves;
+  }
 })();
