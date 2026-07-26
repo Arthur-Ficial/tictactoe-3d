@@ -202,6 +202,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="js/game-modes.js?v=88f37d4"></script>
+<script src="js/cine-camera.js?v=88f37d4"></script>
 <script src="js/shot-clock.js?v=88f37d4"></script>
 <script src="js/cpu-normal.js?v=88f37d4"></script>
 <script src="js/cpu-super-hard.js?v=88f37d4"></script>
@@ -673,15 +674,20 @@ function cineAngleForCell(cellIdx) {
   return { theta, phi: Math.max(PHI_MIN + 0.1, Math.min(PHI_MAX - 0.1, phi)) };
 }
 
-function shortAngleDist(from, to) {
-  const d = ((to - from) % (Math.PI * 2) + Math.PI * 3) % (Math.PI * 2) - Math.PI;
-  return d;
+const CINE = window.TTT3DCineCamera;
+
+function isUserDrivingCamera() {
+  return CINE.isUserInteracting({
+    mouseDown,
+    touchCount: Object.keys(touches).length,
+    pinchActive,
+  });
 }
 
 function startCineMove(cellIdx, duration, onDone) {
   const target = cineAngleForCell(cellIdx);
   cineCam = {
-    targetTheta: sph.theta + shortAngleDist(sph.theta, target.theta),
+    targetTheta: sph.theta + CINE.shortAngleDist(sph.theta, target.theta),
     targetPhi: target.phi,
     startTheta: sph.theta,
     startPhi: sph.phi,
@@ -693,10 +699,17 @@ function startCineMove(cellIdx, duration, onDone) {
 
 function updateCineCam() {
   if (!cineCam) return false;
-  const elapsed = Date.now() - cineCam.startTime;
-  const t = Math.min(1, elapsed / cineCam.duration);
-  // Ease-out cubic for smooth deceleration
-  const e = 1 - Math.pow(1 - t, 3);
+
+  // A live drag/pinch always wins. Bail out leaving sph exactly where it is so
+  // the camera keeps following the finger with no snap, and still land the
+  // move so the turn can never hang.
+  if (isUserDrivingCamera()) {
+    abortCineCam();
+    return false;
+  }
+
+  const t = CINE.cineProgress(Date.now() - cineCam.startTime, cineCam.duration);
+  const e = CINE.easeOutCubic(t);
   sph.theta = cineCam.startTheta + (cineCam.targetTheta - cineCam.startTheta) * e;
   sph.phi = cineCam.startPhi + (cineCam.targetPhi - cineCam.startPhi) * e;
   updateCamera();
@@ -708,6 +721,16 @@ function updateCineCam() {
   return true;
 }
 
+// User grabbed the cube mid-orbit: stop steering the camera but still run the
+// pending placement, otherwise the CPU's marker would never land.
+function abortCineCam() {
+  if (!cineCam) return;
+  const done = cineCam.onDone;
+  cineCam = null;
+  if (done) done();
+}
+
+// Teardown (new game / game over / cancelled turn): drop the move entirely.
 function cancelCineCam() { cineCam = null; }
 
 function setThinkingStatus(who) {
@@ -722,7 +745,6 @@ function scheduleCpuMove(who) {
   const requestId = ++cpuRequestId;
   const difficulty = cpuDifficulty;
   const snapshot = [...board];
-  const cinematic = isSpectatorMode();
 
   thinking = true;
   ptAI.intensity = 3;
@@ -756,7 +778,7 @@ function scheduleCpuMove(who) {
     cpuTimerId = setTimeout(() => {
       cpuTimerId = null;
       if(requestId !== cpuRequestId) return;
-      finishAutomatedMove(requestId, who, randomMove, cinematic);
+      finishAutomatedMove(requestId, who, randomMove);
     }, delay);
     return;
   }
@@ -771,11 +793,11 @@ function scheduleCpuMove(who) {
     try {
       const move = await getCpuMove(difficulty, snapshot, who);
       if(requestId !== cpuRequestId) return;
-      finishAutomatedMove(requestId, who, move, cinematic);
+      finishAutomatedMove(requestId, who, move);
     } catch(err) {
       if(requestId !== cpuRequestId) return;
       console.error('CPU move failed:', err);
-      finishAutomatedMove(requestId, who, cpuFallback(snapshot, who), cinematic);
+      finishAutomatedMove(requestId, who, cpuFallback(snapshot, who));
     }
   }, delay);
 }
@@ -788,23 +810,35 @@ function cpuFallback(snapshot, who) {
   });
 }
 
-function finishAutomatedMove(requestId, who, move, cinematic) {
+function finishAutomatedMove(requestId, who, move, options) {
   if(requestId !== cpuRequestId) return;
   if(move === -1) { completeAutomatedTurn(requestId, who); return; }
 
-  const finalize = () => {
-    if(requestId !== cpuRequestId) return;
+  // Decided here, at the moment the move actually fires, not when it was
+  // scheduled - so a drag that started during the CPU's think time still wins.
+  const cinematic = CINE.shouldPlayCinematic({
+    gameMode,
+    side: who,
+    automated: Boolean(options && options.automated),
+    userInteracting: isUserDrivingCamera(),
+  });
+
+  if(!cinematic) {
     placeMarker(move, who);
     completeAutomatedTurn(requestId, who);
-  };
-
-  if(cinematic) {
-    startCineMove(move, 800, () => {
-      finalize();
-    });
-  } else {
-    finalize();
+    return;
   }
+
+  startCineMove(move, CINE.CINE_DURATION_MS, () => {
+    if(requestId !== cpuRequestId) return;
+    placeMarker(move, who);
+    // Let the chosen cube sit at the front for a beat before the player may
+    // act, so the move reads as "the CPU turned the cube and played there".
+    cpuTimerId = setTimeout(() => {
+      cpuTimerId = null;
+      completeAutomatedTurn(requestId, who);
+    }, CINE.CINE_HOLD_MS);
+  });
 }
 
 function completeAutomatedTurn(requestId, who) {
@@ -859,7 +893,7 @@ function handleTurnTimeout(who, turnId) {
       pending.move = cpuFallback(pending.snapshot, who);
     }
 
-    finishAutomatedMove(pending.requestId, who, pending.move, isSpectatorMode());
+    finishAutomatedMove(pending.requestId, who, pending.move);
     return;
   }
 
@@ -867,10 +901,9 @@ function handleTurnTimeout(who, turnId) {
 
   const requestId = ++cpuRequestId;
   const move = getRandomAutoMove(board);
-  const cinematic = true;
   thinking = true;
   ptAI.intensity = 3;
-  finishAutomatedMove(requestId, who, move, cinematic);
+  finishAutomatedMove(requestId, who, move, { automated: true });
 }
 
 function startTurn(who) {
@@ -1690,7 +1723,7 @@ function animate() {
     if(needsUpdate) updateCamera();
   }
 
-  // Cinematic camera animation (CPU vs CPU)
+  // Cinematic camera animation (any automated move)
   const cineActive = updateCineCam();
 
   // Auto-rotate: gentle drift in spectator mode (when not animating), otherwise after 3s idle
@@ -1732,6 +1765,9 @@ window._game = {
   ptX, ptO, ptW, ptAI,
   get cellMeshes(){return cellMeshes;},
   get board(){return board;},
+  get cameraAngles(){return {theta: sph.theta, phi: sph.phi, r: sph.r};},
+  get cineActive(){return cineCam !== null;},
+  get thinking(){return thinking;},
   getDifficulty() { return cpuDifficulty; },
   setDifficulty(mode) {
     cpuDifficulty = normalizeDifficulty(mode);
